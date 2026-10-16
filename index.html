@@ -334,7 +334,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792156471";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1903,6 +1903,24 @@ if(STANDALONE){
   $('#mpCode').addEventListener('keydown',e=>e.stopPropagation());
   $('#mpLeave').addEventListener('click',()=>{SFX.click();netLeave();});
   addEventListener('pagehide',()=>{if(NET.ok)netLeave(true);});
+}
+
+/* ---------- Auto-Update (nur gehostete Version) ---------- */
+if(STANDALONE&&window.NK_VERSION){
+  let upd=false;
+  const check=()=>{
+    if(upd)return;
+    fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{
+      v=(v||'').trim();if(!v||v===window.NK_VERSION||!/^\d+$/.test(v)||+v<+window.NK_VERSION)return;
+      upd=true;
+      const go=()=>{if(NET.ok)netLeave(true);location.replace(location.pathname+'?v='+v);};
+      const idle=()=>!focus&&!openId&&!(typeof R!=='undefined'&&R.spinning);
+      if(!started||idle()){toast('Neue Version wird geladen…');setTimeout(go,1200);}
+      else{toast('Neue Version da. Sie lädt, sobald du aufstehst.');const iv=setInterval(()=>{if(idle()){clearInterval(iv);toast('Neue Version wird geladen…');setTimeout(go,1200);}},1000);}
+    }).catch(()=>{});
+  };
+  setTimeout(check,3000);setInterval(check,45000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
 }
 
 /* ---- h_ui.js ---- */
