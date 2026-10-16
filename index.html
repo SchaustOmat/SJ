@@ -1090,9 +1090,9 @@ function timerDone(m){
     case 'fsEnd':
       mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;updateButtons(m);if(m.auto)m.timer=1.5;break;
     case 'gambleNext':m.gamble.busy=false;
-      {const cap=m.gamble.kind==='ladder'?10:5;
+      {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
-      else if(m.gamble.n>=cap){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
+      else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=LADDER.length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
       else{m.state='gamble';m.msg=m.gamble.kind==='ladder'?'LEITER DRÜCKEN ODER NEHMEN':'ROT ODER SCHWARZ?';}}
       m.dirty=true;m.topDirty=true;updateButtons(m);break;
   }
@@ -1113,16 +1113,23 @@ function startFsIntro(m){mpWin('hat 10 Freispiele an '+m.G.title+'!');
 /* ---------- gamble ---------- */
 function startGamble(m,kind){
   m.present=null;m.auto=false;
-  if(kind==='ladder'){m.gamble={kind:'ladder',n:0,busy:false,base:m.win};m.state='gamble';m.msg='LEITER DRÜCKEN ODER NEHMEN';}
+  if(kind==='ladder'){
+    let idx=-1;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=m.win)idx=i;
+    if(idx<0){m.msg='GEWINN ZU KLEIN FÜR DIE LEITER';updateButtons(m);return;}
+    const rest=m.win-LADDER[idx];if(rest>0){setChips(chips+rest);}
+    m.win=LADDER[idx];m.disp=m.win;
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null};m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
+const LADDER=[10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000];
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
-  gm.up=Math.random()<.5;
-  if(gm.up){gm.n++;m.win*=2;m.msg='HOCH! '+fmt(m.win);SFX.win();}
-  else{m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();}
-  m.state='gambleNext';m.timer=1.1;updateButtons(m);
+  gm.up=Math.random()<.5;gm.last=gm.idx;
+  if(gm.up){gm.idx++;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();}
+  else if(gm.idx>0){gm.idx--;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();}
+  else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();}
+  m.state='gambleNext';m.timer=.9;updateButtons(m);
 }
 function gambleRB(m,red){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;
@@ -1257,21 +1264,25 @@ function drawGamble(m,g){
   px(g,8);g.fillStyle='#ffd23a';g.textAlign='center';g.textBaseline='middle';
   if(gm.kind==='ladder'){
     px(g,9);g.fillText('RISIKOLEITER',160,RY+9);
-    const lvl=gm.n,start=Math.max(0,lvl-2),rows=7,h=19;
-    const result=m.state==='gambleNext';
+    const result=m.state==='gambleNext',cur=gm.idx;
     const blink=Math.floor(now*7)%2===0;
     if(!result&&Math.floor(now*7)!==Math.floor((now-.016)*7))SFX.gambleTick(blink);
-    for(let i=0;i<rows;i++){const k=start+i,v=gm.base*Math.pow(2,k),y=RY+CH*3-8-(i+1)*h;
-      const isCur=k===lvl,isNext=k===lvl+1;
+    const rows=8,h=17,start=clamp((result?gm.last:cur)-3,0,Math.max(0,LADDER.length-rows));
+    const yb=RY+CH*3-12;
+    for(let i=0;i<rows;i++){const k=start+i;if(k>=LADDER.length)break;const y=yb-(i+1)*h;
       let fill='#1a1424',txt='#9b8fb3';
-      if(result){if(gm.up&&isCur){fill='#ffd23a';txt='#1a1000';}}
-      else if((isCur&&blink)||(isNext&&!blink)){fill=isNext?'#3adf5a':'#ffd23a';txt='#1a1000';}
-      else if(k<lvl){fill='#2a2010';txt='#c8a050';}
+      if(result){if(k===cur){fill=gm.up?'#3adf5a':'#ffd23a';txt='#1a1000';}}
+      else{if(k===cur){fill='#ffd23a';txt='#1a1000';}
+        if(k===cur+1&&blink){fill='#3adf5a';txt='#001a04';}
+        if(k===cur-1&&!blink){fill='#ff3a3a';txt='#1a0000';}}
       g.fillStyle=fill;g.fillRect(100,y,120,h-3);g.strokeStyle='#3a2c52';g.strokeRect(100.5,y+.5,119,h-4);
-      px(g,9);g.fillStyle=txt;g.fillText(fmt(v),160,y+h/2-1);}
-    const y0=RY+CH*3-8;g.fillStyle=result&&!gm.up?'#ff3a3a':'#3a0a0a';g.fillRect(100,y0-2,120,10);px(g,7);g.fillStyle='#fff';g.fillText('0',160,y0+3);
-    px(g,7);g.fillStyle='#ffd23a';g.textAlign='left';g.fillText('JETZT:',230,RY+60);px(g,10);g.fillText(fmt(m.win),230,RY+76);
-    g.textAlign='right';px(g,7);g.fillStyle='#3adf5a';g.fillText('▲ ×2',90,RY+60);g.fillStyle='#ff3a3a';g.fillText('▼ = 0',90,RY+80);
+      px(g,9);g.fillStyle=txt;g.fillText(fmt(LADDER[k]),160,y+h/2-1);}
+    const zeroLit=(result&&cur<0)||(!result&&cur===0&&!blink);
+    g.fillStyle=zeroLit?'#ff3a3a':'#3a0a0a';g.fillRect(100,yb-1,120,10);px(g,7);g.fillStyle='#fff';g.fillText('0',160,yb+4);
+    px(g,7);g.textAlign='left';g.fillStyle='#ffd23a';g.fillText('STUFE:',230,RY+52);px(g,10);g.fillText(fmt(m.win),230,RY+68);
+    px(g,7);g.fillStyle='#9b8fb3';g.fillText('TOP '+fmt(LADDER[LADDER.length-1]),230,RY+92);
+    g.textAlign='right';px(g,7);g.fillStyle='#3adf5a';g.fillText('▲ HOCH',92,RY+52);g.fillStyle='#ff3a3a';g.fillText('▼ RUNTER',92,RY+72);
+    g.fillStyle='#9b8fb3';g.fillText('UNTER 0 = WEG',92,RY+92);
     return;
   }
   if(gm.kind==='rb'){
