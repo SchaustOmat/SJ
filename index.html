@@ -307,7 +307,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <button class="btn hot" id="mpHost">RAUM HOSTEN</button>
   <div class="row" style="flex-wrap:nowrap"><input id="mpCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="CODE"><button class="btn gold" id="mpJoin">BEITRETEN</button></div>
   <button class="btn" id="mpLeave">VERLASSEN</button>
-  <p class="mps" style="color:var(--dim)">Einer hostet und sagt den Code, der andere tritt bei. Am besten im selben WLAN oder Hotspot.</p>
+  <p class="mps" style="color:var(--dim)">Einer hostet und sagt den Code, der andere tritt bei. Funktioniert über WLAN und Mobilfunk.</p>
 </section>
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">
   <header><h2>STEUERUNG</h2><button class="x" data-close>WEITER</button></header>
@@ -333,7 +333,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" onerror="var s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';document.head.appendChild(s)"></script>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
 <script>window.NK_STANDALONE=true;</script>
 <script>
 (function(){
@@ -1843,63 +1843,66 @@ function mpSay(text){
 }
 function mpWin(text){if(!MP.room)return;MP.me.w=cleanText(text,60);MP.me.wt=Date.now();MP.dirty=true;}
 
-/* ---------- Standalone: Raum hosten / beitreten (PeerJS, WebRTC) ---------- */
+/* ---------- Standalone: Raum hosten / beitreten (MQTT über WebSocket) ---------- */
 const STANDALONE=!!window.NK_STANDALONE;
-const NET={peer:null,host:false,conns:new Map(),hostConn:null,states:{},myId:null,code:'',mine:{},timer:null,ok:false};
+const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+const NET={cli:null,code:'',myId:'',states:{},seen:{},mine:{},timer:null,ok:false,bi:0,tries:0};
 function netStatus(t){const e=$('#mpStatus');if(e)e.textContent=t;mpTag();}
 function netRoomObj(){return {presence(p){NET.mine=Object.assign({},p);return Promise.resolve();},connected(){return NET.ok;}};}
 function netLeave(silent){
   if(NET.timer){clearInterval(NET.timer);NET.timer=null;}
-  NET.conns.forEach(c=>{try{c.close();}catch(e){}});NET.conns.clear();
-  if(NET.hostConn){try{NET.hostConn.close();}catch(e){}NET.hostConn=null;}
-  if(NET.peer){try{NET.peer.destroy();}catch(e){}NET.peer=null;}
-  NET.states={};NET.ok=false;NET.code='';MP.room=null;MP.online=0;mpClear();$('#chatBtn').hidden=true;
+  if(NET.cli){try{if(NET.ok)NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,JSON.stringify({bye:1}));NET.cli.end(true);}catch(e){}NET.cli=null;}
+  NET.states={};NET.seen={};NET.ok=false;NET.code='';MP.room=null;MP.online=0;mpClear();$('#chatBtn').hidden=true;
   if(!silent)netStatus('Nicht verbunden.');else mpTag();
 }
-function netPeers(){return Object.entries(NET.states).map(([id,s])=>({peer:id,isMe:id===NET.myId,kind:'viewer',guest:false,presence:s||{}}));}
-function netTick(){
-  if(!NET.ok)return;
-  if(NET.host){NET.states[NET.myId]=NET.mine;const msg={t:'all',s:NET.states};NET.conns.forEach(c=>{if(c.open)try{c.send(msg);}catch(e){}});mpSync(netPeers());}
-  else if(NET.hostConn&&NET.hostConn.open){try{NET.hostConn.send({t:'me',s:NET.mine});}catch(e){}}
-}
 function netValid(s){return s&&typeof s==='object'&&!Array.isArray(s)&&JSON.stringify(s).length<2000;}
-function netStart(asHost,code){
-  if(typeof Peer==='undefined'){netStatus('Verbindungs-Bibliothek nicht geladen. Internet prüfen und Seite neu laden.');return;}
-  netLeave(true);
-  NET.host=asHost;NET.code=code;
-  const p=asHost?new Peer('sinanskeller-'+code,{debug:0}):new Peer({debug:0});NET.peer=p;
-  netStatus(asHost?'Raum wird erstellt…':'Suche Raum '+code+'…');
-  p.on('open',id=>{
-    NET.myId=id;
-    if(asHost){NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;netStatus('Raum '+code+' ist offen. Gib deinem Kollegen den Code.');}
-    else{const c=p.connect('sinanskeller-'+code,{reliable:true});
-      c.on('open',()=>{NET.hostConn=c;NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;netStatus('Verbunden mit Raum '+code+'.');toast('Verbunden mit Raum '+code+'.');});
-      c.on('data',d=>{if(d&&d.t==='all'&&d.s&&typeof d.s==='object'){const st={};for(const k in d.s)if(netValid(d.s[k]))st[k]=d.s[k];NET.states=st;mpSync(netPeers());}});
-      c.on('close',()=>{toast('Der Host hat den Raum geschlossen.');netLeave();});
-      c.on('error',()=>{});}
-    NET.timer=setInterval(netTick,100);
-  });
-  p.on('connection',c=>{
-    if(!NET.host||NET.conns.size>=5){try{c.close();}catch(e){}return;}
-    c.on('open',()=>{NET.conns.set(c.peer,c);mpTag();});
-    c.on('data',d=>{if(d&&d.t==='me'&&netValid(d.s))NET.states[c.peer]=d.s;});
-    c.on('close',()=>{NET.conns.delete(c.peer);delete NET.states[c.peer];mpSync(netPeers());});
-    c.on('error',()=>{});
-  });
-  p.on('error',e=>{
-    const t=e&&e.type;
-    if(t==='unavailable-id'){netLeave(true);netStart(true,String(1000+(Math.random()*9000|0)));return;}
-    if(t==='peer-unavailable'){netLeave(true);netStatus('Raum '+code+' nicht gefunden. Code prüfen, Host muss im Spiel sein.');return;}
-    if(t==='network'||t==='server-error'||t==='socket-error'){netLeave(true);netStatus('Keine Verbindung zum Vermittler. Internet prüfen.');return;}
-    netStatus('Fehler: '+(t||'unbekannt'));
-  });
-  p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});
+function netPeers(){const out=[{peer:NET.myId,isMe:true,kind:'viewer',guest:false,presence:NET.mine}];
+  for(const id in NET.states)out.push({peer:id,isMe:false,kind:'viewer',guest:false,presence:NET.states[id]});return out;}
+function netTick(){
+  if(!NET.ok||!NET.cli)return;
+  try{NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,JSON.stringify({s:NET.mine}),{qos:0});}catch(e){}
+  const t=Date.now();let ch=false;for(const id in NET.seen)if(t-NET.seen[id]>7000){delete NET.seen[id];delete NET.states[id];ch=true;}
+  mpSync(netPeers());
 }
+function netStart(asHost,code){
+  if(typeof mqtt==='undefined'){netStatus('Verbindungs-Bibliothek nicht geladen. Internet prüfen und Seite neu laden.');return;}
+  netLeave(true);NET.code=code;NET.myId='p'+Math.random().toString(36).slice(2,10);NET.tries=0;
+  netConnect(asHost);
+}
+function netConnect(asHost){
+  const url=BROKERS[NET.bi%BROKERS.length];
+  netStatus((asHost?'Raum '+NET.code+' wird geöffnet':'Verbinde mit Raum '+NET.code)+'… ('+(NET.bi%BROKERS.length+1)+')');
+  let cli;
+  try{cli=mqtt.connect(url,{clientId:'sk_'+NET.myId,clean:true,connectTimeout:6000,reconnectPeriod:3000,keepalive:30,
+    will:{topic:'sinanskeller/'+NET.code+'/'+NET.myId,payload:JSON.stringify({bye:1}),qos:0,retain:false}});}catch(e){netNext(asHost);return;}
+  NET.cli=cli;
+  const failT=setTimeout(()=>{if(!NET.ok&&NET.cli===cli){try{cli.end(true);}catch(e){}netNext(asHost);}},8000);
+  cli.on('connect',()=>{
+    clearTimeout(failT);
+    cli.subscribe('sinanskeller/'+NET.code+'/+',{qos:0},err=>{
+      if(err){netStatus('Fehler beim Beitreten. Nochmal versuchen.');return;}
+      const first=!NET.ok;NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;
+      if(!NET.timer)NET.timer=setInterval(netTick,150);
+      netStatus((asHost?'Raum '+NET.code+' ist offen. Sag deinem Kollegen den Code.':'Im Raum '+NET.code+'. Warte auf die anderen…'));
+      if(first)toast('Raum '+NET.code+' verbunden.');
+    });
+  });
+  cli.on('message',(topic,buf)=>{
+    const id=topic.split('/')[2];if(!id||id===NET.myId)return;
+    let d;try{d=JSON.parse(buf.toString());}catch(e){return;}
+    if(d&&d.bye){delete NET.states[id];delete NET.seen[id];mpSync(netPeers());return;}
+    if(d&&netValid(d.s)){const isNew=!NET.states[id];NET.states[id]=d.s;NET.seen[id]=Date.now();if(isNew){mpSync(netPeers());netStatus('Raum '+NET.code+': '+(Object.keys(NET.states).length+1)+' Spieler.');}}
+  });
+  cli.on('offline',()=>{if(NET.cli===cli&&NET.ok)netStatus('Verbindung weg, versuche erneut…');});
+  cli.on('error',()=>{});
+}
+function netNext(asHost){NET.tries++;NET.bi++;if(NET.tries>=BROKERS.length){netLeave(true);netStatus('Kein Server erreichbar. Internet prüfen und nochmal versuchen.');return;}netConnect(asHost);}
 if(STANDALONE){
   $('#mpHost').addEventListener('click',()=>{SFX.click();netStart(true,String(1000+(Math.random()*9000|0)));});
   $('#mpJoin').addEventListener('click',()=>{SFX.click();const c=($('#mpCode').value||'').replace(/\D/g,'').slice(0,4);if(c.length!==4){netStatus('Bitte den 4-stelligen Code eingeben.');return;}netStart(false,c);});
   $('#mpCode').addEventListener('keydown',e=>e.stopPropagation());
   $('#mpLeave').addEventListener('click',()=>{SFX.click();netLeave();});
+  addEventListener('pagehide',()=>{if(NET.ok)netLeave(true);});
 }
 
 /* ---- h_ui.js ---- */
