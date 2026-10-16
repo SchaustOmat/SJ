@@ -307,7 +307,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <button class="btn hot" id="mpHost">RAUM HOSTEN</button>
   <div class="row" style="flex-wrap:nowrap"><input id="mpCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="CODE"><button class="btn gold" id="mpJoin">BEITRETEN</button></div>
   <button class="btn" id="mpLeave">VERLASSEN</button>
-  <p class="mps" style="color:var(--dim)">Einer hostet und sagt den Code, der andere tritt bei. Funktioniert über WLAN und Mobilfunk.</p>
+  <p class="mps" style="color:var(--dim)">Eigenen Code eintippen und RAUM HOSTEN, oder leer lassen für einen Zufallscode. Der andere tippt denselben Code ein und drückt BEITRETEN. Funktioniert über WLAN und Mobilfunk.</p>
 </section>
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">
   <header><h2>STEUERUNG</h2><button class="x" data-close>WEITER</button></header>
@@ -1898,7 +1898,7 @@ function netConnect(asHost){
 }
 function netNext(asHost){NET.tries++;NET.bi++;if(NET.tries>=BROKERS.length){netLeave(true);netStatus('Kein Server erreichbar. Internet prüfen und nochmal versuchen.');return;}netConnect(asHost);}
 if(STANDALONE){
-  $('#mpHost').addEventListener('click',()=>{SFX.click();netStart(true,String(1000+(Math.random()*9000|0)));});
+  $('#mpHost').addEventListener('click',()=>{SFX.click();const c=($('#mpCode').value||'').replace(/\D/g,'').slice(0,4);netStart(true,c.length===4?c:String(1000+(Math.random()*9000|0)));});
   $('#mpJoin').addEventListener('click',()=>{SFX.click();const c=($('#mpCode').value||'').replace(/\D/g,'').slice(0,4);if(c.length!==4){netStatus('Bitte den 4-stelligen Code eingeben.');return;}netStart(false,c);});
   $('#mpCode').addEventListener('keydown',e=>e.stopPropagation());
   $('#mpLeave').addEventListener('click',()=>{SFX.click();netLeave();});
