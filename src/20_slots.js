@@ -201,7 +201,8 @@ function updateButtons(m){
 }
 function pressButton(m,key){
   if(key==='RISIKO')key='KARTE';
-  // Leiter ist immer drückbar: laufende Anzeige/Ausspielung sofort abschließen, dann gilt der Druck
+  // Leiter ist immer drückbar (Anzeige wird sofort abgeschlossen) – nur die AUSSPIELUNG läuft immer komplett durch
+  if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;if(m.btns[key])m.btns[key].press=1;SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START'||key==='KARTE')){for(let n=0;n<3&&m.state==='gambleNext';n++){m.timer=0;timerDone(m);}if(m.state!=='gamble')return;}
   if(typeof svGateOn==='function'&&svGateOn(m))return;
   if(m.btns[key])m.btns[key].press=1;SFX.btn();
@@ -404,7 +405,7 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
-  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.05);if(t!==m.gamble.rb){m.gamble.rb=t;SFX.ausTick(t);}}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.09);if(t!==m.gamble.rb&&m.stateT>.45){m.gamble.rb=t;SFX.ausTick(clamp(m.stateT/2.3,0,1));}}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
       M.fxn++;SFX.coinUp(M.fxn*2);fxBurst(m,cx,cy,14,{spd:110,life:.7});fxFlash(m,.15,'255,230,140');
@@ -461,7 +462,9 @@ function timerDone(m){
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
       else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
       else{m.state='gamble';m.msg=m.gamble.kind==='ladder'?'LEITER DRÜCKEN ODER NEHMEN':'ROT ODER SCHWARZ?';}}
-      m.dirty=true;m.topDirty=true;updateButtons(m);break;
+      m.dirty=true;m.topDirty=true;updateButtons(m);
+      if(m.gamble&&m.gamble.queued&&m.state==='gamble'){const q=m.gamble.queued;m.gamble.queued=null;pressButton(m,q);}
+      break;
   }
 }
 function afterFsSpin(m){
@@ -602,9 +605,9 @@ const ausEV=L=>L.slice(AUS_I).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce
 function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_I+k;}return AUS_I;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[i+1];return (L[i]-D)/(nx-D)*.98;};
 // AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
-function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.state='gambleNext';m.stateT=0;m.timer=2.3;m.msg='AUSSPIELUNG!';
+function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.state='gambleNext';m.stateT=0;m.timer=2.6;m.msg='AUSSPIELUNG!';SFX.ausFan();
   gm.reveal=()=>{gm.run=false;SFX.ausFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
-    m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=.9;if(then)then();};
+    m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=gm.queued?.35:.9;if(then)then();};
   m.dirty=true;updateButtons(m);}
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;const L=ladOf(m);gm.last=gm.idx;
@@ -656,7 +659,7 @@ function drawLadder(m,g,gm){
   const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k+1,yOf=p=>yb-rh*(p+2);
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
   // laufendes Licht: über die oberen Stufen hin und her
-  const nu=L.length-AUS_I,st=Math.floor(m.stateT/.08),rk=AUS_I+((st*7919+st*st*31+13)%nu);
+  const nu=L.length-AUS_I,st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_I+((st*7919+st*st*31+13)%nu);
   const upT=cur+1,dnT=ladDown(cur);
   for(let k=0;k<L.length;k++){const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
     let lit=false,col='y';

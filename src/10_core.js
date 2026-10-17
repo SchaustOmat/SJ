@@ -87,7 +87,7 @@ const SFX={
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
-  ausTick(i){tone(i%2?880:1047,.04,'square',.055);}, // didididi: C6/A5 schnell im Wechsel
+  ausTick(k){tone(1000+k*600,.035,'square',.05);}, // Ausspielung: helle Ticks, Tonhöhe steigt (k = 0..1)
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
