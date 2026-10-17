@@ -51,6 +51,8 @@ var SlotEngine=(function(){
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:3,
+      // Verdeckte Walzen: manchmal werden 1-3 Walzen verdeckt und öffnen alle dasselbe zufällige Symbol
+      mystery:{chance:1/30,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
       pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
            'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
@@ -92,7 +94,14 @@ var SlotEngine=(function(){
       if(ep){res.expand={sym:special,reels:reels,amount:ep*betLine*lines};res.total+=ep*betLine*lines;}}
     return res;
   }
+  // Verdeckte Walzen: ändert das Raster direkt, gibt {reels,sym} oder null zurück
+  function mystery(G,g,rnd,fs){var M=G.mystery;if(!M||fs||rnd()>=M.chance)return null;
+    var r=rnd(),k=1,acc=0,i;for(i=0;i<M.k.length;i++){acc+=M.k[i];if(r<acc){k=i+1;break;}}
+    var cols=[0,1,2,3,4];for(i=4;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=cols[i];cols[i]=cols[j];cols[j]=t;}
+    cols=cols.slice(0,k).sort();
+    var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
+    cols.forEach(function(c){g[0][c]=g[1][c]=g[2][c]=sym;});return {reels:cols,sym:sym};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery};
 })();
 if(typeof module!=='undefined')module.exports=SlotEngine;

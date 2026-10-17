@@ -17,9 +17,9 @@ SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([
   SlotEngine.setup('reef',mk('reef',BASE),303,null,.8);
   SlotEngine.setup('temple',mk('temple',BASE),304,null,1.35);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,0],[10,10,9,9,8,4,4,3,2,0],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,0],[9,9,9,8,8,4,4,3,2,0]].map(a=>R_(a,PH)),401);
+  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,0],[10,10,9,9,8,4,4,3,2,0],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,0],[9,9,9,8,8,4,4,3,2,0]].map(a=>R_(a,PH)),401,null,.95);
 })();
-const GAMEINFO={book:{rtp:'94,4',fs:'187',hit:'2,7'},fruit:{rtp:'94,1',fs:null,hit:'5,2'},viking:{rtp:'94',fs:'203',hit:'3,3'},mine:{rtp:'94',fs:'203',hit:'3,3'},reef:{rtp:'94',fs:'203',hit:'3,3'},temple:{rtp:'94',fs:'203',hit:'3,3'},pharao:{rtp:'96,9',fs:null,hit:'2,4',power:'18'}};
+const GAMEINFO={book:{rtp:'94,4',fs:'187',hit:'2,7'},fruit:{rtp:'94,1',fs:null,hit:'5,2'},viking:{rtp:'94',fs:'203',hit:'3,3'},mine:{rtp:'94',fs:'203',hit:'3,3'},reef:{rtp:'94',fs:'203',hit:'3,3'},temple:{rtp:'94',fs:'203',hit:'3,3'},pharao:{rtp:'96,7',fs:null,hit:'2,4',power:'18'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -223,7 +223,7 @@ function pressButton(m,key){
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
-      if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
+      if(m.state==='show'){startGamble(m,key==='KARTE'?'rb':'ladder');if(key==='LEITER'&&m.state==='gamble'&&m.gamble)ladderPress(m);}break;
     case 'START':
       if(s==='idle')startSpin(m);
       else if(s==='show'){collect(m);startSpin(m);}
@@ -239,6 +239,7 @@ function startSpin(m,demo){
   m.useFs=!!m.fs;
   m.stops=SlotEngine.randStops(m.G,Math.random,m.useFs);
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
+  m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);
   m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,betLine(m),m.fs?m.fs.special:null,m.useFs);
   const fast=m.auto?.75:1;
   m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=26;});
@@ -261,7 +262,9 @@ function updReels(m,dt){
       if(m.G.free&&sc>=2&&i<4&&!m.demo){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;const ext=.9;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=ext;SFX.tease(sc);m.msg='SPANNUNG...';}}
     }
   });
-  if(!any&&m.state==='spin')onResult(m);
+  if(!any&&m.state==='spin'){
+    if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=1.5;m.msg='VERDECKTE WALZEN!';SFX.tease(3);updateButtons(m);}
+    else onResult(m);}
   if(any)m.dirty=true;
 }
 function onResult(m){
@@ -299,7 +302,8 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash')m.dirty=true;
+  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
   if(hot){const h=(now*.6)%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
@@ -317,6 +321,7 @@ function timerDone(m){
       break;
     case 'show':if(m.auto){collect(m);startSpin(m);}break;
     case 'idle':if(m.auto)startSpin(m);break;
+    case 'myst':m.myst.open=true;SFX.expand();onResult(m);break;
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
     case 'splash':m.state='idle';slotIdleMsg(m);m.dirty=true;updateButtons(m);break;
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
@@ -368,7 +373,7 @@ function startPowerRun(m){
 function powerSpin(m){
   const P=m.power;if(P.spinning||P.left<=0)return;
   P.left--;P.spinning=true;P.last=0;P.count++;
-  P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
+  P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.myst=SlotEngine.mystery(m.G,S.grid,Math.random);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
     S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;});});
   m.msg=P.left+' POWER SPINS ÜBRIG';SFX.reelStart();m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -383,7 +388,7 @@ function powerStep(m,dt){
 }
 function powerEnd(m){
   if(!m.power||m.power.spinning)return;const sum=m.power.sum;m.power=null;m.auto=false;
-  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER GEWINN '+fmt(sum)+' · NOCHMAL?';return;}
+  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;}
   if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);}else{m.state='idle';slotIdleMsg(m);}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -403,7 +408,7 @@ function drawOffer(m,g){
   btn(x+14,y+64,92,22,'ANNEHMEN','#3a6ad6','#0a1a5a',false);
   px(g,9);g.fillStyle='#ffd23a';g.fillText('ODER',160,y+75);
   btn(x+w-106,y+64,92,22,'POWER SPINS','#3adf5a','#0a6a1a',blink);
-  btn(x+18,y+100,26,22,'−','#ff5a5a','#8a0010',o.lo);btn(x+w-44,y+100,26,22,'+','#ff5a5a','#8a0010',o.hi);
+  btn(x+18,y+100,26,22,'−','#ff5a5a','#8a0010',o.lo);btn(x+w-44,y+100,26,22,'+','#ff5a5a','#8a0010',o.hi&&blink);
   box(x+70,y+98,w-140,26,fmt(o.cost),'#ff3030',12);
   px(g,6);g.fillStyle='#f4f0e8';g.fillText('PRO POWER SPIN',160,y+134);
   g.fillText(o.mult>1?'ALLE ERFOLGE ×'+o.mult:'4 SPIELE JE '+fmt(totalBet(m)),160,y+144);
@@ -431,7 +436,10 @@ function drawPower(m,g){
       g.save();g.beginPath();g.rect(x+.5,oy,cw-1,H);g.clip();
       const rg=g.createLinearGradient(0,oy,0,oy+H);rg.addColorStop(0,'#3a0a0a');rg.addColorStop(.5,'#f4e0c8');rg.addColorStop(1,'#3a0a0a');g.fillStyle=rg;g.fillRect(x,oy,cw,H);
       const fl=Math.floor(r.pos),off=r.pos-fl;
-      for(let k=0;k<4;k++){const y=oy+(k-off)*ch;g.globalAlpha=r.spin?.8:1;g.drawImage(symCanvas(St[((fl+k-1)%L+L)%L]),x+(cw-23)/2,y+(ch-23)/2,23,23);}
+      const my=!r.spin&&S.myst&&S.myst.reels.includes(c);
+      for(let k=0;k<4;k++){const y=oy+(k-off)*ch;
+        if(my&&k<3){if(P.spinning)mystCover(g,x+1,y+1,cw-2,ch-2);else{g.fillStyle='rgba(255,210,58,.35)';g.fillRect(x,y,cw,ch);g.drawImage(symCanvas(S.myst.sym),x+(cw-23)/2,y+(ch-23)/2,23,23);}continue;}
+        g.globalAlpha=r.spin?.8:1;g.drawImage(symCanvas(St[((fl+k-1)%L+L)%L]),x+(cw-23)/2,y+(ch-23)/2,23,23);}
       g.globalAlpha=1;g.restore();}
     if(!P.spinning&&S.ev&&S.ev.total>0){const blink=Math.floor(now*3)%2;
       S.ev.wins.forEach(w=>{g.strokeStyle=blink?LINECOL[w.line]:'#fff';g.lineWidth=1.5;w.cells.forEach(([r,c])=>g.strokeRect(ox+c*cw+1.5,oy+r*ch+1.5,cw-3,ch-3));});
@@ -448,7 +456,7 @@ function startGamble(m,kind){
     const rest=m.win-LADDER[idx];if(rest>0){setChips(chips+rest);}
     m.win=LADDER[idx];m.disp=m.win;
     if(idx>=LADDER.length-1){collect(m);return;}
-    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:m.state==='show'&&m.ladPrev?now-1:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -493,10 +501,10 @@ function goldRung(g,x,y,w,h,lit,txt,col){
 }
 function drawLadder(m,g,gm){
   // Walzen abdunkeln
-  g.fillStyle='rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+  g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
   const result=m.state==='gambleNext',cur=gm.idx;
-  const ph=Math.floor(m.stateT*LAD_HZ*2)%2===0;
-  if(!result&&ph!==gm.ph){gm.ph=ph;SFX.gambleTick(ph);}
+  const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
+  if(!result&&ph!==gm.ph){gm.ph=ph;if(!gm.preview)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rows=10,rh=15,w=78,x=200,yb=RY+CH*3+1+dy;
   const ref=result?gm.last:cur,start=clamp(ref-3,0,Math.max(0,LADDER.length-rows));
@@ -517,8 +525,11 @@ function drawLadder(m,g,gm){
   g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
   px(g,14);g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(fmt(m.win),168,RY+79);
   g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
-  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'EINE STUFE RUNTER'):'LEITER = HOCH ODER RUNTER',26,RY+106);
-  if(!result&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';g.fillText('TEILEN = HÄLFTE SICHERN',26,RY+120);}
+  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'EINE STUFE RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
+  if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
+  if(gm.preview){const pn=m.G.power?Math.floor(m.win/(4*totalBet(m))):0;
+    if(pn>0){px(g,7);g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText('POWER = '+pn+' POWER SPIN'+(pn>1?'S':''),26,RY+134);}}
+  else if(!result&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';g.fillText('TEILEN = HÄLFTE SICHERN',26,RY+120);}
   g.restore();
 }
 function drawSplash(m,g){
@@ -531,6 +542,21 @@ function drawSplash(m,g){
     const tg=g.createLinearGradient(0,y-14,0,y+14);tg.addColorStop(0,'#fff8c0');tg.addColorStop(.5,'#ffc020');tg.addColorStop(1,'#a04a00');g.fillStyle=tg;g.fillText(wd,0,y);});
   g.restore();
   if(t>.7){g.textAlign='center';g.textBaseline='middle';px(g,14);g.lineWidth=5;g.strokeStyle='#3a0a00';g.strokeText('VIEL GLÜCK!',160,190);g.fillStyle='#ffe040';g.fillText('VIEL GLÜCK!',160,190);}
+}
+/* ---------- verdeckte Walzen ---------- */
+function mystCover(g,x,y,w,h){
+  const gr=g.createLinearGradient(0,y,0,y+h);gr.addColorStop(0,'#fff0a0');gr.addColorStop(.5,'#d89a18');gr.addColorStop(1,'#7a4200');
+  g.fillStyle=gr;g.fillRect(x,y,w,h);g.fillStyle='#3a1a00';g.fillRect(x+3,y+3,w-6,h-6);
+  g.textAlign='center';g.textBaseline='middle';px(g,Math.min(w,h)>30?24:12);g.fillStyle=Math.floor(now*4)%2?'#ffd23a':'#fff';g.fillText('?',x+w/2,y+h/2+1);
+}
+function drawMystCell(m,g,x,y,w,h){
+  const M=m.myst;let p=M.open?1:0;
+  if(m.state==='myst')p=clamp((m.stateT-.7)/.6,0,1);
+  const sx=Math.abs(Math.cos(p*Math.PI)),cx=x+w/2;
+  g.save();g.translate(cx,0);g.scale(Math.max(.02,sx),1);g.translate(-cx,0);
+  if(p<.5)mystCover(g,x,y,w,h);
+  else{g.fillStyle='rgba(255,210,58,.3)';g.fillRect(x,y,w,h);g.drawImage(symCanvas(M.sym),x+(w-46)/2,y+(h-46)/2,46,46);}
+  g.restore();
 }
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
@@ -560,6 +586,7 @@ function drawReelArea(m,g){
       if(m.present&&m.present.items.length&&!r.spin&&(m.state==='show'||m.state==='count'||m.state==='fsShow')){const it=m.present.items[m.present.idx];const row=k;
         alpha=it.cells.some(([cr,cc])=>cr===row&&cc===i)?1:.45;}
       g.globalAlpha=alpha;
+      if(k<3&&!r.spin&&m.myst&&m.myst.reels.includes(i)){drawMystCell(m,g,x+1,y,CW-2,CH);g.globalAlpha=1;continue;}
       if(r.spin){g.globalAlpha=.85;g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2-6,46,58);}
       else g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2,46,46);
       g.globalAlpha=1;
@@ -680,6 +707,8 @@ function drawScreen(m){
   else if(m.state==='fsIntro')drawFsIntro(m,g);
   else if(m.state==='gamble'||(m.state==='gambleNext'&&m.gamble)){if(m.gamble.kind==='ladder')drawReelArea(m,g);drawGamble(m,g);}
   else{drawReelArea(m,g);if(m.info)drawInfo(m,g);
+    else if(m.state==='show'&&!m.auto&&m.win>=LADDER[0]){let idx=0;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=m.win)idx=i;
+      const lp=m.ladPrev&&m.ladPrev.at===m.stateAt?m.ladPrev:(m.ladPrev={at:m.stateAt,t0:now,ph:0,preview:true});lp.idx=idx;drawLadder(m,g,lp);}
     if(m.state==='fsRetrig'||m.state==='fsEnd'){g.fillStyle='rgba(0,0,0,.7)';g.fillRect(RX+20,RY+40,CW*5-40,70);g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';
       g.fillText(m.state==='fsEnd'?'GEWONNEN':'+'+m.G.free.count+' FREISPIELE',160,RY+64);px(g,10);g.fillStyle='#fff';g.fillText(m.state==='fsEnd'?fmt(m.win):'NOCHMAL!',160,RY+90);}}
   drawBar(m,g);
@@ -691,7 +720,12 @@ function drawTop(m){
   const TOPC={book:['#1a0a30','#3a1a04'],fruit:['#3a0000','#a03a00'],viking:['#06142a','#2a4a6a'],mine:['#101018','#3a2a10'],reef:['#002a3a','#0a6a8a'],temple:['#2a0a00','#8a2a00'],pharao:['#2a0000','#8a1010']}[G.id];
   gr.addColorStop(0,TOPC[0]);gr.addColorStop(1,TOPC[1]);
   g.fillStyle=gr;g.fillRect(0,0,256,128);
-  if(m.fs){g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';g.fillText('FREISPIELE',128,24);
+  if(m.power){const P=m.power;g.textAlign='center';g.textBaseline='middle';px(g,14);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('POWER SPINS',128,24);
+    const hg=g.createLinearGradient(0,14,0,34);hg.addColorStop(0,'#d0ff80');hg.addColorStop(1,'#2a9a10');g.fillStyle=hg;g.fillText('POWER SPINS',128,24);
+    px(g,18);g.fillStyle='#fff';g.fillText(Math.max(1,P.count)+' / '+P.total,128,58);
+    px(g,8);g.fillStyle='#ffd23a';g.fillText('GEWONNEN '+fmt(P.sum),128,88);
+    px(g,7);g.fillStyle='#f4f0e8';g.fillText(P.mult>1?'ERFOLGE ×'+P.mult:'4 WALZENSÄTZE',128,108);}
+  else if(m.fs){g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';g.fillText('FREISPIELE',128,24);
     px(g,16);g.fillStyle='#fff';g.fillText(Math.min(m.fs.n+1,m.fs.total)+' / '+m.fs.total,128,56);
     if(m.fs.special){g.drawImage(symCanvas(m.fs.special),104,72,48,48);px(g,6);g.fillStyle='#ffd23a';g.fillText('SONDERSYMBOL',128,124);}
     else{px(g,9);g.fillStyle='#ffd23a';g.fillText(G.free.desc[1],128,96);}}

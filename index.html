@@ -438,7 +438,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792235090";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792236068";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -497,6 +497,8 @@ var SlotEngine=(function(){
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:3,
+      // Verdeckte Walzen: manchmal werden 1-3 Walzen verdeckt und öffnen alle dasselbe zufällige Symbol
+      mystery:{chance:1/30,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
       pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
            'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
@@ -538,8 +540,15 @@ var SlotEngine=(function(){
       if(ep){res.expand={sym:special,reels:reels,amount:ep*betLine*lines};res.total+=ep*betLine*lines;}}
     return res;
   }
+  // Verdeckte Walzen: ändert das Raster direkt, gibt {reels,sym} oder null zurück
+  function mystery(G,g,rnd,fs){var M=G.mystery;if(!M||fs||rnd()>=M.chance)return null;
+    var r=rnd(),k=1,acc=0,i;for(i=0;i<M.k.length;i++){acc+=M.k[i];if(r<acc){k=i+1;break;}}
+    var cols=[0,1,2,3,4];for(i=4;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=cols[i];cols[i]=cols[j];cols[j]=t;}
+    cols=cols.slice(0,k).sort();
+    var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
+    cols.forEach(function(c){g[0][c]=g[1][c]=g[2][c]=sym;});return {reels:cols,sym:sym};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery};
 })();
 
 
@@ -981,9 +990,9 @@ SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([
   SlotEngine.setup('reef',mk('reef',BASE),303,null,.8);
   SlotEngine.setup('temple',mk('temple',BASE),304,null,1.35);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,0],[10,10,9,9,8,4,4,3,2,0],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,0],[9,9,9,8,8,4,4,3,2,0]].map(a=>R_(a,PH)),401);
+  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,0],[10,10,9,9,8,4,4,3,2,0],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,0],[9,9,9,8,8,4,4,3,2,0]].map(a=>R_(a,PH)),401,null,.95);
 })();
-const GAMEINFO={book:{rtp:'94,4',fs:'187',hit:'2,7'},fruit:{rtp:'94,1',fs:null,hit:'5,2'},viking:{rtp:'94',fs:'203',hit:'3,3'},mine:{rtp:'94',fs:'203',hit:'3,3'},reef:{rtp:'94',fs:'203',hit:'3,3'},temple:{rtp:'94',fs:'203',hit:'3,3'},pharao:{rtp:'96,9',fs:null,hit:'2,4',power:'18'}};
+const GAMEINFO={book:{rtp:'94,4',fs:'187',hit:'2,7'},fruit:{rtp:'94,1',fs:null,hit:'5,2'},viking:{rtp:'94',fs:'203',hit:'3,3'},mine:{rtp:'94',fs:'203',hit:'3,3'},reef:{rtp:'94',fs:'203',hit:'3,3'},temple:{rtp:'94',fs:'203',hit:'3,3'},pharao:{rtp:'96,7',fs:null,hit:'2,4',power:'18'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -1187,7 +1196,7 @@ function pressButton(m,key){
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
-      if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
+      if(m.state==='show'){startGamble(m,key==='KARTE'?'rb':'ladder');if(key==='LEITER'&&m.state==='gamble'&&m.gamble)ladderPress(m);}break;
     case 'START':
       if(s==='idle')startSpin(m);
       else if(s==='show'){collect(m);startSpin(m);}
@@ -1203,6 +1212,7 @@ function startSpin(m,demo){
   m.useFs=!!m.fs;
   m.stops=SlotEngine.randStops(m.G,Math.random,m.useFs);
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
+  m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);
   m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,betLine(m),m.fs?m.fs.special:null,m.useFs);
   const fast=m.auto?.75:1;
   m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=26;});
@@ -1225,7 +1235,9 @@ function updReels(m,dt){
       if(m.G.free&&sc>=2&&i<4&&!m.demo){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;const ext=.9;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=ext;SFX.tease(sc);m.msg='SPANNUNG...';}}
     }
   });
-  if(!any&&m.state==='spin')onResult(m);
+  if(!any&&m.state==='spin'){
+    if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=1.5;m.msg='VERDECKTE WALZEN!';SFX.tease(3);updateButtons(m);}
+    else onResult(m);}
   if(any)m.dirty=true;
 }
 function onResult(m){
@@ -1263,7 +1275,8 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash')m.dirty=true;
+  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
   if(hot){const h=(now*.6)%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
@@ -1281,6 +1294,7 @@ function timerDone(m){
       break;
     case 'show':if(m.auto){collect(m);startSpin(m);}break;
     case 'idle':if(m.auto)startSpin(m);break;
+    case 'myst':m.myst.open=true;SFX.expand();onResult(m);break;
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
     case 'splash':m.state='idle';slotIdleMsg(m);m.dirty=true;updateButtons(m);break;
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
@@ -1332,7 +1346,7 @@ function startPowerRun(m){
 function powerSpin(m){
   const P=m.power;if(P.spinning||P.left<=0)return;
   P.left--;P.spinning=true;P.last=0;P.count++;
-  P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
+  P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.myst=SlotEngine.mystery(m.G,S.grid,Math.random);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
     S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;});});
   m.msg=P.left+' POWER SPINS ÜBRIG';SFX.reelStart();m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -1347,7 +1361,7 @@ function powerStep(m,dt){
 }
 function powerEnd(m){
   if(!m.power||m.power.spinning)return;const sum=m.power.sum;m.power=null;m.auto=false;
-  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER GEWINN '+fmt(sum)+' · NOCHMAL?';return;}
+  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;}
   if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);}else{m.state='idle';slotIdleMsg(m);}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -1367,7 +1381,7 @@ function drawOffer(m,g){
   btn(x+14,y+64,92,22,'ANNEHMEN','#3a6ad6','#0a1a5a',false);
   px(g,9);g.fillStyle='#ffd23a';g.fillText('ODER',160,y+75);
   btn(x+w-106,y+64,92,22,'POWER SPINS','#3adf5a','#0a6a1a',blink);
-  btn(x+18,y+100,26,22,'−','#ff5a5a','#8a0010',o.lo);btn(x+w-44,y+100,26,22,'+','#ff5a5a','#8a0010',o.hi);
+  btn(x+18,y+100,26,22,'−','#ff5a5a','#8a0010',o.lo);btn(x+w-44,y+100,26,22,'+','#ff5a5a','#8a0010',o.hi&&blink);
   box(x+70,y+98,w-140,26,fmt(o.cost),'#ff3030',12);
   px(g,6);g.fillStyle='#f4f0e8';g.fillText('PRO POWER SPIN',160,y+134);
   g.fillText(o.mult>1?'ALLE ERFOLGE ×'+o.mult:'4 SPIELE JE '+fmt(totalBet(m)),160,y+144);
@@ -1395,7 +1409,10 @@ function drawPower(m,g){
       g.save();g.beginPath();g.rect(x+.5,oy,cw-1,H);g.clip();
       const rg=g.createLinearGradient(0,oy,0,oy+H);rg.addColorStop(0,'#3a0a0a');rg.addColorStop(.5,'#f4e0c8');rg.addColorStop(1,'#3a0a0a');g.fillStyle=rg;g.fillRect(x,oy,cw,H);
       const fl=Math.floor(r.pos),off=r.pos-fl;
-      for(let k=0;k<4;k++){const y=oy+(k-off)*ch;g.globalAlpha=r.spin?.8:1;g.drawImage(symCanvas(St[((fl+k-1)%L+L)%L]),x+(cw-23)/2,y+(ch-23)/2,23,23);}
+      const my=!r.spin&&S.myst&&S.myst.reels.includes(c);
+      for(let k=0;k<4;k++){const y=oy+(k-off)*ch;
+        if(my&&k<3){if(P.spinning)mystCover(g,x+1,y+1,cw-2,ch-2);else{g.fillStyle='rgba(255,210,58,.35)';g.fillRect(x,y,cw,ch);g.drawImage(symCanvas(S.myst.sym),x+(cw-23)/2,y+(ch-23)/2,23,23);}continue;}
+        g.globalAlpha=r.spin?.8:1;g.drawImage(symCanvas(St[((fl+k-1)%L+L)%L]),x+(cw-23)/2,y+(ch-23)/2,23,23);}
       g.globalAlpha=1;g.restore();}
     if(!P.spinning&&S.ev&&S.ev.total>0){const blink=Math.floor(now*3)%2;
       S.ev.wins.forEach(w=>{g.strokeStyle=blink?LINECOL[w.line]:'#fff';g.lineWidth=1.5;w.cells.forEach(([r,c])=>g.strokeRect(ox+c*cw+1.5,oy+r*ch+1.5,cw-3,ch-3));});
@@ -1412,7 +1429,7 @@ function startGamble(m,kind){
     const rest=m.win-LADDER[idx];if(rest>0){setChips(chips+rest);}
     m.win=LADDER[idx];m.disp=m.win;
     if(idx>=LADDER.length-1){collect(m);return;}
-    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:m.state==='show'&&m.ladPrev?now-1:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -1457,10 +1474,10 @@ function goldRung(g,x,y,w,h,lit,txt,col){
 }
 function drawLadder(m,g,gm){
   // Walzen abdunkeln
-  g.fillStyle='rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+  g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
   const result=m.state==='gambleNext',cur=gm.idx;
-  const ph=Math.floor(m.stateT*LAD_HZ*2)%2===0;
-  if(!result&&ph!==gm.ph){gm.ph=ph;SFX.gambleTick(ph);}
+  const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
+  if(!result&&ph!==gm.ph){gm.ph=ph;if(!gm.preview)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rows=10,rh=15,w=78,x=200,yb=RY+CH*3+1+dy;
   const ref=result?gm.last:cur,start=clamp(ref-3,0,Math.max(0,LADDER.length-rows));
@@ -1481,8 +1498,11 @@ function drawLadder(m,g,gm){
   g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
   px(g,14);g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(fmt(m.win),168,RY+79);
   g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
-  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'EINE STUFE RUNTER'):'LEITER = HOCH ODER RUNTER',26,RY+106);
-  if(!result&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';g.fillText('TEILEN = HÄLFTE SICHERN',26,RY+120);}
+  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'EINE STUFE RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
+  if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
+  if(gm.preview){const pn=m.G.power?Math.floor(m.win/(4*totalBet(m))):0;
+    if(pn>0){px(g,7);g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText('POWER = '+pn+' POWER SPIN'+(pn>1?'S':''),26,RY+134);}}
+  else if(!result&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';g.fillText('TEILEN = HÄLFTE SICHERN',26,RY+120);}
   g.restore();
 }
 function drawSplash(m,g){
@@ -1495,6 +1515,21 @@ function drawSplash(m,g){
     const tg=g.createLinearGradient(0,y-14,0,y+14);tg.addColorStop(0,'#fff8c0');tg.addColorStop(.5,'#ffc020');tg.addColorStop(1,'#a04a00');g.fillStyle=tg;g.fillText(wd,0,y);});
   g.restore();
   if(t>.7){g.textAlign='center';g.textBaseline='middle';px(g,14);g.lineWidth=5;g.strokeStyle='#3a0a00';g.strokeText('VIEL GLÜCK!',160,190);g.fillStyle='#ffe040';g.fillText('VIEL GLÜCK!',160,190);}
+}
+/* ---------- verdeckte Walzen ---------- */
+function mystCover(g,x,y,w,h){
+  const gr=g.createLinearGradient(0,y,0,y+h);gr.addColorStop(0,'#fff0a0');gr.addColorStop(.5,'#d89a18');gr.addColorStop(1,'#7a4200');
+  g.fillStyle=gr;g.fillRect(x,y,w,h);g.fillStyle='#3a1a00';g.fillRect(x+3,y+3,w-6,h-6);
+  g.textAlign='center';g.textBaseline='middle';px(g,Math.min(w,h)>30?24:12);g.fillStyle=Math.floor(now*4)%2?'#ffd23a':'#fff';g.fillText('?',x+w/2,y+h/2+1);
+}
+function drawMystCell(m,g,x,y,w,h){
+  const M=m.myst;let p=M.open?1:0;
+  if(m.state==='myst')p=clamp((m.stateT-.7)/.6,0,1);
+  const sx=Math.abs(Math.cos(p*Math.PI)),cx=x+w/2;
+  g.save();g.translate(cx,0);g.scale(Math.max(.02,sx),1);g.translate(-cx,0);
+  if(p<.5)mystCover(g,x,y,w,h);
+  else{g.fillStyle='rgba(255,210,58,.3)';g.fillRect(x,y,w,h);g.drawImage(symCanvas(M.sym),x+(w-46)/2,y+(h-46)/2,46,46);}
+  g.restore();
 }
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
@@ -1524,6 +1559,7 @@ function drawReelArea(m,g){
       if(m.present&&m.present.items.length&&!r.spin&&(m.state==='show'||m.state==='count'||m.state==='fsShow')){const it=m.present.items[m.present.idx];const row=k;
         alpha=it.cells.some(([cr,cc])=>cr===row&&cc===i)?1:.45;}
       g.globalAlpha=alpha;
+      if(k<3&&!r.spin&&m.myst&&m.myst.reels.includes(i)){drawMystCell(m,g,x+1,y,CW-2,CH);g.globalAlpha=1;continue;}
       if(r.spin){g.globalAlpha=.85;g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2-6,46,58);}
       else g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2,46,46);
       g.globalAlpha=1;
@@ -1644,6 +1680,8 @@ function drawScreen(m){
   else if(m.state==='fsIntro')drawFsIntro(m,g);
   else if(m.state==='gamble'||(m.state==='gambleNext'&&m.gamble)){if(m.gamble.kind==='ladder')drawReelArea(m,g);drawGamble(m,g);}
   else{drawReelArea(m,g);if(m.info)drawInfo(m,g);
+    else if(m.state==='show'&&!m.auto&&m.win>=LADDER[0]){let idx=0;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=m.win)idx=i;
+      const lp=m.ladPrev&&m.ladPrev.at===m.stateAt?m.ladPrev:(m.ladPrev={at:m.stateAt,t0:now,ph:0,preview:true});lp.idx=idx;drawLadder(m,g,lp);}
     if(m.state==='fsRetrig'||m.state==='fsEnd'){g.fillStyle='rgba(0,0,0,.7)';g.fillRect(RX+20,RY+40,CW*5-40,70);g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';
       g.fillText(m.state==='fsEnd'?'GEWONNEN':'+'+m.G.free.count+' FREISPIELE',160,RY+64);px(g,10);g.fillStyle='#fff';g.fillText(m.state==='fsEnd'?fmt(m.win):'NOCHMAL!',160,RY+90);}}
   drawBar(m,g);
@@ -1655,7 +1693,12 @@ function drawTop(m){
   const TOPC={book:['#1a0a30','#3a1a04'],fruit:['#3a0000','#a03a00'],viking:['#06142a','#2a4a6a'],mine:['#101018','#3a2a10'],reef:['#002a3a','#0a6a8a'],temple:['#2a0a00','#8a2a00'],pharao:['#2a0000','#8a1010']}[G.id];
   gr.addColorStop(0,TOPC[0]);gr.addColorStop(1,TOPC[1]);
   g.fillStyle=gr;g.fillRect(0,0,256,128);
-  if(m.fs){g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';g.fillText('FREISPIELE',128,24);
+  if(m.power){const P=m.power;g.textAlign='center';g.textBaseline='middle';px(g,14);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('POWER SPINS',128,24);
+    const hg=g.createLinearGradient(0,14,0,34);hg.addColorStop(0,'#d0ff80');hg.addColorStop(1,'#2a9a10');g.fillStyle=hg;g.fillText('POWER SPINS',128,24);
+    px(g,18);g.fillStyle='#fff';g.fillText(Math.max(1,P.count)+' / '+P.total,128,58);
+    px(g,8);g.fillStyle='#ffd23a';g.fillText('GEWONNEN '+fmt(P.sum),128,88);
+    px(g,7);g.fillStyle='#f4f0e8';g.fillText(P.mult>1?'ERFOLGE ×'+P.mult:'4 WALZENSÄTZE',128,108);}
+  else if(m.fs){g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';g.fillText('FREISPIELE',128,24);
     px(g,16);g.fillStyle='#fff';g.fillText(Math.min(m.fs.n+1,m.fs.total)+' / '+m.fs.total,128,56);
     if(m.fs.special){g.drawImage(symCanvas(m.fs.special),104,72,48,48);px(g,6);g.fillStyle='#ffd23a';g.fillText('SONDERSYMBOL',128,124);}
     else{px(g,9);g.fillStyle='#ffd23a';g.fillText(G.free.desc[1],128,96);}}
@@ -2210,7 +2253,7 @@ const SPIELOMAT={ver:'V0.1',games:[['book','BUCH'],['fruit','SIEBEN'],['viking',
 const SM_TILE={x0:11,y0:44,w:70,h:78,gx:6,gy:8,cols:4};
 function setMachineGame(m,id){
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
-  m.G=G;m.power=null;m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
+  m.G=G;m.power=null;m.myst=null;m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
   m.reels.forEach((r,i)=>{r.spin=false;r.bounce=0;r.pos=Math.floor(Math.random()*G.strips[i].length);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);m.ev=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;
 }
@@ -2979,7 +3022,7 @@ function mpActivity(){
   if(!focus){if(openId==='pRoulette'){const t=$('#rRes').textContent;let sum=0;for(const k in R.bets)sum+=R.bets[k];return {g:'roulette',msg:cleanText(t,40),b:sum,sp:R.spinning?1:0,rid:R.rid,ri:R.ridx,rt:R.act?R.act.id:0,re:R.W.anim?Math.round(R.W.anim.t*10)/10:0};}return null;}
   if(focus.type==='slot'){const m=focus.m;
     return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
-      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):''};}
+      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.reels,m.myst.sym]:0};}
   if(focus.type==='poker'){const h=PK.human;return {g:'poker',c:h.hole.slice(0,2),bd:PK.board.slice(0,5),pot:potTotal(),msg:cleanText(PK.info||PK.msg||'',40),f:h.folded?1:0};}
   if(focus.type==='hilo'){return {g:'hilo',o:HL.open===null?-1:HL.open,p:HL.pick>=0&&HL.state!=='pick'?HL.hidden[HL.pick]:-1,pe:HL.pending,msg:cleanText(HL.msg||'',40)};}
   return null;
@@ -2990,7 +3033,7 @@ function cleanGx(gx){
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
   return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
-    l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),
+    l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].map(x=>num(x,0,4)).slice(0,5),cleanText(gx.my[1],10)]:0,
     c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9),rid:num(gx.rid,0,1e9),ri:num(gx.ri,0,36),rt:num(gx.rt,0,3),re:Number.isFinite(+gx.re)?clamp(+gx.re,0,WHEEL_DUR):0};
 }
 // Automat eines Mitspielers in der eigenen Welt nachspielen
@@ -3011,6 +3054,7 @@ function mirrorSlot(a,gx,credit){
     if(!same||m.state==='rspin'){m.stops=gx.st.map((s,i)=>s%m.G.strips[i].length);m.grid=SlotEngine.grid(m.G,m.stops);
       m.reels.forEach((r,i)=>{r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=true;});m.state='rstop';}
   }
+  m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{reels:gx.my[0],sym:gx.my[1],open:true}:null;
   m.dirty=true;
 }
 function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.demo=false;m.fs=null;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
