@@ -17,7 +17,7 @@ function signTex(text,color,bg){
 }
 function sign(F,text,color,x,y,z,rotY,h){
   h=h||.55;const t=signTex(text,color);const w=h*t.image.width/32;
-  const m=mesh(new THREE.PlaneGeometry(w,h),bas({map:t,side:THREE.DoubleSide}),x,y,z,F.group);m.rotation.y=rotY||0;return m;
+  const m=mesh(new THREE.PlaneGeometry(w,h),bas({map:t,side:THREE.DoubleSide}),x,y,z,F.group);m.rotation.y=rotY||0;(F.signs||(F.signs=[])).push(m);return m;
 }
 function decal(F,tex,w,h,x,y,z,rotY){const m=mesh(new THREE.PlaneGeometry(w,h),lam({map:tex,transparent:true,alphaTest:.5}),x,y,z,F.group);m.rotation.y=rotY;return m;}
 function pointLight(F,color,x,y,z,int,dist,flicker){const l=new THREE.PointLight(color,int,dist,1.4);l.position.set(x,y,z);(F?F.group:scene).add(l);if(F)F.lights.push({l,base:int,flicker:!!flicker});return l;}

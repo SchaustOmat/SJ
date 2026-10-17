@@ -76,6 +76,7 @@ const SFX={
   sparkle(){[2093,2637,3136,4186].forEach((f,i)=>tone(f,.07,'square',.025,i*.035));},
   tierUp(i){[523,659,784,1046,1318].forEach((f,k)=>tone(f*(1+i*.2),.15,'square',.09,k*.055));noise(.35,.14,500);tone(70,.4,'sine',.25,0,40);},
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
+  heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };
 let beatTimer=null,beatN=0;

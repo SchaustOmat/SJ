@@ -408,7 +408,8 @@ function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum
   $('#rSum').textContent=fmt(sum);$('#rAgain').disabled=R.spinning||!Object.keys(R.last).length;$('#rSpin').disabled=R.spinning;$('#rClear').disabled=R.spinning||!sum;}
 function rMsg(t,cls){const e=$('#rRes');e.textContent=t;e.className='res'+(cls?' '+cls:'');}
 function placeBet(k){if(R.spinning)return;const v=rChip();if(chips<v){rMsg('NICHT GENUG CHIPS','lose');SFX.lose();return;}
-  setChips(chips-v);R.bets[k]=(R.bets[k]||0)+v;SFX.chip();renderBets();}
+  setChips(chips-v);R.bets[k]=(R.bets[k]||0)+v;SFX.chip();renderBets();
+  const bb=betBtns[k];if(bb){const [x,y]=UFX.elXY(bb.b);UFX.burst(x,y,7,{spd:150,up:60,life:.5,sz:4});bb.a.classList.remove('pop');void bb.a.offsetWidth;bb.a.classList.add('pop');}}
 $('#rClear').addEventListener('click',()=>{let s=0;for(const k in R.bets)s+=R.bets[k];setChips(chips+s);R.bets={};renderBets();rMsg('SETZ DEINE CHIPS');SFX.click();});
 $('#rAgain').addEventListener('click',()=>{let need=0;for(const k in R.last)need+=R.last[k];if(chips<need){rMsg('NICHT GENUG CHIPS','lose');return;}
   setChips(chips-need);for(const k in R.last)R.bets[k]=(R.bets[k]||0)+R.last[k];renderBets();SFX.chip();});
@@ -417,7 +418,7 @@ $('#rSpin').addEventListener('click',()=>{
   R.spinning=true;setBusy(true);renderBets();rMsg('RIEN NE VA PLUS');
   const idx=Math.random()*37|0;R.rid=Date.now()%1e9;R.ridx=idx;
   wheelStart(R.W,idx);$('.rwrap').classList.add('big');$('#pRoulette').scrollTop=0;
-  if(R.act)F.roulettes[R.act.id].spin=true;SFX.reelStart();
+  if(R.act)F.roulettes[R.act.id].spin=true;SFX.reelStart();SFX.whoosh();
 });
 function payMult(k,n){const red=REDS.has(n);switch(k){case'red':return n&&red?2:0;case'black':return n&&!red?2:0;case'even':return n&&n%2===0?2:0;case'odd':return n%2===1?2:0;
   case'low':return n>=1&&n<=18?2:0;case'high':return n>=19?2:0;case'd1':return n>=1&&n<=12?3:0;case'd2':return n>=13&&n<=24?3:0;case'd3':return n>=25?3:0;default:return +k.slice(1)===n?36:0;}}
@@ -425,8 +426,11 @@ function finishSpin(n){
   let win=0,stake=0;for(const k in R.bets){stake+=R.bets[k];win+=R.bets[k]*payMult(k,n);}
   R.last=Object.assign({},R.bets);R.bets={};
   const cname=n===0?'GRÜN':REDS.has(n)?'ROT':'SCHWARZ';
-  if(win>0){if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();}
-  else{rMsg(n+' '+cname+' · VERLOREN','lose');SFX.lose();}
+  if(win>0){if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
+    const x=win/stake,[wx,wy]=UFX.elXY(rCan);
+    if(x>=3)UFX.banner(x>=10?'MEGA GEWINN':'GROSSER GEWINN',win,x>=10?2:1,n+' '+cname);
+    else{UFX.flash(.35,'255,230,140');UFX.burst(wx,wy,30,{coin:true,sz:8,spd:300,up:200,life:1.2});UFX.float(wx,wy,'+'+fmt(win));}}
+  else{rMsg(n+' '+cname+' · VERLOREN','lose');SFX.lose();UFX.flash(.35,'255,40,40');UFX.shake(.25);}
   R.spinning=false;setBusy(false);renderBets();
   if(R.act)F.roulettes[R.act.id].spin=false;
   const fans=F.rouletteFans||[];const f=fans[Math.random()*fans.length|0];
@@ -434,6 +438,7 @@ function finishSpin(n){
 }
 function updRoulette(dt){
   const W=R.W,done=wheelStep(W,dt,true);
+  UFX.tension('roulette',!!(W.anim&&openId==='pRoulette'&&W.anim.t/W.anim.dur>.6));
   if(done!==null){finishSpin(done);setTimeout(()=>{if(!R.spinning)$('.rwrap').classList.remove('big');},2600);}
   if(openId==='pRoulette')drawWheelCanvas(rCtx,rCan.width,W);
 }
@@ -515,7 +520,7 @@ function frame(){
     camera.updateProjectionMatrix();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
-    F.npcs.forEach(n=>animNPC(n,dt));
+    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);

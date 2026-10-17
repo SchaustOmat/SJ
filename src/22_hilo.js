@@ -74,22 +74,28 @@ function hlPress(key){
   else if(key==='NEHMEN'){hlCollect();}
   else if(key==='WEITER'){hlDeal();}
 }
-function hlCollect(){if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';}HL.pending=0;store('nk_hlpend',null);HL.state='bet';hlClearCards();hlUpdate();}
+function hlCollect(){if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';
+  UFX.burst(LW()/2,LH()*.6,24,{coin:true,sz:9,spd:300,up:260,life:1.3});UFX.float(LW()/2,LH()*.5,'+'+fmt(HL.pending));}HL.pending=0;store('nk_hlpend',null);HL.state='bet';hlClearCards();hlUpdate();}
 function hlPick(i){
   if(HL.state!=='pick')return;HL.pick=i;HL.state='reveal';
   const m=HL.meshes[i];setCardFace(m,HL.hidden[i]);SFX.card();
-  moveTo(m,m.position.clone().add(new THREE.Vector3(0,0,.12)),.15);
+  moveTo(m,m.position.clone().add(new THREE.Vector3(0,.1,.14)),.3);UFX.tension('hilo',true);
   const a=HL.open%13,b=HL.hidden[i]%13,old=HL.pending;
   const res=b>a?'up':b===a?'eq':'down';
   HL.pending=res==='up'?old*2:res==='eq'?old:0;store('nk_hlpend',HL.pending||null);
+  setTimeout(()=>{UFX.tension('hilo',false);if(HL.state!=='reveal'||HL.pick!==i)return;
   flipTo(m,true,.35,()=>{
-    if(res==='up'){HL.msg='HÖHER! JETZT '+fmt(HL.pending);SFX.win();if(HL.pending>=5000)say(HL.dealer,'Starke Nerven.',2);}
-    else if(res==='eq'){HL.msg='GLEICH. EINSATZ BLEIBT '+fmt(HL.pending);SFX.click();}
-    else{HL.msg='TIEFER. '+fmt(old)+' VERLOREN';SFX.lose();if(Math.random()<.5)say(HL.dealer,'Pech. Nochmal?',2);}
+    const cx=LW()/2,cy=LH()*.42,st=hlStake();
+    if(res==='up'){HL.msg='HÖHER! JETZT '+fmt(HL.pending);SFX.win();if(HL.pending>=5000)say(HL.dealer,'Starke Nerven.',2);
+      if(HL.round>=2)SFX.tierUp(Math.min(3,HL.round-2));
+      if(HL.pending>=st*8)UFX.banner(HL.pending>=st*32?'WAHNSINN!':'HÖHER!',HL.pending,HL.pending>=st*32?2:1,'RUNDE '+HL.round);
+      else{UFX.flash(.35,'160,255,170');UFX.burst(cx,cy,30,{cols:['#a8ffb0','#ffd23a','#fff'],spd:320});UFX.float(cx,cy,'×2 = '+fmt(HL.pending),'#3adf5a');}}
+    else if(res==='eq'){HL.msg='GLEICH. EINSATZ BLEIBT '+fmt(HL.pending);SFX.click();UFX.float(cx,cy,'GLEICH','#f4f0e8');}
+    else{HL.msg='TIEFER. '+fmt(old)+' VERLOREN';SFX.lose();SFX.boom();UFX.flash(.5,'255,30,30');UFX.shake(.5);if(Math.random()<.5)say(HL.dealer,'Pech. Nochmal?',2);}
     hlUpdate();
     hlLater(.6,()=>{HL.meshes.forEach((mm,j)=>{if(j!==i){setCardFace(mm,HL.hidden[j]);flipTo(mm,true,.3);}});
       hlLater(.9,()=>{if(HL.pending>0){HL.state='decide';}else{HL.state='bet';}hlUpdate();});});
-  });
+  });},650);
   hlUpdate();
 }
 function hilloStep(dt){
@@ -97,5 +103,5 @@ function hilloStep(dt){
   for(const k in HL.btns){const b=HL.btns[k];b.mat.color.setHex(b.lit?0xe8e8e8:0x3a3a3a);if(b.press>0)b.press=Math.max(0,b.press-dt*7);b.mesh.position.y=.035-b.press*.012;}
   if(HL.state==='pick')HL.meshes.forEach((m,i)=>{m.position.y=.905+Math.max(0,Math.sin(now*4-i*.7))*.02;});
 }
-function hlLeave(){if(HL.state==='reveal'||HL.state==='deal'){HL.next=null;}if(HL.pending>0&&(HL.state==='decide'||HL.state==='pick'||HL.state==='deal'||HL.state==='reveal'))hlCollect();else{HL.state='bet';hlClearCards();hlUpdate();}}
+function hlLeave(){UFX.tension('hilo',false);if(HL.state==='reveal'||HL.state==='deal'){HL.next=null;}if(HL.pending>0&&(HL.state==='decide'||HL.state==='pick'||HL.state==='deal'||HL.state==='reveal'))hlCollect();else{HL.state='bet';hlClearCards();hlUpdate();}}
 try{const hp=+localStorage.getItem('nk_hlpend');if(hp>0){chips+=hp;localStorage.removeItem('nk_hlpend');localStorage.setItem('nk_chips',String(chips));}}catch(e){}
