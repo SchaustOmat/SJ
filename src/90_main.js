@@ -430,8 +430,8 @@ function finishSpin(n){
   const cname=n===0?'GRÜN':REDS.has(n)?'ROT':'SCHWARZ';
   if(win>0){if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
     const x=win/stake,[wx,wy]=UFX.elXY(rCan);
-    if(x>=3)UFX.banner(x>=10?'MEGA GEWINN':'GROSSER GEWINN',win,x>=10?2:1,n+' '+cname);
-    else{UFX.flash(.35,'255,230,140');UFX.burst(wx,wy,30,{coin:true,sz:8,spd:300,up:200,life:1.2});UFX.float(wx,wy,'+'+fmt(win));}}
+    if(x>=3){UFX.banner(x>=10?'MEGA GEWINN':'GROSSER GEWINN',win,x>=10?2:1,n+' '+cname);UFX.flyChips(LW()/2,LH()*.55,win,x>=10?2.6:2);}
+    else{UFX.flash(.35,'255,230,140');UFX.burst(wx,wy,30,{coin:true,sz:8,spd:300,up:200,life:1.2});UFX.flyChips(wx,wy,win);}}
   else{rMsg(n+' '+cname+' · VERLOREN','lose');SFX.lose();UFX.flash(.35,'255,40,40');UFX.shake(.25);}
   R.spinning=false;setBusy(false);renderBets();
   if(R.act)F.roulettes[R.act.id].spin=false;

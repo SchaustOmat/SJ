@@ -4,14 +4,20 @@
    ========================================================= */
 const UFX=(function(){
   const cv=document.createElement('canvas');cv.id='fxCv';
-  let g=null,parts=[],flash=0,fcol='255,255,255',ban=null,floats=[],tenseOn=false,tense=0,run=false,last=0,hb=0;
+  let g=null,fly=[],parts=[],flash=0,fcol='255,255,255',ban=null,floats=[],tenseOn=false,tense=0,run=false,last=0,hb=0;
   const GOLD=['#fff','#ffd23a','#ff9a20','#fff4a0'];
   function mount(){if(g)return;$('#app').appendChild(cv);g=cv.getContext('2d');}
   function size(){const w=LW(),h=LH();if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}}
   function kick(){mount();if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
-  function busy(){return parts.length||flash>0||ban||floats.length||tenseOn||tense>0;}
+  function busy(){return fly.length||parts.length||flash>0||ban||floats.length||tenseOn||tense>0;}
   function loop(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;size();step(dt);draw();
-    if(busy())requestAnimationFrame(loop);else{run=false;g.clearRect(0,0,cv.width,cv.height);}}
+    if(busy())requestAnimationFrame(loop);else{run=false;g.clearRect(0,0,cv.width,cv.height);if(chipsHold){chipsHold=0;showChips();}}}
+  // Gewinn fliegt in Päckchen zum Guthaben oben links; das Geld ist schon gebucht, nur die Anzeige zählt mit
+  let flyN=0;
+  function flyChips(x,y,amount,delay){if(!(amount>0))return;kick();const vals=splitWin(amount,10),n=vals.length,sp=Math.min(70,LW()*.5/n);
+    chipsHold+=amount;showChips();flyN=0;const d=delay||0;
+    vals.forEach((v,i)=>fly.push({v,gx:x+(i-(n-1)/2)*sp,gy:y,born:-d-i*.035,launch:.45+i*.12,dur:.6,t:-d,done:false,bend:(i%2?1:-1)*(40+Math.random()*50)}));}
+  function tagPos(){return elXY($('#chipsTag'));}
   function elXY(el){if(!el)return [LW()/2,LH()/2];const r=el.getBoundingClientRect();return toLocal(r.left+r.width/2,r.top+r.height/2);}
   function burst(x,y,n,o){o=o||{};kick();
     for(let i=0;i<n&&parts.length<400;i++){const a=Math.random()*TAU,sp=(o.spd||260)*(.35+Math.random()*.9);
@@ -29,6 +35,11 @@ const UFX=(function(){
   const srcs={};
   function tension(src,on){srcs[src]=!!on;const any=Object.keys(srcs).some(k=>srcs[k]);if(any===tenseOn)return;tenseOn=any;if(any){kick();hb=0;}}
   function step(dt){
+    if(fly.length){const [tx,ty]=tagPos();
+      for(const f of fly){f.t+=dt;if(!f.done&&f.t>=f.launch+f.dur){f.done=true;chipsHold=Math.max(0,chipsHold-f.v);showChips();flyN++;SFX.coinUp(flyN);
+        const tg=$('#chipsTag');tg.classList.remove('pop');void tg.offsetWidth;tg.classList.add('pop');burst(tx,ty,8,{spd:160,up:40,life:.5,sz:4});}
+        if(!f.done&&f.t>f.launch&&Math.random()<.6){const p=flyPos(f,tx,ty);parts.push({x:p[0],y:p[1],vx:(Math.random()-.5)*30,vy:(Math.random()-.5)*30,g:0,life:0,max:.35,col:GOLD[Math.random()*4|0],sz:4,coin:false,ph:0});}}
+      fly=fly.filter(f=>!f.done);}
     for(const p of parts){p.life+=dt;p.vx*=1-dt*1.1;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
     parts=parts.filter(p=>p.life<p.max&&p.y<LH()+30);
     if(flash>0)flash=Math.max(0,flash-dt*2.4);
@@ -55,6 +66,13 @@ const UFX=(function(){
       if(B.sub){const sz2=Math.max(10,Math.min(18,Math.floor(w*.84/(B.sub.length*1.05))));px(g,sz2);g.lineWidth=4;g.strokeText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);g.fillStyle='#f4f0e8';g.fillText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);}}
     g.restore();
   }
+  function flyPos(f,tx,ty){const k=Math.min(1,Math.max(0,(f.t-f.launch)/f.dur)),e=k*k*(3-2*k),cx=(f.gx+tx)/2+f.bend,cy=Math.min(f.gy,ty)-LH()*.18;
+    const u=1-e;return [u*u*f.gx+2*u*e*cx+e*e*tx,u*u*f.gy+2*u*e*cy+e*e*ty,k];}
+  function drawFly(){if(!fly.length)return;const [tx,ty]=tagPos();
+    for(const f of fly){if(f.t<f.born+.0001&&f.t<0)continue;const a=Math.min(1,Math.max(0,(f.t-f.born)/.15));if(a<=0)continue;
+      const [x,y,k]=flyPos(f,tx,ty),sc=(f.t<f.launch?.6+.4*a+Math.sin(f.t*14)*.05:1.15-k*.45);
+      const txt='+'+fmt(f.v),sz=Math.round(16*sc);px(g,sz);g.textAlign='center';g.textBaseline='middle';g.globalAlpha=a;
+      g.lineWidth=5;g.lineJoin='round';g.strokeStyle='#1a0800';g.strokeText(txt,x,y);g.fillStyle=k>0&&k<1?'#fff4a0':'#ffd23a';g.fillText(txt,x,y);g.globalAlpha=1;}}
   function draw(){
     const w=cv.width,h=cv.height;g.clearRect(0,0,w,h);
     if(tense>0){const pl=Math.max(0,Math.sin((.82-hb)/.82*Math.PI*2))*.5+.5,rg=g.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.75);
@@ -69,7 +87,8 @@ const UFX=(function(){
     for(const f of floats){const a=f.t<1?1:1-(f.t-1)/.4,y=f.y-f.t*70,sz=Math.round(18*(1+Math.max(0,.25-f.t)*2));px(g,sz);g.textAlign='center';g.textBaseline='middle';
       g.globalAlpha=Math.max(0,a);g.lineWidth=5;g.strokeStyle='#000';g.strokeText(f.text,f.x,y);g.fillStyle=f.col;g.fillText(f.text,f.x,y);}
     g.globalAlpha=1;
+    drawFly();
     if(flash>0){g.fillStyle='rgba('+fcol+','+(flash*.45).toFixed(3)+')';g.fillRect(0,0,w,h);}
   }
-  return {burst,coins,flash:doFlash,shake,float,banner,tension,elXY};
+  return {burst,coins,flash:doFlash,shake,float,banner,tension,elXY,flyChips};
 })();

@@ -12,9 +12,17 @@ try{const v=localStorage.getItem('nk_chips');if(v!==null&&isFinite(+v))chips=+v;
   const sp=+localStorage.getItem('nk_slotpend');if(sp>0)chips+=sp;localStorage.removeItem('nk_slotpend');
   localStorage.setItem('nk_chips',String(chips));
   if(localStorage.getItem('nk_v')!=='2'){chips=Math.max(chips,20000);localStorage.setItem('nk_v','2');}}catch(e){}
+let chipsHold=0; // Teil des Guthabens, der gerade noch zum Zähler fliegt (nur Anzeige)
+function showChips(){$('#chips').textContent=fmt(Math.max(0,chips-chipsHold));}
+// Gewinn in Päckchen zerlegen: 1.250 -> 1.000, 200, 50 (große Stellen bis zu 3 Päckchen)
+function splitWin(A,max){const out=[];let rest=Math.round(A);if(rest<=0)return out;let p=Math.pow(10,Math.floor(Math.log10(rest)));
+  while(rest>0&&p>=1&&out.length<max){const k=Math.floor(rest/p);if(k>0){const n=Math.min(k,3,max-out.length);let left=k;
+    for(let i=0;i<n;i++){const kk=i===n-1?left:Math.ceil(left/(n-i));out.push(kk*p);left-=kk;}rest-=k*p;}p=Math.round(p/10);if(p<1)break;}
+  if(rest>0){if(out.length)out[out.length-1]+=rest;else out.push(rest);}
+  return out.sort((a,b)=>b-a);}
 function setChips(v,flash){
   chips=Math.max(0,Math.round(v));
-  $('#chips').textContent=fmt(chips);
+  showChips();
   try{localStorage.setItem('nk_chips',String(chips));}catch(e){}
   if(typeof saveChanged==='function')saveChanged();
   if(flash){const t=$('#chipsTag');t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');}
@@ -77,6 +85,7 @@ const SFX={
   tierUp(i){[523,659,784,1046,1318].forEach((f,k)=>tone(f*(1+i*.2),.15,'square',.09,k*.055));noise(.35,.14,500);tone(70,.4,'sine',.25,0,40);},
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
+  coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };
 let beatTimer=null,beatN=0;
