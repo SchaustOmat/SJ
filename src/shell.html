@@ -256,6 +256,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .wc-m{font-family:var(--f-title);font-size:10px;color:var(--gold)}
 .wc-s{font-size:18px;color:var(--ink);overflow-wrap:anywhere}
 #watchCard .pcards{justify-content:flex-start}
+#micBtn{width:auto;padding:0 8px;font-size:10px}#micBtn.on{border-color:#3adf5a;color:#3adf5a}#micBtn.mute{border-color:var(--neon);color:var(--neon)}
 </style>
 <div id="app">
 <canvas id="game"></canvas>
@@ -266,6 +267,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="mid"><div class="tag" id="floorTag">EG · HALLE</div><button class="tag" id="onlineTag" hidden>MULTI</button></div>
   <div class="icons">
     <button class="ibtn" id="chatBtn" aria-label="Chat" hidden>SAG</button>
+    <button class="ibtn" id="micBtn" aria-label="Voice-Chat" hidden>MIC</button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat umschalten" aria-pressed="false">⟲</button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus">♪</button>
     <button class="ibtn" id="helpBtn" aria-label="Steuerung">?</button>
@@ -351,6 +353,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Aufzug:</b> grünen Knopf rufen, rein, in der Kabine 2 oder EG drücken.</p>
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
+    <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
     <p><b>⟲ oben:</b> Querformat, falls sich die App nicht mitdreht.</p>
     <p style="color:var(--dim)">Nur Spielgeld. Pleite? Der Barkeeper im EG gibt dir 20.000. Am PC: WASD, Maus ziehen, klicken, Leertaste = Start.</p>
   </div>

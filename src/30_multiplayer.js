@@ -87,7 +87,7 @@ function seatAvatars(){
   MP.avatars.forEach(a=>{const T=TABLES[a.mt];if(a.act==='mtable'&&T&&a.ms>=0&&a.f===T.floor){const p=mtSeatPos(T,a.ms,T.R);a.tx=p.x;a.tz=p.z;a.ty=Math.atan2(T.cx-p.x,T.cz-p.z);}});
 }
 function mpStep(dt){
-  seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);
+  seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
   if(MP.room&&MP.started){
     const s=mpLocalState();const m=MP.me;
     const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
@@ -118,6 +118,7 @@ const NET={cli:null,code:'',myId:'',states:{},seen:{},mine:{},timer:null,ok:fals
 function netStatus(t){const e=$('#mpStatus');if(e)e.textContent=t;mpTag();}
 function netRoomObj(){return {presence(p){NET.mine=Object.assign({},p);return Promise.resolve();},connected(){return NET.ok;}};}
 function netLeave(silent){
+  if(typeof VC!=='undefined'&&VC.state)vcStop();
   if(NET.timer){clearInterval(NET.timer);NET.timer=null;}
   if(NET.cli){try{if(NET.ok)NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,JSON.stringify({bye:1}));NET.cli.end(true);}catch(e){}NET.cli=null;}
   NET.states={};NET.seen={};NET.ok=false;NET.code='';MP.room=null;MP.online=0;mpClear();$('#chatBtn').hidden=true;
@@ -148,6 +149,7 @@ function netConnect(asHost){
   const failT=setTimeout(()=>{if(!NET.ok&&NET.cli===cli){try{cli.end(true);}catch(e){}netNext(asHost);}},8000);
   cli.on('connect',()=>{
     clearTimeout(failT);
+    cli.subscribe('sinanskeller/'+NET.code+'/sig/'+NET.myId,{qos:0});
     cli.subscribe('sinanskeller/'+NET.code+'/+',{qos:0},err=>{
       if(err){netStatus('Fehler beim Beitreten. Nochmal versuchen.');return;}
       const first=!NET.ok;NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;
@@ -157,7 +159,9 @@ function netConnect(asHost){
     });
   });
   cli.on('message',(topic,buf)=>{
-    const id=topic.split('/')[2];if(!id||id===NET.myId)return;
+    const parts=topic.split('/');
+    if(parts[2]==='sig'){if(parts[3]===NET.myId){try{vcSignal(JSON.parse(buf.toString()));}catch(e){}}return;}
+    const id=parts[2];if(!id||id===NET.myId)return;
     let d;try{d=JSON.parse(buf.toString());}catch(e){return;}
     if(d&&d.bye){delete NET.states[id];delete NET.seen[id];mpSync(netPeers());return;}
     if(d&&netValid(d.s)){const isNew=!NET.states[id];NET.states[id]=d.s;NET.seen[id]=Date.now();if(isNew){mpSync(netPeers());netStatus('Raum '+NET.code+': '+(Object.keys(NET.states).length+1)+' Spieler.');}}

@@ -521,7 +521,7 @@ function frame(){
     if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=.15;updatePrompt();}}else if(!promptEl.hidden)promptEl.hidden=true;
     if(openId==='pRoulette'||R.anim)updRoulette(dt);
   }
-  if(!SV.m)renderer.render(scene,camera);
+  renderer.render(scene,camera);
 }
 
 /* ---------- boot ---------- */
