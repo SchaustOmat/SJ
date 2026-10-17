@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246536";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246552";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1744,11 +1744,12 @@ function startGamble(m,kind){
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
 // Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
 // Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
-const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,14000]; // in Cent wie am Gerät (bis Level 2 € fest)
+const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,14000]; // in Cent wie am Gerät bei Level 0,10 €
 const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
 const LADC={};
-function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=Math.max(1,tb/200);return LADC[tb]=LAD_REAL.map(x=>Math.round(x*f));}
+// Leiter wächst mit dem Einsatz: Werte gelten für 0,10 €, bei 0,20 € doppelt, bei 1 € zehnfach usw.
+function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=tb/10;return LADC[tb]=LAD_REAL.map(x=>Math.round(x*f));}
 // unten: hoch 1 / sonst 2 runter; ab 4,00 € (über AUSSPIELUNG): hoch 1 / sonst alles weg. Fair mit 2 % Vorteil.
 const ladDown=i=>i>=AUS_I?-1:i>=2?i-2:-1;
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
