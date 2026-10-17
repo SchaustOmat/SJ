@@ -377,7 +377,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792232178";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792232233";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1820,7 +1820,9 @@ function hlDeal(){
   hlClearCards();
   const deck=[...Array(52).keys()];for(let i=51;i>0;i--){const j=Math.random()*(i+1)|0;[deck[i],deck[j]]=[deck[j],deck[i]];}
   let oi=deck.findIndex(c=>c%13!==12);[deck[0],deck[oi]]=[deck[oi],deck[0]];
-  HL.open=deck[0];HL.hidden=deck.slice(1,5);HL.pick=-1;HL.round++;
+  HL.open=deck[0];HL.hidden=deck.slice(1,5);
+  // mindestens eine verdeckte Karte ist gleich oder höher als die Bankkarte
+  if(!HL.hidden.some(c=>c%13>=HL.open%13)){const j=deck.findIndex((c,i)=>i>=5&&c%13>=HL.open%13);if(j>=0)HL.hidden[Math.random()*4|0]=deck[j];}HL.pick=-1;HL.round++;
   const F=HL.F,cx=HL.cx,cz=HL.cz,src=new THREE.Vector3(cx,1.0,cz-.85);
   const om=makeCard(F.group);om.rotation.z=Math.PI;om.position.copy(src);setCardFace(om,HL.open);HL.openMesh=om;
   setTimeout(()=>{SFX.card();moveTo(om,new THREE.Vector3(cx-.62,.905,cz-.05),.3,.2,()=>flipTo(om,true,.3));},0);
