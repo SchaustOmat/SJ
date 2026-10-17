@@ -1,7 +1,7 @@
 /* =========================================================
    TEXAS HOLD'EM TISCH (2. Stock)
    ========================================================= */
-const PK={F:null,group:null,cx:-5,cz:-4,seats:[],dealer:0,sb:10,bb:20,board:[],deck:[],stage:'off',toAct:-1,curBet:0,minRaise:20,
+const PK={F:null,group:null,cx:-5,cz:-4,seats:[],dealer:0,sb:50,bb:100,board:[],deck:[],stage:'off',toAct:-1,curBet:0,minRaise:100,
   wait:0,next:null,raiseTo:0,cards:[],boardMeshes:[],msg:'',info:'',human:null,consoleTex:null,potSprite:null,potStack:null,dbtn:null,handNo:0,btns:{}};
 const BOT_DEF=[
   {name:'BOSS',pos:[-1.78,-.85],agg:.55,loose:.35,glasses:true,color:0x8a6a1a},
@@ -16,7 +16,7 @@ function buildPoker(F){
   const top=mesh(new THREE.CylinderGeometry(1,1,.1,20),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
   const rim=mesh(new THREE.CylinderGeometry(1,1,.12,20),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
   mesh(new THREE.CylinderGeometry(.35,.6,.76,8),lam({color:0x120c18}),0,.38,0,g);
-  const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 10/20',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
+  const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 50/100',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+2.3);
   col(F,cx,cz,2.8,4.4);
   // seats
@@ -31,9 +31,9 @@ function buildPoker(F){
     const n=npc(F,{x:wx,z:wz,rot:faceTo(wx,wz,cx,cz),sit:true,anim:'cards',lines:LINES.poker,name:d.name,glasses:d.glasses,color:d.color,hair:d.hair,noCol:true});
     mesh(new THREE.BoxGeometry(.45,.06,.45),lam({color:0x6a1020}),wx,.6,wz,F.group);col(F,wx,wz,.55,.55);
     const lab=spriteLabel(192,56,.2);lab.position.set(wx,1.78,wz);F.group.add(lab);
-    PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:1500+Math.round(Math.random()*15)*100,hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
+    PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:20000,hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
   });
-  const dl=npc(F,{x:cx,z:cz-2.55,rot:0,anim:'dealer',lines:["Blinds 10 und 20.","Setz dich, wenn du dich traust.","Karten kommen."],name:'DEALERIN',color:0x1a1a1e,hair:0xb02a5a});
+  const dl=npc(F,{x:cx,z:cz-2.55,rot:0,anim:'dealer',lines:["Blinds 50 und 100.","Setz dich, wenn du dich traust.","Karten kommen."],name:'DEALERIN',color:0x1a1a1e,hair:0xb02a5a});
   PK.dealerNpc=dl;
   // pot sprite
   PK.potSprite=spriteLabel(256,64,.2);PK.potSprite.position.set(cx,1.02,cz-.75);F.group.add(PK.potSprite);
@@ -138,13 +138,13 @@ function pressPBtn(key){
 function later(sec,fn){PK.wait=sec;PK.next=fn;}
 function pokerSit(){
   if(PK.sitting)return true;
-  const buy=Math.min(chips,2000);if(buy<100){toast('Du brauchst mindestens 100 Chips für den Tisch.');return false;}
+  const buy=chips;if(buy<500){toast('Du brauchst mindestens 500 Chips für den Tisch.');return false;}
   setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;PK.sitting=true;store('nk_pstack',PK.human.stack);
   PK.info='BUY-IN '+fmt(buy)+' · GLEICH GEHT\'S LOS';PK.msg='NEUE RUNDE';drawPot();updConsole();
-  say(PK.dealerNpc,'Willkommen am Tisch. Blinds 10 und 20.',3);
+  say(PK.dealerNpc,'Willkommen am Tisch. Blinds 50 und 100.',3);
   later(1.6,newHand);return true;
 }
-function rebuyHuman(){const buy=Math.min(chips,2000);if(buy<100){PK.info='ZU WENIG CHIPS';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
+function rebuyHuman(){const buy=chips;if(buy<500){PK.info='ZU WENIG CHIPS';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
 function pokerLeave(){
   const h=PK.human;
   if(PK.stage!=='off'&&!h.folded){h.folded=true;h.last='FOLD';}
@@ -159,7 +159,7 @@ function active(){return PK.seats.filter(s=>!s.out);}
 function nextIdx(i,pred){for(let k=1;k<=PK.seats.length;k++){const j=(i+k)%PK.seats.length;if(pred(PK.seats[j]))return j;}return -1;}
 function newHand(){
   PK.next=null;
-  PK.seats.forEach(s=>{if(!s.human&&s.stack<=0){s.stack=1500+Math.round(Math.random()*10)*100;s.last='NACHGEKAUFT';say(s.npc,'Nachgekauft. Jetzt erst recht.',2.5);}});
+  PK.seats.forEach(s=>{if(!s.human&&s.stack<=0){s.stack=20000;s.last='NACHGEKAUFT';say(s.npc,'Nachgekauft. Jetzt erst recht.',2.5);}});
   const h=PK.human;if(h.stack<=0){h.out=true;PK.stage='off';PK.info='KEINE CHIPS MEHR · NACHKAUFEN ODER AUFSTEHEN';PK.msg='';drawPot();updConsole();return;}
   clearTable();
   PK.handNo++;PK.board=[];

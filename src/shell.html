@@ -165,7 +165,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .help p{font-size:22px}
 #standBtn{left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 66px);bottom:auto;font-size:12px;padding:14px 14px}
 /* slot fullscreen */
-#slotView{position:fixed;inset:0;z-index:15;background:radial-gradient(ellipse at 50% 30%,#241238,#07050c 70%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;
+#slotView{position:fixed;inset:0;z-index:15;background:transparent;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;
   padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 #slotView.land{gap:6px}
 .sv-screens{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
@@ -241,6 +241,21 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 @media (max-width:380px){.tag{font-size:10px;padding:7px 8px}.ibtn{width:36px;height:36px}}
 @media (max-width:420px){.tbb,.svb{font-size:8px;letter-spacing:0}.svb.big{font-size:11px}.tbb.sm{font-size:16px}.tb-row{gap:5px}}
 @media (orientation:landscape) and (max-height:500px){.pshow{display:none}.pc{width:34px;height:46px;font-size:15px}.pc b{font-size:15px}.pcl{display:none}}
+.mtfeed{font-family:var(--f-title);font-size:10px;color:var(--cyan);text-align:center;min-height:14px;letter-spacing:.04em;overflow-wrap:anywhere}
+body.gfx-sharp #crt{opacity:.35}
+#game{image-rendering:auto}
+body:not(.gfx-sharp) #game{image-rendering:pixelated}
+#slotView .sv-side,#slotView #svStand{pointer-events:auto}
+#slotView .sv-info,#slotView .sv-msg{display:none}
+#slotView .sv-side{margin-top:auto;width:min(100%,680px)!important}
+#slotView.land .sv-side{width:min(100%,980px)!important}
+.sv-deck{background:linear-gradient(rgba(26,26,34,.92),rgba(12,10,16,.96))}
+#watchCard{position:fixed;z-index:6;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 108px);width:min(420px,calc(100% - 24px));
+  background:rgba(7,5,12,.88);border:2px solid var(--cyan);box-shadow:0 0 0 2px #000,4px 4px 0 #000;padding:8px 10px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.wc-h{font-family:var(--f-title);font-size:10px;color:var(--cyan);letter-spacing:.06em}
+.wc-m{font-family:var(--f-title);font-size:10px;color:var(--gold)}
+.wc-s{font-size:18px;color:var(--ink);overflow-wrap:anywhere}
+#watchCard .pcards{justify-content:flex-start}
 </style>
 <div id="app">
 <canvas id="game"></canvas>
@@ -262,7 +277,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
 
 <div id="slotView" hidden>
-  <div class="sv-screens"><canvas id="svTop" width="256" height="128"></canvas><canvas id="svMain" width="320" height="240"></canvas></div>
+  <div class="sv-screens" hidden><canvas id="svTop" width="256" height="128"></canvas><canvas id="svMain" width="320" height="240"></canvas></div>
   <div class="sv-side">
     <div class="sv-info"><div><span>GUTHABEN</span><b id="svCredit">0</b></div><div><span>EINSATZ</span><b id="svBet">0</b></div><div id="svWinBox"><span>GEWINN</span><b id="svWin">0</b></div></div>
     <div class="sv-msg" id="svMsg"></div>
@@ -281,6 +296,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 <div id="mtBar" class="tbar" hidden>
   <div class="pcards" id="mtCards" hidden></div>
   <div class="tb-info"><span id="mtInfo"></span><span id="mtMsg"></span></div>
+  <div class="mtfeed" id="mtFeed"></div>
   <div class="tb-row"><button class="tbb c-red" id="mt-FOLD">FOLD</button><button class="tbb c-green" id="mt-CALL">CHECK</button><button class="tbb c-white sm" id="mt-MINUS">−</button><button class="tbb c-amber" id="mt-RAISE">RAISE</button><button class="tbb c-white sm" id="mt-PLUS">+</button><button class="tbb c-yellow" id="mt-ALLIN">ALL IN</button></div>
   <div class="tb-row"><button class="tbb c-blue" id="mt-SIT">HINSETZEN</button></div>
 </div>
@@ -290,6 +306,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <div class="tb-row" id="hlRow"><button class="tbb c-white sm" id="hl-MINUS">−</button><button class="tbb c-white sm" id="hl-PLUS">+</button><button class="tbb c-green" id="hl-GEBEN">GEBEN</button><button class="tbb c-yellow" id="hl-NEHMEN">NEHMEN</button><button class="tbb c-red" id="hl-WEITER">WEITER</button></div>
   <div class="tb-row" id="hlCards" hidden><button class="tbb c-amber lit" id="hlc-0">KARTE 1</button><button class="tbb c-amber lit" id="hlc-1">KARTE 2</button><button class="tbb c-amber lit" id="hlc-2">KARTE 3</button><button class="tbb c-amber lit" id="hlc-3">KARTE 4</button></div>
 </div>
+<div id="watchCard" hidden></div>
 <div id="toast" hidden></div>
 <div id="bubbles"></div>
 <div id="veil" hidden></div>
@@ -326,6 +343,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 </section>
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">
   <header><h2>STEUERUNG</h2><button class="x" data-close>WEITER</button></header>
+  <button class="btn gold" id="gfxBtn">GRAFIK: SCHARF</button>
   <div class="help" style="display:flex;flex-direction:column;gap:10px">
     <p><b>Links:</b> Daumen ziehen zum Laufen. <b>Rechts:</b> wischen zum Umschauen.</p>
     <p><b>Antippen:</b> Automat, Tisch, Aufzug oder Person. Ist es weiter weg, läufst du hin.</p>

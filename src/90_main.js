@@ -94,7 +94,10 @@ function buildWorld(){
   pillar(A,-5,-7,conc,0x29f0ff);pillar(A,5,-6.5,conc,0xff2e88);pillar(A,-5,4.5,conc,0xff2e88);pillar(A,5,4.5,conc,0x29f0ff);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
   const mA=[[-6.5,'book',0xd6a02a],[-4,'fruit',0xc42a3a],[-1.5,'book',0x2a6ad6],[1,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
-  buildBar(A);buildHall(A,'EG');buildMTable(A);
+  // vier Freispiel-Automaten um die Ecke an der Nordwand
+  [[-10.3,'viking',0x4a9aff],[-8.9,'mine',0x29f0ff],[-7.5,'reef',0x2ad8c8],[-6.1,'temple',0xff6a1a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
+  buildBar(A);buildHall(A,'EG');
+  buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
   sign(A,"SINAN'S KELLER",'#ff2e88',-3.5,2.9,-11.9,0,.75);
@@ -143,8 +146,8 @@ function buildWorld(){
   npc(B,{x:-9.9,z:9.7,rot:Math.PI,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true});
   npc(B,{x:-10.7,z:6.5,rot:Math.PI/2,sit:true,anim:'idle',lines:LINES.vip,name:'GAST',noCol:true});
   speaker(B,-10.9,-10.9,Math.PI/4);speaker(B,10.9,10.9,-Math.PI*3/4);
-  npc(B,{x:-7,z:7.5,rot:Math.PI*.8,anim:'dance',lines:["Hörst du den Bass?","Hier oben schläft keiner."],name:'TÄNZERIN',hair:0xb02a5a,color:0x2a4a2a});
-  npc(B,{x:-6,z:6.4,rot:-Math.PI*.3,anim:'dance',lines:["Hörst du den Bass?","Einer noch!"],name:'TÄNZER'});
+  npc(B,{x:-8.6,z:8.4,rot:Math.PI*.8,anim:'dance',lines:["Hörst du den Bass?","Hier oben schläft keiner."],name:'TÄNZERIN',hair:0xb02a5a,color:0x2a4a2a});
+  npc(B,{x:-7.6,z:9.4,rot:-Math.PI*.3,anim:'dance',lines:["Hörst du den Bass?","Einer noch!"],name:'TÄNZER'});
   buildHall(B,'2');
   npc(B,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:["Willkommen oben.","Hier wird nicht gedrängelt."],name:'TÜRSTEHERIN',glasses:true,color:0x0c0c10,hair:0x111111});
   sign(B,'VIP LOUNGE','#ffcf3a',-3.5,2.9,-11.9,0,.8);
@@ -160,6 +163,7 @@ function buildWorld(){
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
   B.ambient=0x5a2a3a;
+  buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
   ambient=new THREE.AmbientLight(0x4a3a66,.6);scene.add(ambient);
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
@@ -190,19 +194,23 @@ let focus=null,camAnim=null;
 function focusPose(){
   const asp=LW()/LH(),f=focus;const out={pos:new THREE.Vector3(),yaw:0,pitch:0,fov:60,look:true};
   if(f.type==='slot'){
-    const g=f.m.group,v=asp<1?62:54,h=2*Math.atan(Math.tan(v*Math.PI/360)*asp);
-    const d=Math.max(.8/Math.tan(v*Math.PI/360),.52/Math.tan(h/2))+.05;
-    g.localToWorld(out.pos.set(0,1.68,.15+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
+    // Kamera fährt nah an den Automaten: Bildschirm füllt den freien Bereich über den Knöpfen, die Halle bleibt sichtbar
+    const g=f.m.group,deck=$('.sv-side'),bh=deck&&!SV.el.hidden?deck.offsetHeight+16:120,top=asp<1?56:12,LHv=LH();
+    const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
+    const v=asp<1?60:50,tv=Math.tan(v*Math.PI/360),th=tv*asp;
+    const H=asp<1?.74:.68,W=.86;
+    const d=Math.max(H/(2*tv*free),W/(2*th))+.02,vis=2*d*tv;
+    g.localToWorld(out.pos.set(0,1.47+shift*vis,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
   } else if(f.type==='poker'||f.type==='hilo'||f.type==='mtable'){
     const cx=f.type==='poker'?PK.cx:HL.cx,cz=f.type==='poker'?PK.cz:HL.cz;
     const bar=f.type==='poker'?$('#pkBar'):f.type==='hilo'?$('#hlBar'):$('#mtBar');const top=110;
     const bh=bar&&!bar.hidden?bar.offsetHeight:150,LHv=LH();const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
     if(f.type==='mtable'){
-      const si=mtMySeat(),sa=si>=0?mtSeatPos(si,1).a:Math.PI/2,fx=-Math.cos(sa),fz=-Math.sin(sa);
+      const T=f.m,si=mtMySeat(T),sa=si>=0?mtSeatPos(T,si,1).a:Math.PI/2,fx=-Math.cos(sa),fz=-Math.sin(sa);
       out.yaw=Math.atan2(-fx,-fz);
       if(asp<1){const hgt=2.7,rad=2.15;const t=rad/hgt/Math.min(1,asp)/free;out.fov=clamp(2*Math.atan(t)*180/Math.PI,40,140);
-        const vis=2*hgt*Math.tan(out.fov*Math.PI/360);out.pos.set(MT.cx+fx*shift*vis,.88+hgt,MT.cz+fz*shift*vis);out.pitch=-Math.PI/2+.0001;out.look=false;}
-      else{const d=MT.R+1.35;out.pos.set(MT.cx-fx*d,1.85,MT.cz-fz*d);out.pitch=Math.atan2(.86-1.85,d)+shift*.9;out.fov=clamp(62/free*.82,58,90);}
+        const vis=2*hgt*Math.tan(out.fov*Math.PI/360);out.pos.set(T.cx+fx*shift*vis,.88+hgt,T.cz+fz*shift*vis);out.pitch=-Math.PI/2+.0001;out.look=false;}
+      else{const d=T.R+1.35;out.pos.set(T.cx-fx*d,1.85,T.cz-fz*d);out.pitch=Math.atan2(.86-1.85,d)+shift*.9;out.fov=clamp(62/free*.82,58,90);}
       if(out.look){out.yaw+=f.ly||0;out.pitch+=f.lp||0;}
       return out;
     }
@@ -229,7 +237,7 @@ function enterFocus(type,m){
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
   if(type==='slot'){updateButtons(m);m.dirty=true;}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
-  if(type==='mtable'){const V=MT.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=100)mtRequestSeat();mtBarSync();}
+  if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
 }
 function leaveFocus(){
@@ -240,7 +248,7 @@ function leaveFocus(){
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
   else if(f.type==='hilo'){if(['deal','pick','reveal'].includes(HL.state)){toast('Erst eine Karte wählen.');return;}hlLeave();P.x=HL.cx;P.z=HL.cz+1.95;P.yaw=0;}
-  else if(f.type==='mtable'){const si=mtMySeat();mtLeaveSeat();const p=mtSeatPos(si>=0?si:0,MT.R+.95);P.x=p.x;P.z=p.z;P.yaw=Math.atan2(-(MT.cx-p.x),-(MT.cz-p.z));}
+  else if(f.type==='mtable'){const T=f.m,si=mtMySeat(T);mtLeaveSeat();const p=mtSeatPos(T,si>=0?si:0,T.R+.95);P.x=p.x;P.z=p.z;P.yaw=Math.atan2(-(T.cx-p.x),-(T.cz-p.z));}
   P.pitch=-.05;
   camAnim={t:0,dur:.5,fromPos:camera.position.clone(),fromYaw:camera.rotation.y,fromPitch:camera.rotation.x,fromFov:camera.fov,dir:-1};
   focus=null;svClose();barsFor(null);$('#standBtn').hidden=true;joyBase.hidden=false;joyHint.hidden=false;
@@ -327,10 +335,10 @@ function interact(act){
   walk=null;marker.visible=false;
   switch(act.type){
     case 'roulette':openRoulette(act);break;
-    case 'machine':if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
+    case 'machine':if(act.m.remote){toast(act.m.remote.name+' spielt hier gerade.');SFX.click();}else if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
     case 'poker':enterFocus('poker');break;
     case 'hilo':enterFocus('hilo');break;
-    case 'mtable':enterFocus('mtable');break;
+    case 'mtable':enterFocus('mtable',act.T);break;
     case 'ecall':elevCall();break;
     case 'ebtn':elevGo(act.dest,act);break;
     case 'npc':talk(act.npc);break;
@@ -433,16 +441,26 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
+let GFX='sharp';try{GFX=localStorage.getItem('nk_gfx')||'sharp';}catch(e){}
 function resize(){
-  const w=LW(),h=LH();
-  let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable')?1:Math.max(1,s-1);
-  const iw=Math.ceil(w/s),ih=Math.ceil(h/s);renderer.setSize(iw,ih,false);
-  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
+  const w=LW(),h=LH();let iw,ih;
+  if(GFX==='sharp'){
+    // scharf: volle Auflösung (bis 2x auf Retina), bei sehr großen Bildschirmen etwas begrenzt
+    let pr=Math.min(window.devicePixelRatio||1,2);while(pr>1&&w*h*pr*pr>3.2e6)pr-=.25;
+    iw=Math.round(w*pr);ih=Math.round(h*pr);
+  } else {
+    let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable')?1:Math.max(1,s-1);
+    iw=Math.ceil(w/s);ih=Math.ceil(h/s);
+  }
+  renderer.setSize(iw,ih,false);document.body.classList.toggle('gfx-sharp',GFX==='sharp');
+  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();if(GFX==='sharp')snapRes.value.set(Math.max(320,iw/2),Math.max(240,ih/2));else snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
   if(typeof svLayout==='function')svLayout();
 }
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
 $('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
+function gfxLabel(){$('#gfxBtn').textContent='GRAFIK: '+(GFX==='sharp'?'SCHARF':'RETRO (PS1)');}
+$('#gfxBtn').addEventListener('click',()=>{GFX=GFX==='sharp'?'retro':'sharp';store('nk_gfx',GFX);gfxLabel();resize();});gfxLabel();
 $('#chatBtn').addEventListener('click',()=>{openPanel('pChat');});
 $('#onlineTag').addEventListener('click',()=>{if(window.NK_STANDALONE){openPanel('pMulti');return;}if(!MP.room)toast('Nicht verbunden. Der Link allein reicht nicht: Du musst über TEILEN mit deiner E-Mail eingeladen sein und eingeloggt mit genau dieser E-Mail öffnen.');else if(!MP.online)toast('Verbunden. Warte auf deinen Kollegen…');else toast((MP.online+1)+' Spieler im Keller.');});
 document.querySelectorAll('#pChat [data-say]').forEach(b=>b.addEventListener('click',()=>{mpSay(b.dataset.say);closePanel();}));

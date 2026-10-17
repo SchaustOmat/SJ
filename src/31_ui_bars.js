@@ -8,17 +8,7 @@ SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
-function svLayout(){
-  if(SV.el.hidden)return;
-  const W=LW(),H=LH(),land=W>H;SV.el.classList.toggle('land',land);
-  const side=$('.sv-side');side.style.width=Math.min(W-16,land?W-16:560)+'px';
-  const sideH=side.offsetHeight||(land?70:190);
-  const topPad=land?10:52,aw=W-16,ah=H-sideH-topPad-24;
-  let mw=Math.max(120,Math.min(aw,ah*4/3));
-  const rest=ah-mw*.75;const th=rest>60?Math.min(rest-10,mw*.35):0;
-  SV.main.style.width=mw+'px';SV.main.style.height=mw*.75+'px';
-  SV.top.style.display=th>40?'block':'none';SV.top.style.width=th*2+'px';SV.top.style.height=th+'px';
-}
+function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.toggle('land',W>H);}
 function svButtons(m){
   if(m!==SV.m||!m.btnModel)return;
   SVKEYS.forEach(k=>{const b=SV.btn[k],d=m.btnModel[k];if(!d)return;
@@ -28,8 +18,6 @@ function svButtons(m){
 }
 function svDraw(m){
   if(m!==SV.m)return;
-  SV.mctx.drawImage(m.scr.userData.canvas,0,0);
-  if(m.svTopDrawn!==m.topVer){SV.tctx.drawImage(m.top.userData.canvas,0,0);m.svTopDrawn=m.topVer;}
   const cr=fmt(chips),bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
   if(SV.last.cr!==cr){$('#svCredit').textContent=cr;SV.last.cr=cr;}
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
