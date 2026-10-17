@@ -16,7 +16,7 @@ let saveT=null,cloudDoc=null;
 function saveChanged(){
   try{localStorage.setItem('nk_t',String(Date.now()));}catch(e){}
   if(!cloudDoc)return;clearTimeout(saveT);
-  saveT=setTimeout(()=>{cloudDoc.set({chips:totalWealth(),t:Date.now()}).catch(()=>{});},1500);
+  saveT=setTimeout(()=>{cloudDoc.set({chips:totalWealth(),bank:BANK.bal+bankPendSum(),t:Date.now()}).catch(()=>{});},1500);
 }
 // anderer Tab hat Chips geändert
 addEventListener('storage',e=>{
@@ -33,7 +33,7 @@ async function cloudSaveInit(){
   try{
     const snap=await doc.get();let localT=0;try{localT=+(localStorage.getItem('nk_t')||0);}catch(e){}
     if(snap.exists){const d=snap.data()||{};const v=+d.chips,t=+d.t||0;
-      if(isFinite(v)&&v>=0&&t>localT&&!focus){setChips(v);toast('Spielstand geladen: '+fmt(v)+' Chips');}}
+      if(isFinite(v)&&v>=0&&t>localT&&!focus){const b=+d.bank;if(isFinite(b)&&b>=0){BANK.bal=Math.round(b);store('nk_bank',BANK.bal);}setChips(v);toast('Spielstand geladen: '+fmt(v)+' Chips'+(BANK.bal?' · Konto '+fmt(BANK.bal):''));}}
   }catch(e){}
   cloudDoc=doc;saveChanged();
 }

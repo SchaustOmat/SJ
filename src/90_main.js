@@ -95,8 +95,8 @@ function buildWorld(){
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
   const mA=[[-6.5,'book',0xd6a02a],[-4,'fruit',0xc42a3a],[-1.5,'book',0x2a6ad6],[1,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
-  [[-10.3,'viking',0x4a9aff],[-8.9,'mine',0x29f0ff],[-7.5,'reef',0x2ad8c8],[-6.1,'temple',0xff6a1a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
-  buildBar(A);buildHall(A,'EG');
+  [[-10.3,'viking',0x4a9aff],[-8.9,'mine',0x29f0ff],[-7.5,'reef',0x2ad8c8],[-6.1,'temple',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
+  buildBar(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
@@ -141,7 +141,7 @@ function buildWorld(){
   B.rouletteFans=[v1,v2];
   const mB=[[1.5,'book',0xd6a02a],[4,'book',0xc42a3a],[6.5,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
   mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
-  buildHilo(B);
+  buildHilo(B);buildATM(B,-2.4,-11.6,0);
   sofa(B,-9.5,9.8,Math.PI,0x6a1020);sofa(B,-10.8,6.8,Math.PI/2,0x6a1020);
   npc(B,{x:-9.9,z:9.7,rot:Math.PI,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true});
   npc(B,{x:-10.7,z:6.5,rot:Math.PI/2,sit:true,anim:'idle',lines:LINES.vip,name:'GAST',noCol:true});
@@ -243,7 +243,7 @@ function enterFocus(type,m){
 function leaveFocus(){
   if(!focus)return;
   const f=focus;
-  if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
+  if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext'].includes(m.state)||(m.power&&m.power.spinning)){toast('Erst das Spiel beenden.');return;}
     if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
@@ -343,10 +343,12 @@ function interact(act){
     case 'ecall':elevCall();break;
     case 'ebtn':elevGo(act.dest,act);break;
     case 'npc':talk(act.npc);break;
+    case 'atm':atmOpen();break;
   }
 }
 function talk(n){
   SFX.click();
+  if(n.special==='bartender'&&chips<100&&BANK.bal>=100){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
   if(n.special==='bartender'&&chips<100){setChips(chips+20000,true);say(n,'Pleite? Hier, 20.000 aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
@@ -359,6 +361,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeou
 let openId=null,busy=false;
 function openPanel(id){if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
 function closePanel(){if(!openId)return;
+  if(openId==='pAtm')atmClosed();
   if(openId==='pRoulette'&&!R.spinning){let s=0;for(const k in R.bets)s+=R.bets[k];if(s>0){setChips(chips+s);toast(fmt(s)+' Chips Einsatz zurück.');}R.bets={};}$('#'+openId).hidden=true;$('#veil').hidden=true;openId=null;locked=false;curAct=null;}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)closePanel();}));
 $('#veil').addEventListener('click',()=>{if(!busy)closePanel();});

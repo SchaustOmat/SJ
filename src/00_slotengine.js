@@ -47,7 +47,13 @@ var SlotEngine=(function(){
       wild:'FEUER',scatter:'TEMPEL',
       pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
            'KELCH':[0,0,0,20,80,300],'SCHLANGE':[0,0,0,25,100,400],'STATUE':[0,0,5,40,200,1000],'FEUER':[0,0,10,100,500,2500]},
-      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,wildExpand:true,desc:['10 FREISPIELE','JOKER FÜLLT WALZE']},counts:null}
+      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,wildExpand:true,desc:['10 FREISPIELE','JOKER FÜLLT WALZE']},counts:null},
+    // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
+    pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+      wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',
+      pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
+           'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
+      scatterPay:[0,0,0,0,0,0],free:null,counts:null}
   };
   function setup(id,counts,seed,fsCounts,payScale){var G=GAMES[id];
     if(payScale&&!G.scaled){G.scaled=1;Object.keys(G.pay).forEach(function(k){G.pay[k]=G.pay[k].map(function(v){return Math.round(v*payScale);});});}SCAT_TMP=G.scatter;G.counts=counts;G.strips=buildStrips(counts,seed);G.syms=Object.keys(counts[0]);
@@ -59,16 +65,22 @@ var SlotEngine=(function(){
     var F=G.free||{},mult=fs&&F.mult?F.mult:1;
     if(fs&&F.wildExpand){var wr=[];for(var c0=0;c0<5;c0++){if(g[0][c0]===G.wild||g[1][c0]===G.wild||g[2][c0]===G.wild)wr.push(c0);}
       if(wr.length){g=[g[0].slice(),g[1].slice(),g[2].slice()];wr.forEach(function(c){g[0][c]=g[1][c]=g[2][c]=G.wild;});res.wildReels=wr;}}
-    for(var li=0;li<lines;li++){var path=G.lines[li],base=null,i;
-      var wn=0;for(i=0;i<5;i++){var s=g[path[i]][i];if(s!==G.wild){base=s;break;}wn++;}
+    function run(path,cols){var base=null,i,wn=0;
+      for(i=0;i<cols.length;i++){var s=g[path[cols[i]]][cols[i]];if(s!==G.wild){base=s;break;}wn++;}
+      if(!base&&G.top)base=G.top;
       var n=0,p=0;
-      if(base&&base!==G.scatter){for(i=0;i<5;i++){var t=g[path[i]][i];if(t===base||t===G.wild)n++;else break;}p=(G.pay[base]||[])[n]||0;}
+      if(base&&base!==G.scatter){for(i=0;i<cols.length;i++){var t=g[path[cols[i]]][cols[i]];if(t===base||t===G.wild)n++;else break;}p=(G.pay[base]||[])[n]||0;}
       var wp=G.wild&&G.wild!==G.scatter?(G.pay[G.wild]||[])[wn]||0:0;
       if(wp>p){base=G.wild;n=wn;p=wp;}
-      if(!p)continue;
-      var dbl=1;
-      if(p&&G.wildDouble&&base!==G.wild){for(i=0;i<n;i++)if(g[path[i]][i]===G.wild){dbl=2;break;}}
-      if(p){var cells=[];for(i=0;i<n;i++)cells.push([path[i],i]);var amt=p*betLine*dbl*mult;res.wins.push({line:li,sym:base,count:n,amount:amt,cells:cells});res.total+=amt;}
+      var cells=[];for(i=0;i<n;i++)cells.push([path[cols[i]],cols[i]]);
+      return {base:base,n:n,p:p,cells:cells};}
+    function add(li,r,path){if(!r.p)return;var dbl=1,i;
+      if(G.wildDouble&&r.base!==G.wild){for(i=0;i<r.cells.length;i++)if(g[r.cells[i][0]][r.cells[i][1]]===G.wild){dbl=2;break;}}
+      var amt=r.p*betLine*dbl*mult;res.wins.push({line:li,sym:r.base,count:r.n,amount:amt,cells:r.cells});res.total+=amt;}
+    for(var li=0;li<lines;li++){var path=G.lines[li];
+      var L=run(path,[0,1,2,3,4]);add(li,L,path);
+      if(G.bothWays){var Rr=L.n<5?run(path,[4,3,2,1,0]):{n:0,p:0};add(li,Rr,path);
+        if(L.n<4&&Rr.n<4){var M=run(path,[1,2,3]);if(M.n===3)add(li,M,path);}}
     }
     var sc=[];for(var c=0;c<5;c++)for(var r=0;r<3;r++)if(g[r][c]===G.scatter)sc.push([r,c]);
     var sp=G.scatterPay[Math.min(5,sc.length)]||0;

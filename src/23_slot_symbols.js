@@ -67,3 +67,32 @@ const EXTRA_SYM={
 };
 Object.assign(SYMNAME,{HELM:'HELM',RUNE:'RUNE',AXT:'AXT',SCHILD:'SCHILD',DRACHE:'DRACHENBOOT',DIAMANT:'DIAMANT',LORE:'LORE',HACKE:'SPITZHACKE',LATERNE:'LATERNE',NUGGET:'GOLDNUGGET',
   DELFIN:'DELFIN',MUSCHEL:'MUSCHEL',FISCH:'FISCH',SEESTERN:'SEESTERN',PERLE:'PERLE',FEUER:'FEUER',TEMPEL:'TEMPEL',KELCH:'KELCH',SCHLANGE:'SCHLANGE',STATUE:'STATUE'});
+// --- Pharao Wild
+function gemShine(g,pts){g.fillStyle='rgba(255,255,255,.55)';poly(g,pts);g.fill();}
+Object.assign(EXTRA_SYM,{
+  PHARAO(g){ // goldener Pharaokopf mit rot-goldenem Kopftuch, Band "WILD"
+    const st=['#c81a1a','#ffd23a'];
+    g.fillStyle='#3a0a00';poly(g,[[24,2],[44,14],[46,40],[2,40],[4,14]]);g.fill();
+    for(let i=0;i<8;i++){g.fillStyle=st[i%2];const y=6+i*4.2;poly(g,[[24-6-i*2.4,y],[24+6+i*2.4,y],[24+8+i*2.4,y+2.6],[24-8-i*2.4,y+2.6]]);g.fill();}
+    g.fillStyle=linFill(g,10,36,'#ffe8a0','#c88a10');g.beginPath();g.ellipse(24,22,9,12,0,0,TAU);g.fill();
+    g.fillStyle='#120a04';g.fillRect(17,19,6,2);g.fillRect(26,19,6,2);g.fillStyle='#fff';g.fillRect(19,19,2,2);g.fillRect(28,19,2,2);
+    g.fillStyle='#8a3a10';g.fillRect(21,29,6,2);
+    g.fillStyle='#2a6ad6';g.fillRect(21,33,6,6);g.fillStyle='#ffd23a';g.fillRect(21,35,6,1);
+    g.fillStyle='#3adf5a';g.beginPath();g.arc(24,7,2.5,0,TAU);g.fill();
+    g.fillStyle='#120a04';g.fillRect(4,39,40,9);g.fillStyle=linFill(g,39,48,'#ff6a6a','#a00010');g.fillRect(5,40,38,7);
+    px(g,6);g.textAlign='center';g.textBaseline='middle';g.fillStyle='#fff8c0';g.fillText('WILD',24,44);},
+  BRILLANT(g){g.fillStyle=linFill(g,4,44,'#ffffff','#9ab0c8');poly(g,[[24,44],[3,16],[12,5],[36,5],[45,16]]);g.fill();
+    gemShine(g,[[12,5],[18,16],[24,5]]);g.fillStyle='rgba(60,80,120,.25)';poly(g,[[3,16],[45,16],[24,44]]);g.fill();
+    g.strokeStyle='#5a6a88';g.lineWidth=1;g.beginPath();g.moveTo(3,16);g.lineTo(45,16);g.moveTo(18,16);g.lineTo(24,5);g.lineTo(30,16);g.moveTo(18,16);g.lineTo(24,44);g.lineTo(30,16);g.stroke();
+    g.fillStyle='#fff';g.fillRect(36,8,2,6);g.fillRect(34,10,6,2);},
+  RUBIN(g){g.fillStyle=radialFill(g,24,24,20,'#ff8a9a','#7a0010');poly(g,[[16,4],[32,4],[44,16],[44,32],[32,44],[16,44],[4,32],[4,16]]);g.fill();
+    g.fillStyle=radialFill(g,24,24,10,'#ffb0c0','#c0102a');poly(g,[[19,13],[29,13],[35,19],[35,29],[29,35],[19,35],[13,29],[13,19]]);g.fill();
+    gemShine(g,[[16,4],[32,4],[29,13],[19,13]]);g.strokeStyle='#4a0008';g.lineWidth=1.5;poly(g,[[16,4],[32,4],[44,16],[44,32],[32,44],[16,44],[4,32],[4,16]]);g.stroke();},
+  SAPHIR(g){g.fillStyle=radialFill(g,24,24,20,'#9ac8ff','#081a6a');g.beginPath();g.ellipse(24,25,16,20,0,0,TAU);g.fill();
+    g.fillStyle=radialFill(g,24,24,10,'#c0e0ff','#1a4ac0');g.beginPath();g.ellipse(24,25,8,11,0,0,TAU);g.fill();
+    g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.ellipse(18,14,5,3,-.6,0,TAU);g.fill();g.strokeStyle='#040a3a';g.lineWidth=1.5;g.beginPath();g.ellipse(24,25,16,20,0,0,TAU);g.stroke();},
+  SMARAGD(g){g.fillStyle=linFill(g,6,42,'#9affb0','#0a5a1a');poly(g,[[12,6],[36,6],[42,12],[42,36],[36,42],[12,42],[6,36],[6,12]]);g.fill();
+    g.fillStyle=linFill(g,14,34,'#c0ffd0','#1a9a3a');g.fillRect(14,14,20,20);gemShine(g,[[12,6],[36,6],[34,14],[14,14]]);
+    g.strokeStyle='#043a0a';g.lineWidth=1.5;poly(g,[[12,6],[36,6],[42,12],[42,36],[36,42],[12,42],[6,36],[6,12]]);g.stroke();g.strokeRect(14,14,20,20);}
+});
+Object.assign(SYMNAME,{PHARAO:'PHARAO',BRILLANT:'BRILLANT',RUBIN:'RUBIN',SAPHIR:'SAPHIR',SMARAGD:'SMARAGD'});
