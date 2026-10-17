@@ -15,7 +15,8 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - Deploy: bauen, Syntax prüfen (`node --check` auf das Script aus index.html), committen, pushen. Pages baut automatisch.
 
 ## Dateien (src/)
-- 00_slotengine.js: Walzen-Engine (Strips, Linien, Wild/Scatter, Freispiele, bothWays, wildStack). Spiele: book, fruit, viking, mine, reef, temple, pharao.
+- 00_slotengine.js: Walzen-Engine (Strips, Linien, Wild/Scatter, Freispiele, bothWays, wildStack, wildMult, walk, superspin). Spiele: book, fruit, viking, mine, reef, temple, pharao, spitze, zent (Zentaurus), tizona, doppel (Doppel Buch).
+- 28_spitze.js: Alles Spitze (eine Walze, 3 Leitern, Cashpot). 29_newgames.js: Symbole für Zentaurus/Tizona/Doppel Buch.
 - 20_slots.js: Automaten (3D-Gehäuse, Knöpfe, Ablauf, Risiko Karte/Leiter mit TEILEN, Pharao Power-Spin-Angebot + Power Spins, Bildschirm-Zeichnung).
 - 23_slot_symbols.js: gezeichnete Symbole. 24_spielomat.js: Automaten-OS „Spielomat V0.1“ (Menü, alle Spiele an jedem Automaten).
 - 25_wheel.js: Roulette-Rad (groß, Zahlen, Kugel), auch fürs Zuschauen.

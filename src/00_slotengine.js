@@ -12,6 +12,7 @@ var SlotEngine=(function(){
   }
   var SCAT_TMP=null;
   var LINES10=[[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],[1,2,2,2,1],[1,0,0,0,1],[2,2,1,0,0],[0,0,1,2,2],[2,1,1,1,0]];
+  var LINES20=LINES10.concat([[1,2,1,0,1],[1,0,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],[0,0,2,0,0],[2,2,0,2,2]]);
   var GAMES={
     book:{id:'book',title:'GRABKAMMER',sub:'DAS BUCH DER TOTEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'BUCH',scatter:'BUCH',low:['10','J','Q','K','A'],
@@ -51,6 +52,24 @@ var SlotEngine=(function(){
       pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,10,25,100],'A':[0,0,0,10,25,100],
            'SMARAGD':[0,0,0,25,50,150],'SAPHIR':[0,0,0,25,50,150],'RUBIN':[0,0,0,35,100,200],'BRILLANT':[0,0,0,50,250,2500]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null},
+    // Zentaurus Power Spins: 20 Linien, Zentaur = Wild und verdoppelt je Zentaur auf der Linie, 3 Münzen = 10 Freispiele mit Superspin, Power Spins
+    zent:{id:'zent',title:'ZENTAURUS',sub:'POWER SPINS',lines:LINES20,lineOpts:[20],betOpts:[1,2,3,4,5,10,20,30,40,50,100],
+      wild:'ZENT',scatter:'MUENZE',wildMult:true,power:true,top:'OLYMP',
+      pay:{'9':[0,0,0,1,2,4],'10':[0,0,0,1,2,4],'J':[0,0,0,1,4,8],'Q':[0,0,0,1,4,8],'K':[0,0,0,2,6,16],'A':[0,0,0,2,6,16],
+           'FUELL':[0,0,0,4,8,24],'VASE':[0,0,0,8,16,32],'HARFE':[0,0,8,16,32,80],'OLYMP':[0,0,20,40,60,200],'ZENT':[0,0,10,100,1000,5000]},
+      scatterPay:[0,0,0,0,0,0],free:{count:10,trigger:3,superspin:true,desc:['10 FREISPIELE','MIT SUPERSPIN']},counts:null},
+    // Tizona: 10 Linien, Schwert = wanderndes Wild (zieht jede Runde eine Walze nach links), 3/4/5 Schilde = 10/15/20 Freispiele, dort wächst das Schwert
+    tizona:{id:'tizona',title:'TIZONA',sub:'DAS SCHWERT DES CID',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
+      wild:'SCHWERT',scatter:'SCHILD',walkWild:true,top:'RITTER',
+      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,40,150],'A':[0,0,0,10,40,150],
+           'TRUHE':[0,0,0,20,75,500],'HANDS':[0,0,0,20,75,500],'BURG':[0,0,10,50,500,1000],'ROSS':[0,0,10,50,500,1000],'RITTER':[0,0,10,100,1000,5000]},
+      scatterPay:[0,0,0,0,0,0],free:{count:10,byCount:[0,0,0,10,15,20],trigger:3,shields:true,desc:['10-20 FREISPIELE','SCHWERT WÄCHST']},counts:null},
+    // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
+    doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
+      wild:'BUCH',scatter:'BUCH',doppel:true,
+      pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,5,20,60],'A':[0,0,0,5,20,60],
+           'SKARAB':[0,0,5,30,100,250],'GREIF':[0,0,5,30,100,250],'MASKE':[0,0,5,50,250,500],'FORSCH':[0,0,10,100,500,1000]},
+      scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
     // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
     spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
       wild:null,scatter:null,pay:{},scatterPay:[0,0,0,0,0,0],free:null,counts:null}
@@ -77,7 +96,8 @@ var SlotEngine=(function(){
       return {base:base,n:n,p:p,cells:cells};}
     function add(li,r,path){if(!r.p)return;var dbl=1,i;
       if(G.wildDouble&&r.base!==G.wild){for(i=0;i<r.cells.length;i++)if(g[r.cells[i][0]][r.cells[i][1]]===G.wild){dbl=2;break;}}
-      var amt=r.p*betLine*dbl*mult;res.wins.push({line:li,sym:r.base,count:r.n,amount:amt,cells:r.cells});res.total+=amt;}
+      if(G.wildMult&&r.base!==G.wild){for(i=0;i<r.cells.length;i++)if(g[r.cells[i][0]][r.cells[i][1]]===G.wild)dbl*=2;}
+      var amt=Math.round(r.p*betLine*dbl*mult);res.wins.push({line:li,sym:r.base,count:r.n,amount:amt,cells:r.cells});res.total+=amt;}
     for(var li=0;li<lines;li++){var path=G.lines[li];
       var L=run(path,[0,1,2,3,4]);add(li,L,path);
       if(G.bothWays){var Rr=L.n<5?run(path,[4,3,2,1,0]):{n:0,p:0};add(li,Rr,path);
@@ -87,9 +107,10 @@ var SlotEngine=(function(){
     var sp=G.scatterPay[Math.min(5,sc.length)]||0;
     if(sp){res.scatter={count:sc.length,amount:sp*betLine*lines*mult,cells:sc};res.total+=sp*betLine*lines*mult;}
     if(G.free&&sc.length>=G.free.trigger)res.trigger=true;
-    if(special){var reels=[];for(c=0;c<5;c++){for(r=0;r<3;r++)if(g[r][c]===special){reels.push(c);break;}}
-      var ep=(G.pay[special]||[])[reels.length]||0;
-      if(ep){res.expand={sym:special,reels:reels,amount:ep*betLine*lines};res.total+=ep*betLine*lines;}}
+    if(special){var sl=Array.isArray(special)?special:[special],list=[];
+      sl.forEach(function(sym){var reels=[];for(var c2=0;c2<5;c2++){for(var r2=0;r2<3;r2++)if(g[r2][c2]===sym){reels.push(c2);break;}}
+        var ep=(G.pay[sym]||[])[reels.length]||0;if(ep){list.push({sym:sym,reels:reels,amount:Math.round(ep*betLine*lines)});res.total+=Math.round(ep*betLine*lines);}});
+      if(list.length){res.expand=list[0];res.expand.list=list;res.expand.amount=list.reduce(function(a,e){return a+e.amount;},0);}}
     return res;
   }
   // Zufallssymbole: verdeckte Felder irgendwo auf dem Raster (Walze, Reihe, Linie quer/schräg oder verstreut),
@@ -103,7 +124,22 @@ var SlotEngine=(function(){
       for(i=0;i<n3;i++)cells.push([all[i]/5|0,all[i]%5]);}
     var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
     cells.forEach(function(q){g[q[0]][q[1]]=sym;});return {cells:cells,sym:sym};}
+  // Tizona: wandernde Schwerter. ww = [{c,r,h}] aus der letzten Runde; sie ziehen eine Walze nach links,
+  // neue Schwerter kommen dazu. h = Höhe (1-3, in Freispielen durch Schilde). Rückgabe: neue Liste, Raster wird überschrieben.
+  function walk(G,g,ww,h){var out=[],i,c,r;
+    (ww||[]).forEach(function(w){if(w.c-1>=0)out.push({c:w.c-1,r:w.r,h:w.h});});
+    for(c=0;c<5;c++)for(r=0;r<3;r++)if(g[r][c]===G.wild&&!out.some(function(w){return w.c===c;}))out.push({c:c,r:r,h:h||1,fresh:true});
+    out.forEach(function(w){var hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(i=0;i<hh;i++)g[r0+i][w.c]=G.wild;});
+    return out;}
+  // Zentaurus Superspin: Gewinnpositionen bleiben, der Rest wird neu ausgespielt, solange der Gewinn steigt
+  function superspin(G,g,lines,betLine,rnd,fs){var S=stripsOf(G,fs),ev=evaluate(G,g,lines,betLine,null,fs),best=ev.total,steps=0,gg=g;
+    if(best<=0)return {grid:g,total:0,steps:0,ev:ev};
+    for(var n=0;n<12;n++){var held={};ev.wins.forEach(function(w){w.cells.forEach(function(q){held[q[0]+','+q[1]]=1;});});
+      var ng=[gg[0].slice(),gg[1].slice(),gg[2].slice()];
+      for(var c=0;c<5;c++)for(var r=0;r<3;r++)if(!held[r+','+c]){var st=S[c];ng[r][c]=st[Math.floor(rnd()*st.length)];}
+      var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
+    return {grid:gg,total:best,steps:steps,ev:ev};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin};
 })();
 if(typeof module!=='undefined')module.exports=SlotEngine;

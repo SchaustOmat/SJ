@@ -2,8 +2,8 @@
    SPIELOMAT V0.1 – das Automaten-System von Sinan's Keller
    Startbildschirm, Spielauswahl mit allen Spielen, MENÜ-Taste im Spiel.
    ========================================================= */
-const SPIELOMAT={ver:'V0.1',games:[['book','BUCH'],['fruit','SIEBEN'],['viking','HELM'],['mine','DIAMANT'],['reef','DELFIN'],['temple','FEUER'],['pharao','PHARAO'],['spitze','KLEE']]};
-const SM_TILE={x0:11,y0:44,w:70,h:78,gx:6,gy:8,cols:4};
+const SPIELOMAT={ver:'V0.1',games:[['book','BUCH'],['fruit','SIEBEN'],['viking','HELM'],['mine','DIAMANT'],['reef','DELFIN'],['temple','FEUER'],['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
+const SM_TILE={x0:11,y0:42,w:70,h:56,gx:6,gy:4,cols:4};
 function setMachineGame(m,id){
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
   if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
@@ -59,11 +59,11 @@ function smDraw(m,g){
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{
     const G=SlotEngine.GAMES[id],c=i%T.cols,r=i/T.cols|0,x=T.x0+c*(T.w+T.gx),y=T.y0+r*(T.h+T.gy),sel=i===m.menuIdx;
-    const TOPC={book:['#3a1a50','#1a0a04'],fruit:['#6a0a00','#2a0400'],viking:['#1a3a6a','#06142a'],mine:['#4a3a20','#101010'],reef:['#0a6a8a','#002a3a'],temple:['#8a2a00','#2a0a00'],pharao:['#8a1010','#2a0000'],spitze:['#1a4a1a','#04100a']}[id];
+    const TOPC={book:['#3a1a50','#1a0a04'],fruit:['#6a0a00','#2a0400'],viking:['#1a3a6a','#06142a'],mine:['#4a3a20','#101010'],reef:['#0a6a8a','#002a3a'],temple:['#8a2a00','#2a0a00'],pharao:['#8a1010','#2a0000'],spitze:['#1a4a1a','#04100a'],zent:['#1a4a8a','#0a1a2a'],tizona:['#5a3a1a','#1a0a04'],doppel:['#4a2a6a','#1a0a04']}[id];
     const tg=g.createLinearGradient(0,y,0,y+T.h);tg.addColorStop(0,TOPC[0]);tg.addColorStop(1,TOPC[1]);g.fillStyle=tg;g.fillRect(x,y,T.w,T.h);
-    g.drawImage(symCanvas(icon),x+T.w/2-20,y+6,40,40);
-    px(g,G.title.length>9?5:6);g.fillStyle='#ffd23a';g.fillText(G.title,x+T.w/2,y+56);
-    px(g,5);g.fillStyle='#e8e0cc';g.fillText(G.special?'3 LEITERN':G.power?'POWER SPINS':G.free?(G.id==='book'?'10 FS · BUCH':G.free.count+' FS'+(G.free.mult>1?' ×'+G.free.mult:'')):'5 LINIEN',x+T.w/2,y+70);
+    g.drawImage(symCanvas(icon),x+T.w/2-15,y+4,30,30);
+    px(g,G.title.length>9?5:6);g.fillStyle='#ffd23a';g.fillText(G.title,x+T.w/2,y+42);
+    px(g,5);g.fillStyle='#e8e0cc';g.fillText(G.special?'3 LEITERN':G.doppel?'EINZEL/DOPPEL':G.power?'POWER SPINS':G.free?(G.id==='book'?'10 FS · BUCH':G.free.count+' FS'+(G.free.mult>1?' ×'+G.free.mult:'')):'5 LINIEN',x+T.w/2,y+51);
     g.lineWidth=sel?3:1;g.strokeStyle=sel?(blink?'#ffffff':'#ffcf3a'):'#3a2c52';g.strokeRect(x+.5,y+.5,T.w-1,T.h-1);
   });
   px(g,6);g.fillStyle='#9b8fb3';g.fillText('ANTIPPEN ODER ◄ ► · NOCHMAL TIPPEN / SPIELEN = START',160,226);
