@@ -254,7 +254,8 @@ function enterFocus(type,m){
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
-  if(type==='slot'){if(RESV!==m||(m.state==='idle'&&!m.auto&&!m.win))smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
+  // nichts zurücksetzen: der Automat zeigt genau das, wo du zuletzt warst (Menü nur beim allerersten Einschalten)
+  if(type==='slot'){if(!m.booted&&RESV!==m)smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
   if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
