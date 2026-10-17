@@ -171,7 +171,7 @@ function btnModel(m){
   if(s==='splash'){SVKEYS.forEach(k=>B(k,k==='START'?'START':k==='MENU'?'MENÜ':k,'white',false));return o;}
   if(s==='poffer'){const can=pOffer(m);
     B('MENU','MENÜ','white',false);B('INFO','INFO','white',false);B('KARTE','RISIKO KARTE','red',false);B('LEITER','RISIKO LEITER','yellow',false);
-    B('LINIEN','ANNEHMEN','white',true);B('AUTO','− ERFOLG','amber',can.lo);B('EINSATZ','+ ERFOLG','amber',can.hi);B('START','POWER SPINS','green',can.n>0,true);return o;}
+    B('LINIEN','ANNEHMEN','white',true);B('EINSATZ','− ERFOLG','amber',can.lo);B('AUTO','+ ERFOLG','amber',can.hi);B('START','POWER SPINS','green',can.n>0,true);return o;}
   if(s==='power'&&m.power){SVKEYS.forEach(k=>B(k,k==='START'?'POWER':k==='MENU'?'MENÜ':k,k==='START'?'green':'white',false));return o;}
   if((s==='gamble'||s==='gambleNext')&&m.gamble){
     const live=s==='gamble'&&!m.gamble.busy;
@@ -215,7 +215,7 @@ function pressButton(m,key){
   if(s==='poffer'){
     if(key==='START')startPowerRun(m);
     else if(key==='LINIEN'){m.state='show';m.disp=m.win;m.msg='ANGENOMMEN · RISIKO ODER NEHMEN';SFX.click();m.dirty=true;updateButtons(m);}
-    else if(key==='AUTO'||key==='EINSATZ'){const c=pOffer(m);if(key==='AUTO'&&c.lo)m.pmult--;if(key==='EINSATZ'&&c.hi)m.pmult++;SFX.tick();m.dirty=true;updateButtons(m);}
+    else if(key==='AUTO'||key==='EINSATZ'){const c=pOffer(m);if(key==='EINSATZ'&&c.lo)m.pmult--;if(key==='AUTO'&&c.hi)m.pmult++;SFX.tick();m.dirty=true;updateButtons(m);}
     return;
   }
   if(key==='LINIEN'&&m.G.power&&(s==='show'||s==='count')&&m.win>=4*totalBet(m)){if(s==='count'){m.timer=0;m.disp=m.win;}openOffer(m);return;}
@@ -545,8 +545,8 @@ function offerTap(m,uv){
   const hit=(bx,by,bw,bh)=>x>=bx-3&&x<=bx+bw+3&&y>=by-3&&y<=by+bh+3;
   if(hit(ox+14,oy+64,92,22)){pressButton(m,'LINIEN');return true;}
   if(hit(ox+w-106,oy+64,92,22)){pressButton(m,'START');return true;}
-  if(hit(ox+18,oy+100,26,22)){pressButton(m,'AUTO');return true;}
-  if(hit(ox+w-44,oy+100,26,22)){pressButton(m,'EINSATZ');return true;}
+  if(hit(ox+18,oy+100,26,22)){pressButton(m,'EINSATZ');return true;}
+  if(hit(ox+w-44,oy+100,26,22)){pressButton(m,'AUTO');return true;}
   return false;
 }
 function drawPower(m,g){
