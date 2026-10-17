@@ -377,7 +377,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792232557";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792232723";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1231,11 +1231,14 @@ function startGamble(m,kind){
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
-const LADDER_UP=.31; // fair: bei hoch/runter um eine Stufe ist ab ~0,33 Dauerdrücken ein Gewinn-Trick
-const LADDER=[10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000,100000,200000,500000];
+// Leiter: feine Stufen (~x1,25). Chance pro Stufe so, dass Drücken fair ist (minimal unter 50/50 der Wertänderung):
+// p = (L[i]-L[i-1]) / (L[i+1]-L[i-1]) * 0.97  ->  meist 42-46 % hoch
+const LADDER=[10,13,16,20,25,30,40,50,60,80,100,130,160,200,250,300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,6000,8000,
+  10000,13000,16000,20000,25000,30000,40000,50000,60000,80000,100000,130000,160000,200000,250000,300000,400000,500000];
+const ladderUp=i=>i>=LADDER.length-1?0:(LADDER[i]-(i>0?LADDER[i-1]:0))/(LADDER[i+1]-(i>0?LADDER[i-1]:0))*.97;
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
-  gm.up=Math.random()<LADDER_UP;gm.last=gm.idx;
+  gm.up=Math.random()<ladderUp(gm.idx);gm.last=gm.idx;
   if(gm.up&&gm.idx>=LADDER.length-1){gm.busy=false;collect(m);return;}
   if(gm.up){gm.idx++;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();}
   else if(gm.idx>0){gm.idx--;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();}
