@@ -6,6 +6,7 @@ SV.mctx=SV.main.getContext('2d');SV.tctx=SV.top.getContext('2d');SV.mctx.imageSm
 SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
   b.addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});});
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
+$('#svCard').addEventListener('click',()=>{const m=SV.m;if(!m)return;if(RESV===m)cardOut(m);else cardIn(m);});
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
 function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.toggle('land',W>H);}

@@ -6,39 +6,47 @@
    ========================================================= */
 function allMachines(){return floors.flatMap(f=>f.machines);}
 function mpActivity(){
+  if(!focus&&RESV&&openId!=='pRoulette')return slotGx(RESV);
   if(!focus){if(openId==='pRoulette'){const t=$('#rRes').textContent;let sum=0;for(const k in R.bets)sum+=R.bets[k];return {g:'roulette',msg:cleanText(t,40),b:sum,sp:R.spinning?1:0,rid:R.rid,ri:R.ridx,rt:R.act?R.act.id:0,re:R.W.anim?Math.round(R.W.anim.t*10)/10:0};}return null;}
-  if(focus.type==='slot'){const m=focus.m;
+  if(focus.type==='slot')return slotGx(focus.m);
+  return mpActivity2();
+}
+function slotGx(m){{
     return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
-      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.reels,m.myst.sym]:0,
+      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.cells.map(q=>q[0]*5+q[1]),m.myst.sym]:0,
       ps:m.state,pm:m.pmult||0,
       lg:m.gamble&&m.gamble.kind==='ladder'?[m.gamble.idx,m.gamble.up?1:0,m.gamble.last===null?-1:m.gamble.last]:0,
       cd:m.gamble&&m.gamble.kind==='rb'?[m.gamble.card===null?-1:m.gamble.card].concat(m.history.slice(0,6)):0,
-      pw:m.power?{c:m.power.count,l:m.power.left,t:m.power.total,mu:m.power.mult,sp:m.power.spinning?1:0,su:m.power.sum,s:m.power.sets.map(S=>S.stops.slice()),my:m.power.sets.map(S=>S.myst?[S.myst.reels,S.myst.sym]:0)}:0};}
+      pw:m.power?{c:m.power.count,l:m.power.left,t:m.power.total,mu:m.power.mult,sp:m.power.spinning?1:0,su:m.power.sum,s:m.power.sets.map(S=>S.stops.slice()),my:m.power.sets.map(S=>S.myst?[S.myst.cells.map(q=>q[0]*5+q[1]),S.myst.sym]:0)}:0};}
+  }
+function mpActivity2(){
   if(focus.type==='poker'){const h=PK.human;return {g:'poker',c:h.hole.slice(0,2),bd:PK.board.slice(0,5),pot:potTotal(),msg:cleanText(PK.info||PK.msg||'',40),f:h.folded?1:0};}
   if(focus.type==='hilo'){return {g:'hilo',o:HL.open===null?-1:HL.open,p:HL.pick>=0&&HL.state!=='pick'?HL.hidden[HL.pick]:-1,pe:HL.pending,msg:cleanText(HL.msg||'',40)};}
   return null;
 }
+// Automat, in dem ein Mitspieler seine Karte stecken hat (Name oder '')
+function machineHeld(m){const i=allMachines().indexOf(m);let n='';MP.avatars.forEach(a=>{if(a.rs===i&&a.f===floorIdx)n=a.name||'Jemand';});return n;}
 const GNAME={slot:'AUTOMAT',poker:'POKER',hilo:'HÖHER/TIEFER',roulette:'ROULETTE'};
 function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
   return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
-    l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].map(x=>num(x,0,4)).slice(0,5),cleanText(gx.my[1],10)]:0,
+    l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].slice(0,15).map(x=>num(x,0,14)),cleanText(gx.my[1],10)]:0,
     ps:cleanText(gx.ps,12),pm:num(gx.pm,0,9),lg:Array.isArray(gx.lg)?[num(gx.lg[0],-1,99),gx.lg[1]?1:0,num(gx.lg[2],-1,99)]:0,
     cd:Array.isArray(gx.cd)?gx.cd.slice(0,7).map(x=>num(x,-1,51)):0,pw:cleanPw(gx.pw),
     c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9),rid:num(gx.rid,0,1e9),ri:num(gx.ri,0,36),rt:num(gx.rt,0,3),re:Number.isFinite(+gx.re)?clamp(+gx.re,0,WHEEL_DUR):0};
 }
 function cleanPw(p){if(!p||typeof p!=='object'||!Array.isArray(p.s))return 0;const n=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   return {c:n(p.c,0,9999),l:n(p.l,0,9999),t:n(p.t,0,9999),mu:n(p.mu,1,99),sp:p.sp?1:0,su:n(p.su,0,1e9),s:p.s.slice(0,4).map(a=>Array.isArray(a)?a.slice(0,5).map(x=>n(x,0,999)):[0,0,0,0,0]),
-    my:Array.isArray(p.my)?p.my.slice(0,4).map(q=>Array.isArray(q)&&Array.isArray(q[0])?[q[0].slice(0,5).map(x=>n(x,0,4)),cleanText(q[1],10)]:0):[]};}
+    my:Array.isArray(p.my)?p.my.slice(0,4).map(q=>Array.isArray(q)&&Array.isArray(q[0])?[q[0].slice(0,15).map(x=>n(x,0,14)),cleanText(q[1],10)]:0):[]};}
 // Zustand des Mitspieler-Automaten nachbauen: Gewinnlinien, Angebot, Power Spins, Leiter, Karte
 function remotePhase(m){
   const gx=m.rgx;if(!gx)return;const ps=gx.ps;
   if(gx.pw){const p=gx.pw,G=m.G;
     if(!m.power||m.power.count!==p.c||m.power.spinning!==!!p.sp){const old=m.power;
       const sets=p.s.map((st,si)=>{const stops=st.map((x,i)=>x%G.strips[i].length),grid=SlotEngine.grid(G,stops);const q=p.my&&p.my[si];
-        let myst=null;if(q&&G.syms.includes(q[1])){myst={reels:q[0],sym:q[1]};myst.reels.forEach(c=>{grid[0][c]=grid[1][c]=grid[2][c]=q[1];});}
+        let myst=null;if(q&&G.syms.includes(q[1])){myst={cells:q[0].map(v=>[v/5|0,v%5]),sym:q[1],open:true};myst.cells.forEach(([r,c])=>{grid[r][c]=q[1];});}
         const prev=old&&old.sets[si];const reels=stops.map((x,i)=>{const r=prev?prev.reels[i]:{pos:x,spin:false,stopAt:0,target:x};
           if(p.sp&&!(old&&old.count===p.c&&old.spinning)){r.spin=true;r.target=x;r.stopAt=now+.5+i*.11+si*.16;}else if(!p.sp){r.spin=false;r.pos=x;r.target=x;}return r;});
         return {stops,grid,myst,reels,ev:SlotEngine.evaluate(G,grid,m.lines,betLine(m)*p.mu)};});
@@ -73,8 +81,8 @@ function mirrorSlot(a,gx,credit){
     if(!same||m.state==='rspin'){m.stops=gx.st.map((s,i)=>s%m.G.strips[i].length);m.grid=SlotEngine.grid(m.G,m.stops);
       m.reels.forEach((r,i)=>{r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=true;});m.state='rstop';}
   }
-  m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{reels:gx.my[0],sym:gx.my[1],open:true}:null;
-  if(m.myst&&m.grid){m.grid=SlotEngine.grid(m.G,m.stops);m.myst.reels.forEach(c=>{m.grid[0][c]=m.grid[1][c]=m.grid[2][c]=m.myst.sym;});}
+  m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{cells:gx.my[0].map(v=>[v/5|0,v%5]),sym:gx.my[1],open:true}:null;
+  if(m.myst&&m.grid){m.grid=SlotEngine.grid(m.G,m.stops);m.myst.cells.forEach(([r,c])=>{m.grid[r][c]=m.myst.sym;});}
   m.rgx=gx;if(gx.sp){m.present=null;m.power=null;m.gamble=null;}else remotePhase(m);
   m.dirty=true;
 }

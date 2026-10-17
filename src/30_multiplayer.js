@@ -51,7 +51,7 @@ function mpSync(peers){
       if(MP.started)toast(name+' ist jetzt im Keller.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
-    mpApplyActivity(a,pr);bankPeer(a,pr);
+    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;mpApplyActivity(a,pr);bankPeer(a,pr);
     a.ms=Number.isInteger(pr.ms)&&pr.ms>=0&&pr.ms<6?pr.ms:-1;a.mt=typeof pr.mt==='string'&&TABLES[pr.mt]?pr.mt:'';
     const sitting=a.act==='slot'||a.act==='poker'||a.act==='hilo'||a.act==='mtable';avPose(a,sitting);
     a.n.anim=a.act==='slot'?'slot':sitting?'cards':'idle';
@@ -71,7 +71,7 @@ function mpLocalState(){
     else if(focus.type==='mtable'){const T=focus.m,si=mtMySeat(T);mt=T.id;if(si>=0){const p=mtSeatPos(T,si,T.R);x=p.x;z=p.z;y=Math.atan2(T.cx-p.x,T.cz-p.z);a='mtable';ms=si;}else{const p=mtSeatPos(T,0,T.R+.9);x=p.x;z=p.z;y=Math.PI;a='mwatch';}}
   } else if(openId==='pRoulette')a='roulette';
   else if(EL.phase==='moving')a='elev';
-  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,gx:mpActivity(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
+  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,gx:mpActivity(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
 }
 const EXTRA_SEATS={poker:[[-1.3,-1.95],[1.3,-1.95],[-1.95,-.05],[1.95,-.05]],hilo:[[-1.55,.1],[1.55,.1],[-1.3,-.65],[1.3,-.65]]};
 function seatAvatars(){
@@ -90,7 +90,7 @@ function mpStep(dt){
   seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
   if(MP.room&&MP.started){
     const s=mpLocalState();const m=MP.me;
-    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
+    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
     if((ch||MP.dirty)&&now-MP.lastSent>.1){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
       MP.room.presence(Object.assign({},m)).catch(()=>{});}
   }

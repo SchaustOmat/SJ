@@ -124,3 +124,29 @@ function lpSand(){
   g.strokeStyle='rgba(40,25,10,.5)';g.beginPath();g.moveTo(.5,0);g.lineTo(.5,192);g.moveTo(63.5,0);g.lineTo(63.5,192);g.stroke();
   return lpSandC=c;
 }
+
+// Abdeckung der Zufallssymbole: Lucky-Pharaoh-Logo auf Sternenhimmel im Goldrahmen
+let lpCoverC=null;
+function lpCover(){
+  if(lpCoverC)return lpCoverC;const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d');
+  let s=11;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;};
+  const bg=g.createRadialGradient(48,44,4,48,48,60);bg.addColorStop(0,'#1c2450');bg.addColorStop(1,'#04050c');g.fillStyle=bg;g.fillRect(0,0,96,96);
+  for(let i=0;i<40;i++){g.fillStyle='rgba(255,'+(200+r()*55|0)+',150,'+(.3+r()*.7).toFixed(2)+')';const z=r()<.15?2:1;g.fillRect(r()*96|0,r()*96|0,z,z);}
+  // goldene Flügel links und rechts
+  [-1,1].forEach(d=>{g.save();g.translate(48,50);g.scale(d,1);
+    for(let i=0;i<6;i++){const a=-.15-i*.17,len=40-i*3;g.fillStyle=i%2?'#c88a18':'#f0c040';g.strokeStyle='#5a3000';g.lineWidth=.8;
+      g.beginPath();g.moveTo(8,-6+i*2);g.quadraticCurveTo(8+len*.6,-6+i*2+Math.sin(a)*len*.9,8+len,-2+i*5);g.quadraticCurveTo(8+len*.5,4+i*3,8,6+i*2);g.closePath();g.fill();g.stroke();}
+    g.restore();});
+  g.globalAlpha=.55;g.strokeStyle='#c88a18';g.lineWidth=1;g.beginPath();g.arc(48,50,30,0,TAU);g.stroke();g.globalAlpha=1;
+  const txt=(t,y,sz)=>{g.font='italic bold '+sz+'px '+LP_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
+    g.lineWidth=5;g.strokeStyle='#2a1000';g.strokeText(t,48,y);const tg=g.createLinearGradient(0,y-sz/2,0,y+sz/2);tg.addColorStop(0,'#fff6c0');tg.addColorStop(.5,'#ffc830');tg.addColorStop(1,'#a05a00');g.fillStyle=tg;g.fillText(t,48,y);};
+  txt('Lucky',36,24);txt('Pharaoh',60,21);
+  g.font='italic bold 21px '+LP_SERIF;const full=g.measureText('Pharaoh').width,pre=g.measureText('Phara').width,ow=g.measureText('o').width;
+  const gx=48-full/2+pre+ow/2,gy=61,gr=g.createRadialGradient(gx-1.5,gy-1.5,.5,gx,gy,5);gr.addColorStop(0,'#d8ffb0');gr.addColorStop(.5,'#3ad818');gr.addColorStop(1,'#0a5a08');
+  g.fillStyle=gr;g.beginPath();g.arc(gx,gy,4.6,0,TAU);g.fill();g.strokeStyle='#ffd040';g.lineWidth=1;g.stroke();
+  [[18,22],[78,24],[26,80],[72,78],[48,14]].forEach(([x,y])=>lpSpark(g,x,y,2.2));
+  // Rahmen
+  const fr=g.createLinearGradient(0,0,96,96);fr.addColorStop(0,'#ffe080');fr.addColorStop(.5,'#ff9a10');fr.addColorStop(1,'#c86000');g.strokeStyle=fr;g.lineWidth=6;g.strokeRect(3,3,90,90);
+  g.strokeStyle='rgba(40,10,0,.9)';g.lineWidth=1.5;g.strokeRect(6.5,6.5,83,83);
+  return lpCoverC=c;
+}

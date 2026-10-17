@@ -254,7 +254,7 @@ function enterFocus(type,m){
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
-  if(type==='slot'){smOpen(m);m.dirty=true;}
+  if(type==='slot'){if(RESV!==m||(m.state==='idle'&&!m.auto&&!m.win))smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
   if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
@@ -262,7 +262,9 @@ function enterFocus(type,m){
 function leaveFocus(){
   if(!focus)return;
   const f=focus;
-  if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
+  if(f.type==='slot'&&f.m===RESV){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
+    toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}
+  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
@@ -359,7 +361,8 @@ function interact(act){
   walk=null;marker.visible=false;
   switch(act.type){
     case 'roulette':openRoulette(act);break;
-    case 'machine':if(act.m.remote){toast(act.m.remote.name+' spielt hier gerade.');SFX.click();}else if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
+    case 'machine':if(act.m.remote){toast(act.m.remote.name+' spielt hier gerade.');SFX.click();}
+      else if(machineHeld(act.m)){toast(machineHeld(act.m)+' hat hier eine Karte stecken.');SFX.click();}else if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
     case 'poker':enterFocus('poker');break;
     case 'hilo':enterFocus('hilo');break;
     case 'mtable':enterFocus('mtable',act.T);break;

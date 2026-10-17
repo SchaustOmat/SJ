@@ -51,8 +51,8 @@ var SlotEngine=(function(){
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
-      // Verdeckte Walzen: manchmal werden 1-3 Walzen verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/45,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
+      // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
+      mystery:{chance:1/58,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
       pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
            'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
@@ -94,13 +94,17 @@ var SlotEngine=(function(){
       if(ep){res.expand={sym:special,reels:reels,amount:ep*betLine*lines};res.total+=ep*betLine*lines;}}
     return res;
   }
-  // Verdeckte Walzen: ändert das Raster direkt, gibt {reels,sym} oder null zurück
+  // Zufallssymbole: verdeckte Felder irgendwo auf dem Raster (Walze, Reihe, Linie quer/schräg oder verstreut),
+  // die alle dasselbe Symbol aufdecken. Ändert das Raster direkt, gibt {cells:[[r,c]...],sym} oder null zurück.
   function mystery(G,g,rnd,fs){var M=G.mystery;if(!M||fs||rnd()>=M.chance)return null;
-    var r=rnd(),k=1,acc=0,i;for(i=0;i<M.k.length;i++){acc+=M.k[i];if(r<acc){k=i+1;break;}}
-    var cols=[0,1,2,3,4];for(i=4;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=cols[i];cols[i]=cols[j];cols[j]=t;}
-    cols=cols.slice(0,k).sort();
+    var cells=[],i,r=rnd(),pick;
+    if(r<M.shape[0]){var c=Math.floor(rnd()*5);for(i=0;i<3;i++)cells.push([i,c]);}
+    else if(r<M.shape[0]+M.shape[1]){var row=Math.floor(rnd()*3),n=3+Math.floor(rnd()*3),c0=Math.floor(rnd()*(6-n));for(i=0;i<n;i++)cells.push([row,c0+i]);}
+    else if(r<M.shape[0]+M.shape[1]+M.shape[2]){var L=G.lines[Math.floor(rnd()*G.lines.length)],n2=3+Math.floor(rnd()*3),s0=Math.floor(rnd()*(6-n2));for(i=0;i<n2;i++)cells.push([L[s0+i],s0+i]);}
+    else{var n3=3+Math.floor(rnd()*4),all=[];for(i=0;i<15;i++)all.push(i);for(i=14;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=all[i];all[i]=all[j];all[j]=t;}
+      for(i=0;i<n3;i++)cells.push([all[i]/5|0,all[i]%5]);}
     var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
-    cols.forEach(function(c){g[0][c]=g[1][c]=g[2][c]=sym;});return {reels:cols,sym:sym};}
+    cells.forEach(function(q){g[q[0]][q[1]]=sym;});return {cells:cells,sym:sym};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
   return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery};
 })();
