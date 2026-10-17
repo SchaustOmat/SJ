@@ -2,24 +2,26 @@
    SPIELAUTOMATEN  (Grabkammer = Buch-Spiel, Glutofen = Früchte)
    ========================================================= */
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
+// Feinabstimmung der Walzen pro Spiel (Quote ~97 % bei glatten Gewinnbeträgen, per Simulation)
+const ADJ=(rows,d)=>rows.map(r=>r.map((v,i)=>Math.max(1,v+(d[i]||0))));
 const BK=['10','J','Q','K','A','ANKH','SKARAB','PYRAMIDE','MASKE','BUCH'];
 const FK=['KIRSCHE','ZITRONE','ORANGE','PFLAUME','TRAUBE','MELONE','SIEBEN','STERN'];
-SlotEngine.setup('book',[R_([6,6,5,5,4,3,2,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,2],BK),R_([8,7,7,6,6,3,3,2,1,1],BK),R_([8,8,7,7,6,3,3,2,1,1],BK)],101,null,1.045);
-SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,2],FK)],202,null,1.035);
+SlotEngine.setup('book',ADJ([[6,6,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[8,8,7,7,6,3,3,2,1,1]],[-1]).map(a=>R_(a,BK)),101);
+SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,2]],[-1]).map(a=>R_(a,FK)),202);
 (function(){
   const BASE=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,2,1],[7,7,6,6,5,3,3,2,2,2],[8,7,7,6,6,3,3,2,2,1],[8,8,7,7,6,3,3,2,1,1]];
   const MINEFS=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,5,1],[7,7,6,6,5,3,3,2,5,2],[8,7,7,6,6,3,3,2,5,1],[8,8,7,7,6,3,3,2,1,1]];
   const K={viking:['10','J','Q','K','A','AXT','SCHILD','DRACHE','HELM','RUNE'],mine:['10','J','Q','K','A','LATERNE','HACKE','NUGGET','DIAMANT','LORE'],
     reef:['10','J','Q','K','A','FISCH','SEESTERN','PERLE','DELFIN','MUSCHEL'],temple:['10','J','Q','K','A','KELCH','SCHLANGE','STATUE','FEUER','TEMPEL']};
   const mk=(id,rows)=>rows.map(a=>R_(a,K[id]));
-  SlotEngine.setup('viking',mk('viking',BASE),301,null,1.382);
-  SlotEngine.setup('mine',mk('mine',BASE),302,mk('mine',MINEFS),1.503);
-  SlotEngine.setup('reef',mk('reef',BASE),303,null,.832);
-  SlotEngine.setup('temple',mk('temple',BASE),304,null,1.392);
+  SlotEngine.setup('viking',mk('viking',ADJ(BASE,[1,1,0,0,-1])),301);
+  SlotEngine.setup('mine',mk('mine',ADJ(BASE,[1,0,0,1])),302,mk('mine',ADJ(MINEFS,[1,0,0,1])));
+  SlotEngine.setup('reef',mk('reef',ADJ(BASE,[-1])),303);
+  SlotEngine.setup('temple',mk('temple',ADJ(BASE,[1,1,0,0,-1])),304);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[9,9,9,8,8,4,4,3,2,1]].map(a=>R_(a,PH)),401,null,.70);
+  SlotEngine.setup('pharao',[[7,7,7,6,6,4,4,3,2,1],[8,8,7,7,6,4,4,3,2,1],[10,10,9,8,7,4,4,3,2,1],[8,8,7,7,6,4,4,3,2,1],[7,7,7,6,6,4,4,3,2,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'97',fs:'187',hit:'2,7'},fruit:{rtp:'97',fs:null,hit:'5,2'},viking:{rtp:'97',fs:'203',hit:'3,3'},mine:{rtp:'97',fs:'201',hit:'3,3'},reef:{rtp:'97',fs:'203',hit:'3,3'},temple:{rtp:'97',fs:'204',hit:'3,4'},pharao:{rtp:'97',fs:null,hit:'2,1',power:'21'}};
+const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'2,2',power:'16'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -581,17 +583,19 @@ function startGamble(m,kind){
 // Leiter: beginnt beim Einsatz, Stufen in Vielfachen davon (~x1,4).
 // Hoch = eine Stufe, daneben = zwei Stufen runter (unter der untersten = 0).
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
-// ab dem 40-fachen Einsatz beginnt die AUSSPIELUNG: Stufen verdoppeln sich, jeder Druck läuft mit didididi
-const LADM=[1,1.5,2,3,4,6,8,12,16,24,40,80,160,320,640,1280,2560,5120],AUS_IDX=LADM.indexOf(40);
+// Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
+// Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
+const LAD_REAL=[15,30,60,120,240,400,800,1200,1600,2000,3200,5400,14000];
+const ausIdx=m=>ladOf(m).indexOf(totalBet(m)*10);
 const LADC={};
-function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[];LADM.forEach(x=>{L.push(Math.max(L.length?L[L.length-1]+1:1,Math.round(x*tb)));});return LADC[tb]=L;}
+function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[tb];LAD_REAL.forEach(x=>{const v=Math.round(x*tb/40);if(v>tb&&v>L[L.length-1])L.push(v);});return LADC[tb]=L;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const D=i>=2?L[i-2]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<ladderUp(ladOf(m),gm.idx);gm.last=gm.idx;
   if(gm.up&&gm.idx>=ladOf(m).length-1){gm.busy=false;collect(m);return;}
-  if(gm.idx>=AUS_IDX-1){ // Ausspielung: Lichter rasen erst über die Leiter, dann das Ergebnis
-    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.idx>=AUS_IDX?'AUSSPIELUNG ...':'GEHT ES IN DIE AUSSPIELUNG?';
+  if(gm.idx>=ausIdx(m)-1){ // Ausspielung: Lichter rasen erst über die Leiter, dann das Ergebnis
+    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.idx>=ausIdx(m)?'AUSSPIELUNG ...':'GEHT ES IN DIE AUSSPIELUNG?';
     m.state='gambleNext';m.timer=2.0;m.dirty=true;updateButtons(m);return;}
   ladderResult(m);
 }
@@ -601,9 +605,9 @@ function ladderResult(m){
     fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
   else if(gm.idx>=2){gm.idx-=2;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
   else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
-  if(gm.up&&gm.idx>=AUS_IDX&&!gm.ausDone){gm.ausDone=true;SFX.ausFan();m.msg='AUSSPIELUNG! '+fmt(m.win);fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);
+  if(gm.up&&gm.idx>=ausIdx(m)&&!gm.ausDone){gm.ausDone=true;SFX.ausFan();m.msg='AUSSPIELUNG! '+fmt(m.win);fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);
     fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});}
-  m.state='gambleNext';m.timer=gm.idx<0?1.6:gm.ausDone&&gm.up&&gm.idx===AUS_IDX?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
+  m.state='gambleNext';m.timer=gm.idx<0?1.6:gm.ausDone&&gm.up&&gm.idx===ausIdx(m)?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
@@ -646,11 +650,11 @@ function drawLadder(m,g,gm){
     if(run){lit=k===rk;col='red';}
     else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
     else{if(k===cur+1&&ph)lit=true;if(k===cur-2&&!ph)lit=true;}
-    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col,k>=AUS_IDX);
+    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col,k>=ausIdx(m));
     if(!result&&k===cur){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(x-2.5,y-2.5,w+5,rh+4);}}
   const zl=!run&&((result&&cur<0)||(!result&&cur<2&&!ph));
-  if(cur>=AUS_IDX-2){px(g,7);g.textAlign='left';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#ff5a3a':'#ffd23a';
-    g.fillText(cur>=AUS_IDX?'AUSSPIELUNG!':'AUSSPIELUNG AB '+fmt(ladOf(m)[AUS_IDX]),26,RY+138+dy*0);}
+  if(cur>=ausIdx(m)-2){px(g,7);g.textAlign='left';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#ff5a3a':'#ffd23a';
+    g.fillText(cur>=ausIdx(m)?'AUSSPIELUNG!':'AUSSPIELUNG AB '+fmt(ladOf(m)[ausIdx(m)]),26,RY+138+dy*0);}
   goldRung(g,x+12,yb-rh,w-24,rh-2,zl,'0',zl&&result?'red':'y');
   // RISIKO+ Schriftzug und Erfolg links
   g.textAlign='left';g.textBaseline='middle';px(g,15);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',22,RY+20+dy);

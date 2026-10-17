@@ -28,7 +28,8 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 ## Regeln vom Nutzer
 - Startchips 20.000, Barkeeper gibt 20.000 unter 2.000 Chips (nicht wenn mind. 2.000 auf dem Konto).
 - Geld darf nie verloren gehen/zurückgesetzt werden.
-- Leiter: unterste Stufe = Einsatz, Stufen Vielfache vom Einsatz, hoch eine Stufe / sonst zwei runter, Chance ~50–74 % (fair, 2 % Vorteil); ab 40× Einsatz AUSSPIELUNG mit Verdoppeln und didididi (Chance dort ~40 %), spammbar, ruhig blinkend. Nicht automatisch nach Gewinn öffnen, nur per Knopf.
+- Leiter: Werte wie echtes Merkur-Gerät (bei Level 40: 15,30,60,120,240,400,800,1200,1600,2000,3200,5400,14000), auf Einsatz umgerechnet, unterste Stufe = Einsatz; hoch eine Stufe / sonst zwei runter, fair (2 % Vorteil); ab 10× Einsatz AUSSPIELUNG mit didididi. Spammbar, nicht automatisch nach Gewinn öffnen.
 - Automaten: beim Hinsetzen Portemonnaie/Karte stecken (ENTSPERRT), Karte hält den Automaten (Aufstehen in jedem Zustand).
-- Quoten aller Automaten 97 %, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' <scale> 2000000`, andere Spiele mit tools/slot_sim.js).
+- Gewinne nur glatte Beträge (Pharao = echter Merkur-Spielplan), Einsatzstufen wie Merkur-Level (10, 20, 40, 60, 80, 100, 200 …). Quoten ~96–98 % über die Walzenbelegung, nicht über krumme Gewinne, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' <scale> 2000000`, andere Spiele mit tools/slot_sim.js).
 - Text darf nie aus dem Bild laufen, Hoch- und Querformat müssen gehen.
+- Keine Dateien/Grafiken/Sounds aus echten Merkur-Apps übernehmen (Urheberrecht, Seite ist öffentlich). Zahlen/Regeln aus Spielplänen sind ok, Optik selbst nachzeichnen.

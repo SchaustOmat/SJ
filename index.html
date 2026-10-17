@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792245045";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792245571";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -527,48 +527,43 @@ var SlotEngine=(function(){
   var SCAT_TMP=null;
   var LINES10=[[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],[1,2,2,2,1],[1,0,0,0,1],[2,2,1,0,0],[0,0,1,2,2],[2,1,1,1,0]];
   var GAMES={
-    book:{id:'book',title:'GRABKAMMER',sub:'DAS BUCH DER TOTEN',lines:LINES10,lineOpts:[1,3,5,7,9,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    book:{id:'book',title:'GRABKAMMER',sub:'DAS BUCH DER TOTEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'BUCH',scatter:'BUCH',low:['10','J','Q','K','A'],
-      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],
-           'ANKH':[0,0,5,30,100,750],'SKARAB':[0,0,5,30,100,750],'PYRAMIDE':[0,0,5,40,400,2000],'MASKE':[0,0,10,100,1000,5000]},
+      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],'ANKH':[0,0,5,30,100,800],'SKARAB':[0,0,5,30,100,800],'PYRAMIDE':[0,0,5,40,400,2000],'MASKE':[0,0,10,100,1000,5000]},
       scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true},
       counts:null},
-    fruit:{id:'fruit',title:'GLUTOFEN',sub:'HEISSE FRÜCHTE',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[1,2,4,10,20,50,100,200,500,1000,2000],
+    fruit:{id:'fruit',title:'GLUTOFEN',sub:'HEISSE FRÜCHTE',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
       wild:null,scatter:'STERN',
-      pay:{'KIRSCHE':[0,0,5,20,50,200],'ZITRONE':[0,0,0,20,50,200],'ORANGE':[0,0,0,20,50,200],'PFLAUME':[0,0,0,20,50,200],
-           'TRAUBE':[0,0,0,50,125,500],'MELONE':[0,0,0,50,125,500],'SIEBEN':[0,0,0,100,1000,5000]},
+      pay:{'KIRSCHE':[0,0,5,20,50,200],'ZITRONE':[0,0,0,20,50,200],'ORANGE':[0,0,0,20,50,200],'PFLAUME':[0,0,0,20,50,200],'TRAUBE':[0,0,0,50,120,500],'MELONE':[0,0,0,50,120,500],'SIEBEN':[0,0,0,100,1000,5000]},
       scatterPay:[0,0,0,2,10,50],free:null,counts:null},
     // Freispiele: Gewinne x3
-    viking:{id:'viking',title:'WIKINGERGOLD',sub:'DER SCHATZ IM NORDEN',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    viking:{id:'viking',title:'WIKINGERGOLD',sub:'DER SCHATZ IM NORDEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'HELM',scatter:'RUNE',
-      pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
-           'AXT':[0,0,0,20,80,300],'SCHILD':[0,0,0,25,100,400],'DRACHE':[0,0,5,40,200,1000],'HELM':[0,0,10,100,500,2500]},
+      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'AXT':[0,0,0,30,120,400],'SCHILD':[0,0,0,30,150,600],'DRACHE':[0,0,6,60,300,1500],'HELM':[0,0,15,150,750,3000]},
       scatterPay:[0,0,0,3,15,100],free:{count:12,trigger:3,mult:3,desc:['12 FREISPIELE','ALLE GEWINNE ×3']},counts:null},
     // Freispiele: Walzen voller Joker
-    mine:{id:'mine',title:'DIAMANTMINE',sub:'GRABEN BIS ZUM GLÜCK',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    mine:{id:'mine',title:'DIAMANTMINE',sub:'GRABEN BIS ZUM GLÜCK',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'DIAMANT',scatter:'LORE',
-      pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
-           'LATERNE':[0,0,0,20,80,300],'HACKE':[0,0,0,25,100,400],'NUGGET':[0,0,5,40,200,1000],'DIAMANT':[0,0,10,100,500,2500]},
+      pay:{'10':[0,0,0,8,30,120],'J':[0,0,0,8,30,120],'Q':[0,0,0,8,40,150],'K':[0,0,0,15,50,200],'A':[0,0,0,15,50,200],'LATERNE':[0,0,0,30,120,500],'HACKE':[0,0,0,40,150,600],'NUGGET':[0,0,8,60,300,1500],'DIAMANT':[0,0,15,150,750,4000]},
       scatterPay:[0,0,0,0,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
     // Joker verdoppelt jeden Gewinn, Freispiele x3
-    reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'DELFIN',scatter:'MUSCHEL',wildDouble:true,
-      pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
-           'FISCH':[0,0,0,20,75,250],'SEESTERN':[0,0,0,25,100,400],'PERLE':[0,0,5,40,200,1000],'DELFIN':[0,0,10,150,750,4000]},
+      pay:{'10':[0,0,0,4,15,60],'J':[0,0,0,4,15,60],'Q':[0,0,0,4,20,80],'K':[0,0,0,8,25,100],'A':[0,0,0,8,25,100],'FISCH':[0,0,0,15,60,200],'SEESTERN':[0,0,0,20,80,300],'PERLE':[0,0,4,30,150,800],'DELFIN':[0,0,8,120,600,3000]},
       scatterPay:[0,0,0,2,10,100],free:{count:15,trigger:3,mult:3,desc:['15 FREISPIELE ×3','JOKER = DOPPELT']},counts:null},
     // Freispiele: Joker breiten sich über die ganze Walze aus
-    temple:{id:'temple',title:'TEMPELFEUER',sub:'DIE FLAMME DER GÖTTER',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    temple:{id:'temple',title:'TEMPELFEUER',sub:'DIE FLAMME DER GÖTTER',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'FEUER',scatter:'TEMPEL',
-      pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
-           'KELCH':[0,0,0,20,80,300],'SCHLANGE':[0,0,0,25,100,400],'STATUE':[0,0,5,40,200,1000],'FEUER':[0,0,10,100,500,2500]},
+      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'KELCH':[0,0,0,30,120,400],'SCHLANGE':[0,0,0,30,150,600],'STATUE':[0,0,6,60,300,1500],'FEUER':[0,0,15,150,750,3000]},
       scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,wildExpand:true,desc:['10 FREISPIELE','JOKER FÜLLT WALZE']},counts:null},
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
-    pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
+    pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/58,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
-      pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
-           'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
+      mystery:{chance:1/54,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
+      // Gewinnplan wie der echte Merkur-Spielplan (bei Level 40: Diamant 2/10/100 €, Rubin 1,40/4/8 € …), hier pro Linie bei Einsatz 1 je Linie
+      pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,10,25,100],'A':[0,0,0,10,25,100],
+           'SMARAGD':[0,0,0,25,50,150],'SAPHIR':[0,0,0,25,50,150],'RUBIN':[0,0,0,35,100,200],'BRILLANT':[0,0,0,50,250,2500]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
   };
   function setup(id,counts,seed,fsCounts,payScale){var G=GAMES[id];
@@ -1164,24 +1159,26 @@ const UFX=(function(){
    SPIELAUTOMATEN  (Grabkammer = Buch-Spiel, Glutofen = Früchte)
    ========================================================= */
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
+// Feinabstimmung der Walzen pro Spiel (Quote ~97 % bei glatten Gewinnbeträgen, per Simulation)
+const ADJ=(rows,d)=>rows.map(r=>r.map((v,i)=>Math.max(1,v+(d[i]||0))));
 const BK=['10','J','Q','K','A','ANKH','SKARAB','PYRAMIDE','MASKE','BUCH'];
 const FK=['KIRSCHE','ZITRONE','ORANGE','PFLAUME','TRAUBE','MELONE','SIEBEN','STERN'];
-SlotEngine.setup('book',[R_([6,6,5,5,4,3,2,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,2],BK),R_([8,7,7,6,6,3,3,2,1,1],BK),R_([8,8,7,7,6,3,3,2,1,1],BK)],101,null,1.045);
-SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,2],FK)],202,null,1.035);
+SlotEngine.setup('book',ADJ([[6,6,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[8,8,7,7,6,3,3,2,1,1]],[-1]).map(a=>R_(a,BK)),101);
+SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,2]],[-1]).map(a=>R_(a,FK)),202);
 (function(){
   const BASE=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,2,1],[7,7,6,6,5,3,3,2,2,2],[8,7,7,6,6,3,3,2,2,1],[8,8,7,7,6,3,3,2,1,1]];
   const MINEFS=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,5,1],[7,7,6,6,5,3,3,2,5,2],[8,7,7,6,6,3,3,2,5,1],[8,8,7,7,6,3,3,2,1,1]];
   const K={viking:['10','J','Q','K','A','AXT','SCHILD','DRACHE','HELM','RUNE'],mine:['10','J','Q','K','A','LATERNE','HACKE','NUGGET','DIAMANT','LORE'],
     reef:['10','J','Q','K','A','FISCH','SEESTERN','PERLE','DELFIN','MUSCHEL'],temple:['10','J','Q','K','A','KELCH','SCHLANGE','STATUE','FEUER','TEMPEL']};
   const mk=(id,rows)=>rows.map(a=>R_(a,K[id]));
-  SlotEngine.setup('viking',mk('viking',BASE),301,null,1.382);
-  SlotEngine.setup('mine',mk('mine',BASE),302,mk('mine',MINEFS),1.503);
-  SlotEngine.setup('reef',mk('reef',BASE),303,null,.832);
-  SlotEngine.setup('temple',mk('temple',BASE),304,null,1.392);
+  SlotEngine.setup('viking',mk('viking',ADJ(BASE,[1,1,0,0,-1])),301);
+  SlotEngine.setup('mine',mk('mine',ADJ(BASE,[1,0,0,1])),302,mk('mine',ADJ(MINEFS,[1,0,0,1])));
+  SlotEngine.setup('reef',mk('reef',ADJ(BASE,[-1])),303);
+  SlotEngine.setup('temple',mk('temple',ADJ(BASE,[1,1,0,0,-1])),304);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[9,9,9,8,8,4,4,3,2,1]].map(a=>R_(a,PH)),401,null,.70);
+  SlotEngine.setup('pharao',[[7,7,7,6,6,4,4,3,2,1],[8,8,7,7,6,4,4,3,2,1],[10,10,9,8,7,4,4,3,2,1],[8,8,7,7,6,4,4,3,2,1],[7,7,7,6,6,4,4,3,2,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'97',fs:'187',hit:'2,7'},fruit:{rtp:'97',fs:null,hit:'5,2'},viking:{rtp:'97',fs:'203',hit:'3,3'},mine:{rtp:'97',fs:'201',hit:'3,3'},reef:{rtp:'97',fs:'203',hit:'3,3'},temple:{rtp:'97',fs:'204',hit:'3,4'},pharao:{rtp:'97',fs:null,hit:'2,1',power:'21'}};
+const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'2,2',power:'16'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -1743,17 +1740,19 @@ function startGamble(m,kind){
 // Leiter: beginnt beim Einsatz, Stufen in Vielfachen davon (~x1,4).
 // Hoch = eine Stufe, daneben = zwei Stufen runter (unter der untersten = 0).
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
-// ab dem 40-fachen Einsatz beginnt die AUSSPIELUNG: Stufen verdoppeln sich, jeder Druck läuft mit didididi
-const LADM=[1,1.5,2,3,4,6,8,12,16,24,40,80,160,320,640,1280,2560,5120],AUS_IDX=LADM.indexOf(40);
+// Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
+// Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
+const LAD_REAL=[15,30,60,120,240,400,800,1200,1600,2000,3200,5400,14000];
+const ausIdx=m=>ladOf(m).indexOf(totalBet(m)*10);
 const LADC={};
-function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[];LADM.forEach(x=>{L.push(Math.max(L.length?L[L.length-1]+1:1,Math.round(x*tb)));});return LADC[tb]=L;}
+function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[tb];LAD_REAL.forEach(x=>{const v=Math.round(x*tb/40);if(v>tb&&v>L[L.length-1])L.push(v);});return LADC[tb]=L;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const D=i>=2?L[i-2]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<ladderUp(ladOf(m),gm.idx);gm.last=gm.idx;
   if(gm.up&&gm.idx>=ladOf(m).length-1){gm.busy=false;collect(m);return;}
-  if(gm.idx>=AUS_IDX-1){ // Ausspielung: Lichter rasen erst über die Leiter, dann das Ergebnis
-    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.idx>=AUS_IDX?'AUSSPIELUNG ...':'GEHT ES IN DIE AUSSPIELUNG?';
+  if(gm.idx>=ausIdx(m)-1){ // Ausspielung: Lichter rasen erst über die Leiter, dann das Ergebnis
+    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.idx>=ausIdx(m)?'AUSSPIELUNG ...':'GEHT ES IN DIE AUSSPIELUNG?';
     m.state='gambleNext';m.timer=2.0;m.dirty=true;updateButtons(m);return;}
   ladderResult(m);
 }
@@ -1763,9 +1762,9 @@ function ladderResult(m){
     fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
   else if(gm.idx>=2){gm.idx-=2;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
   else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
-  if(gm.up&&gm.idx>=AUS_IDX&&!gm.ausDone){gm.ausDone=true;SFX.ausFan();m.msg='AUSSPIELUNG! '+fmt(m.win);fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);
+  if(gm.up&&gm.idx>=ausIdx(m)&&!gm.ausDone){gm.ausDone=true;SFX.ausFan();m.msg='AUSSPIELUNG! '+fmt(m.win);fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);
     fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});}
-  m.state='gambleNext';m.timer=gm.idx<0?1.6:gm.ausDone&&gm.up&&gm.idx===AUS_IDX?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
+  m.state='gambleNext';m.timer=gm.idx<0?1.6:gm.ausDone&&gm.up&&gm.idx===ausIdx(m)?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
@@ -1808,11 +1807,11 @@ function drawLadder(m,g,gm){
     if(run){lit=k===rk;col='red';}
     else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
     else{if(k===cur+1&&ph)lit=true;if(k===cur-2&&!ph)lit=true;}
-    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col,k>=AUS_IDX);
+    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col,k>=ausIdx(m));
     if(!result&&k===cur){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(x-2.5,y-2.5,w+5,rh+4);}}
   const zl=!run&&((result&&cur<0)||(!result&&cur<2&&!ph));
-  if(cur>=AUS_IDX-2){px(g,7);g.textAlign='left';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#ff5a3a':'#ffd23a';
-    g.fillText(cur>=AUS_IDX?'AUSSPIELUNG!':'AUSSPIELUNG AB '+fmt(ladOf(m)[AUS_IDX]),26,RY+138+dy*0);}
+  if(cur>=ausIdx(m)-2){px(g,7);g.textAlign='left';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#ff5a3a':'#ffd23a';
+    g.fillText(cur>=ausIdx(m)?'AUSSPIELUNG!':'AUSSPIELUNG AB '+fmt(ladOf(m)[ausIdx(m)]),26,RY+138+dy*0);}
   goldRung(g,x+12,yb-rh,w-24,rh-2,zl,'0',zl&&result?'red':'y');
   // RISIKO+ Schriftzug und Erfolg links
   g.textAlign='left';g.textBaseline='middle';px(g,15);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',22,RY+20+dy);
