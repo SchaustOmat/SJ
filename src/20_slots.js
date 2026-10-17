@@ -175,7 +175,8 @@ function btnModel(m){
   B('AUTO',m.auto?'STOP':'AUTO','blue',idle||show||m.auto,m.auto);
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
   B('KARTE','RISIKO KARTE','red',canRisk,canRisk);
-  B('LEITER','RISIKO LEITER','yellow',canRisk,canRisk);
+  const canLadder=canRisk&&m.win>=LADDER[0];
+  B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
   B('START',s==='spin'?'STOP':show?'NEHMEN':'START','green',idle||show||(s==='spin'&&!m.fs));
   return o;
 }
@@ -344,7 +345,7 @@ function startGamble(m,kind){
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
 const LADDER_UP=.31; // fair: bei hoch/runter um eine Stufe ist ab ~0,33 Dauerdrücken ein Gewinn-Trick
-const LADDER=[1,2,4,6,10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000];
+const LADDER=[10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000];
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<LADDER_UP;gm.last=gm.idx;
