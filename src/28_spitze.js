@@ -43,7 +43,7 @@ function spOf(m){return m.sp||(m.sp={lv:{KLEE:0,PFEN:0,KAEF:0},pot:0,jp:false,hi
 function spitzeResult(m){
   const S=spOf(m),bet=totalBet(m),sym=m.grid[1][2];m.present=null;
   const up=k=>{if(S.lv[k]<5)S.lv[k]++;const v=SPL[k][S.lv[k]-1]*bet;S.pot+=v;S.hit[k]=now;
-    const x=k==='KLEE'?55:k==='PFEN'?121:260;fxBurst(m,x,RY+150-S.lv[k]*21,14,{spd:90,life:.7});return v;};
+    fxBurst(m,SP_BX[k]+SP_BW/2,RY+88-S.lv[k]*13.6,14,{spd:90,life:.7});return v;};
   if(sym==='KOEN'){let s=0;SP_KEYS.forEach(k=>s+=up(k));m.msg='KÖNIG! ALLE LEITERN +'+fmt(s);SFX.big();fxFlash(m,.6,'255,220,120');fxShake(m,.4,true);}
   else if(sym==='TEUF'){const had=S.pot>0||SP_KEYS.some(k=>S.lv[k]);S.lv={KLEE:0,PFEN:0,KAEF:0};S.pot=0;S.jp=false;
     m.msg=had?'TEUFEL! LEITERN UND CASHPOT WEG':'TEUFEL';SFX.lose();if(had){SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.6,true);}}
@@ -57,39 +57,51 @@ function spitzeResult(m){
 function startBigSp(m){fxFlash(m,1);fxShake(m,.8,true);fxBurst(m,160,100,80,{coin:true,spd:200,up:110,sz:5,life:1.8});}
 // Cashpot nehmen: wird zum Gewinn (danach Risiko oder Nehmen wie gewohnt); Leitern bleiben stehen
 function spitzeTake(m){const S=spOf(m);if(S.pot<=0)return;m.win=S.pot;S.pot=0;m.disp=0;m.state='count';m.timer=.9;m.msg='CASHPOT '+fmt(m.win);SFX.chip();
-  fxBurst(m,188,RY+132,24,{coin:true,sz:4,spd:120,up:90,life:1.2});m.dirty=true;updateButtons(m);}
+  fxBurst(m,68,RY+120,24,{coin:true,sz:4,spd:120,up:90,life:1.2});m.dirty=true;updateButtons(m);}
 // --- Bildschirm ---
+const SP_BX={KLEE:24,PFEN:116,KAEF:208},SP_BW=88;
 function drawSpitze(m,g){
   const S=spOf(m),bet=totalBet(m),blink=Math.floor(now*3)%2;
   g.fillStyle='#000';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
   const bg=g.createLinearGradient(0,RY,0,RY+CH*3);bg.addColorStop(0,'#14204a');bg.addColorStop(1,'#060a1a');g.fillStyle=bg;g.fillRect(RX,RY,CW*5,CH*3);
-  // drei Leitern
-  const cols={KLEE:[24,62,'#3adf5a'],PFEN:[90,62,'#ff9a40'],KAEF:[226,72,'#ff3a3a']};
-  SP_KEYS.forEach(k=>{const [x,w,c]=cols[k],lv=S.lv[k],rh=20,top=RY+24;
-    g.drawImage(symCanvas(k),x+w/2-10,RY+2,20,20);
-    for(let i=0;i<5;i++){const y=RY+CH*3-4-(i+1)*(rh+1),on=i<lv,cur=i===lv-1,fl=cur&&S.hit[k]&&now-S.hit[k]<.6;
-      g.fillStyle='#000';g.fillRect(x-1,y-1,w+2,rh+2);
+  // drei Gewinntafeln oben nebeneinander
+  const COL={KLEE:'#3adf5a',PFEN:'#ff9a40',KAEF:'#ff3a3a'};
+  SP_KEYS.forEach(k=>{const x=SP_BX[k],w=SP_BW,lv=S.lv[k],c=COL[k],rh=12.6,full=lv>=5;
+    g.fillStyle='rgba(0,0,0,.45)';g.fillRect(x-2,RY+1,w+4,89);g.strokeStyle=full&&blink?c:'#3a2c52';g.lineWidth=1;g.strokeRect(x-1.5,RY+1.5,w+3,88);
+    g.drawImage(symCanvas(k),x+3,RY+3,16,16);
+    px(g,5);g.textAlign='left';g.textBaseline='middle';g.fillStyle=c;fitL(g,SP_NAME[k],x+22,RY+11,w-38,5);
+    // Pfeil: leuchtet, wenn die Tafel voll ist
+    g.fillStyle=full?(blink?'#ffd23a':'#fff'):'#2a2238';g.beginPath();g.moveTo(x+w-8,RY+4);g.lineTo(x+w-1,RY+15);g.lineTo(x+w-15,RY+15);g.closePath();g.fill();
+    for(let i=0;i<5;i++){const y=RY+88-(i+1)*(rh+1),on=i<lv,cur=i===lv-1,fl=cur&&S.hit[k]&&now-S.hit[k]<.6;
       const rg=g.createLinearGradient(0,y,0,y+rh);if(on){rg.addColorStop(0,fl&&blink?'#ffffff':'#fff2a0');rg.addColorStop(1,c);}else{rg.addColorStop(0,'#2a2238');rg.addColorStop(1,'#120c1e');}
-      g.fillStyle=rg;g.fillRect(x,y,w,rh);if(cur){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(x+.5,y+.5,w-1,rh-1);}
-      const t=fmt(SPL[k][i]*bet).replace(' €','');px(g,Math.min(8,Math.floor((w-6)/t.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=on?'#1a0e00':'#9b8fb3';g.fillText(t,x+w/2,y+rh/2+1);}
-    // Pfeil oben: leuchtet, wenn die Leiter voll ist
-    const ay=top-2,full=lv>=5;g.fillStyle=full?(blink?'#ffd23a':'#fff'):'#2a2238';g.beginPath();g.moveTo(x+w/2,ay-1);g.lineTo(x+w/2+9,ay+7);g.lineTo(x+w/2-9,ay+7);g.closePath();g.fill();});
-  // Walzenfenster (eine Walze)
-  const wx=158,ww=62,wy=RY+4,wh=96,r=m.reels[2],St=G_strip(m),L=St.length,fl=Math.floor(r.pos),off=r.pos-fl,cell=wh/3;
-  g.fillStyle='#000';g.fillRect(wx-3,wy-3,ww+6,wh+6);g.save();g.beginPath();g.rect(wx,wy,ww,wh);g.clip();
-  const rg=g.createLinearGradient(0,wy,0,wy+wh);rg.addColorStop(0,'#3a3060');rg.addColorStop(.5,'#f4f0ff');rg.addColorStop(1,'#3a3060');g.fillStyle=rg;g.fillRect(wx,wy,ww,wh);
-  for(let k=0;k<4;k++){const sym=St[((fl+k-1)%L+L)%L],y=wy+(k-off)*cell;if(sym==='LEER')continue;const im=symCanvas(sym),z=cell*.9;
-    if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.35;g.drawImage(im,wx+(ww-z)/2,y+(cell-z)/2-10,z,z*1.3);g.globalAlpha=.85;}
+      g.fillStyle=rg;g.fillRect(x+2,y,w-4,rh);if(cur){g.strokeStyle='#fff';g.lineWidth=1.2;g.strokeRect(x+2.5,y+.5,w-5,rh-1);}
+      const t=fmt(SPL[k][i]*bet).replace(' €','');px(g,Math.min(7,Math.floor((w-10)/t.length)));g.textAlign='center';g.fillStyle=on?'#1a0e00':'#9b8fb3';g.fillText(t,x+w/2,y+rh/2+1);}});
+  // großes Walzenfenster unten in der Mitte
+  const wx=116,ww=88,wy=RY+94,wh=58,r=m.reels[2],St=G_strip(m),L=St.length,fl=Math.floor(r.pos),off=r.pos-fl,cell=46;
+  g.fillStyle='#000';g.fillRect(wx-4,wy-4,ww+8,wh+8);
+  const fr=g.createLinearGradient(0,wy-4,0,wy+wh+4);fr.addColorStop(0,'#fff0a0');fr.addColorStop(1,'#8a5a08');g.strokeStyle=fr;g.lineWidth=3;g.strokeRect(wx-2.5,wy-2.5,ww+5,wh+5);
+  g.save();g.beginPath();g.rect(wx,wy,ww,wh);g.clip();
+  const rg=g.createLinearGradient(0,wy,0,wy+wh);rg.addColorStop(0,'#2a2450');rg.addColorStop(.5,'#f4f0ff');rg.addColorStop(1,'#2a2450');g.fillStyle=rg;g.fillRect(wx,wy,ww,wh);
+  // Die Walze zeigt nur Symbole; ein "LEER"-Feld ist die Lücke zwischen zwei Symbolen (dort bleibt sie halb versetzt stehen)
+  const VM=spVis(St),c=spVisPos(VM,r.pos),j0=Math.floor(c)-1;
+  for(let j=j0;j<=j0+3;j++){const sym=VM.vs[((j%VM.n)+VM.n)%VM.n],y=wy+wh/2-cell/2+(j-c)*cell,im=symCanvas(sym),z=cell*.92;
+    if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.35;g.drawImage(im,wx+(ww-z)/2,y+(cell-z)/2-12,z,z*1.35);g.globalAlpha=.85;}
+    else if(!r.spin&&Math.abs(j-c)<.01){const p=1+Math.abs(Math.sin(now*5))*.06;g.drawImage(im,wx+(ww-z*p)/2,y+(cell-z*p)/2,z*p,z*p);continue;}
     g.drawImage(im,wx+(ww-z)/2,y+(cell-z)/2,z,z);g.globalAlpha=1;}
-  g.restore();
-  g.strokeStyle=blink&&!r.spin?'#ffd23a':'#c88a10';g.lineWidth=2;g.strokeRect(wx+1,wy+cell+1,ww-2,cell-2);
-  // Cashpot
-  const cy=RY+108;g.fillStyle='#000';g.fillRect(wx-3,cy,ww+6,40);g.strokeStyle=S.pot>0?(blink?'#ffd23a':'#3adf5a'):'#3a2c52';g.lineWidth=2;g.strokeRect(wx-2,cy+1,ww+4,38);
-  px(g,6);g.textAlign='center';g.fillStyle='#9b8fb3';g.fillText('CASHPOT',wx+ww/2,cy+9);
-  {const t=fmt(S.pot).replace(' €','');px(g,Math.min(10,Math.floor((ww-4)/t.length)));g.fillStyle='#ffd23a';g.fillText(t,wx+ww/2,cy+24);}
-  px(g,5);g.fillStyle=S.jp?'#3adf5a':'#e8e0cc';g.fillText('JACKPOT '+fmt(SP_JP*bet).replace(' €',''),wx+ww/2,cy+35);
+  g.restore();g.globalAlpha=1;
+  // Cashpot links, Jackpot rechts
+  const box=(x,label,val,on,col)=>{g.fillStyle='#000';g.fillRect(x,wy-2,SP_BW,wh+4);g.strokeStyle=on?(blink?'#ffd23a':col):'#3a2c52';g.lineWidth=2;g.strokeRect(x+1,wy-1,SP_BW-2,wh+2);
+    px(g,7);g.textAlign='center';g.textBaseline='middle';g.fillStyle='#9b8fb3';g.fillText(label,x+SP_BW/2,wy+10);
+    const t=fmt(val).replace(' €','');px(g,Math.min(13,Math.floor((SP_BW-8)/t.length)));g.fillStyle=on?'#ffd23a':'#e8e0cc';g.fillText(t,x+SP_BW/2,wy+34);};
+  box(24,'CASHPOT',S.pot,S.pot>0,'#3adf5a');box(208,'JACKPOT',SP_JP*bet,S.jp,'#ff3a3a');
 }
 function G_strip(m){return m.G.strips[2];}
+// Abbildung Walzenposition -> Anzeigeposition (nur Symbole; Lücken liegen genau zwischen zwei Symbolen)
+const SPVC=new WeakMap();
+function spVis(St){let M=SPVC.get(St);if(M)return M;const vs=[],V=[];let n=0;
+  St.forEach(x=>{if(x==='LEER')V.push(n-.5);else{V.push(n);vs.push(x);n++;}});M={vs,V,n,L:St.length};SPVC.set(St,M);return M;}
+function spVisPos(M,p){const L=M.L,i=Math.floor(p),f=p-i,wrap=Math.floor(i/L),a=((i%L)+L)%L,b=(a+1)%L;
+  let va=M.V[a],vb=M.V[b];if(b<a)vb+=M.n;return wrap*M.n+va+(vb-va)*f;}
 function drawSpitzeInfo(m,g){
   g.fillStyle='rgba(10,6,16,.95)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);g.fillStyle='#ffd23a';
   const L=['EINE WALZE · DREI GEWINNLEITERN','KLEEBLATT, PFENNIG, KÄFER: LEITER +1, WERT IN DEN CASHPOT','OBEN ZAHLT JEDER WEITERE TREFFER DEN HÖCHSTWERT',
