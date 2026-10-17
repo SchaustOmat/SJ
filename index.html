@@ -340,24 +340,24 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .gate-box{display:flex;flex-direction:column;align-items:center;gap:6px}
 #svGate{transition:opacity .3s,background .3s}#svGate.out{opacity:0}
 .gw{position:relative;width:240px;height:150px;margin-top:64px;cursor:pointer;transition:transform .5s cubic-bezier(.3,1.35,.5,1),opacity .35s}
-#svGate.enter .gw{transform:translateY(160px) rotate(-6deg);opacity:0}
-#svGate.ins .gw{transform:translateY(240px) rotate(4deg);opacity:0;transition:transform .5s ease-in .12s,opacity .4s .2s}
+.gwrap[data-st="enter"] .gw{transform:translateY(160px) rotate(-6deg);opacity:0}
+.gwrap[data-st="ins"] .gw{transform:translateY(240px) rotate(4deg);opacity:0;transition:transform .5s ease-in .12s,opacity .4s .2s}
 .gw-back{position:absolute;inset:0;background:linear-gradient(160deg,#6a4018,#3a200a);border:3px solid #1a0a00;border-radius:12px;box-shadow:6px 6px 0 rgba(0,0,0,.5)}
 .gw-card{position:absolute;left:30px;top:12px;width:176px;height:110px;border-radius:9px;border:2px solid #000;z-index:1;font-family:var(--f-title);color:#fff;
   background:linear-gradient(135deg,#1a3a9a 0%,#5a1a8a 55%,#ff2e88 100%);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,3px 3px 0 rgba(0,0,0,.45);transition:transform .45s cubic-bezier(.4,1.5,.5,1),opacity .3s,box-shadow .3s}
-#svGate.open .gw-card{transform:translateY(-70px);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,0 0 22px rgba(255,210,80,.75);animation:gwpulse .9s ease-in-out .45s infinite alternate}
+.gwrap[data-st="open"] .gw-card{transform:translateY(-70px);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,0 0 22px rgba(255,210,80,.75);animation:gwpulse .9s ease-in-out .45s infinite alternate}
 @keyframes gwpulse{to{transform:translateY(-76px) scale(1.03)}}
-#svGate.ins .gw-card{animation:none;transform:translateY(-560px) scale(.75,.2);opacity:.2;transition:transform .5s cubic-bezier(.6,0,.9,.6),opacity .5s}
+.gwrap[data-st="ins"] .gw-card{animation:none;transform:translateY(-560px) scale(.75,.2);opacity:.2;transition:transform .5s cubic-bezier(.6,0,.9,.6),opacity .5s}
 .gw-pocket{position:absolute;left:0;right:0;bottom:0;height:64%;z-index:2;border:3px solid #1a0a00;border-radius:0 0 12px 12px;background:linear-gradient(#8a5a2a,#4a2a10);box-shadow:inset 0 0 0 5px rgba(0,0,0,.12)}
 .gw-pocket::after{content:'';position:absolute;inset:7px;border:2px dashed rgba(255,220,160,.35);border-radius:6px}
 .gw-flap{position:absolute;left:0;right:0;top:0;height:100%;z-index:3;border:3px solid #1a0a00;border-radius:12px;background:linear-gradient(160deg,#9a6a32,#5a3414);display:grid;place-items:center;
   transform-origin:50% 0;transition:transform .45s cubic-bezier(.5,0,.6,1),opacity .25s .2s}
 .gw-flap::after{content:'';position:absolute;inset:8px;border:2px dashed rgba(255,220,160,.35);border-radius:8px}
 .gw-flap span{width:34px;height:34px;border-radius:50%;background:radial-gradient(#ffe8a0,#b08010);border:2px solid #1a0a00;display:grid;place-items:center;color:#1a0a00;font-size:16px}
-#svGate.open .gw-flap,#svGate.ins .gw-flap{transform:translateY(-30%) scaleY(.05);opacity:0}
+.gwrap[data-st="open"] .gw-flap,.gwrap[data-st="ins"] .gw-flap{transform:translateY(-30%) scaleY(.05);opacity:0}
 .gate-slot{position:absolute;left:50%;top:14%;transform:translateX(-50%);width:200px;height:16px;border-radius:8px;background:#05030a;border:3px solid #3a2c52;box-shadow:0 0 0 2px #000;opacity:0;transition:opacity .3s}
 .gate-slot i{position:absolute;left:12px;right:12px;top:5px;height:2px;background:#2a2238}
-#svGate.open .gate-slot,#svGate.ins .gate-slot{opacity:1}
+.gwrap[data-st="open"] .gate-slot,.gwrap[data-st="ins"] .gate-slot{opacity:1}
 #svGate.slot .gate-slot{border-color:#3adf5a;box-shadow:0 0 0 2px #000,0 0 18px #3adf5a}
 .gate-t{font-family:var(--f-title);font-size:14px;color:var(--gold);letter-spacing:.08em;text-shadow:0 0 0 #000,2px 2px 0 #000}
 .gate-h{font-family:var(--f-body);font-size:22px;color:var(--ink);margin:4px 0 0;min-height:1.2em}
@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244809";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244899";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -3190,16 +3190,15 @@ $('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&RESV===m)cardOut(m
 function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
 function svGate(m){
   const el=$('#svGate');if(!el)return;if(!m||RESV===m){el.hidden=true;return;}
-  el.hidden=false;el.className='enter';
-  const inner=cardHtml().replace(/^<div class="bcard" id="atmCard">/,'').replace(/<\/div>$/,'');
-  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div><div class="gw" id="gWallet"><div class="gw-back"></div><div class="gw-card">'+inner+'</div><div class="gw-pocket"></div><div class="gw-flap"><span>◆</span></div></div><p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.className==='enter')el.className='';}));
+  el.hidden=false;el.className='gwrap';el.dataset.st='enter';
+  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div>'+walletHtml('gWallet')+'<p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.dataset.st==='enter')el.dataset.st='';}));
   const w=el.querySelector('#gWallet'),hint=el.querySelector('#gHint');
   w.addEventListener('click',e=>{e.stopPropagation();
-    if(el.className===''){el.className='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
-    if(el.className==='open'&&e.target.closest('.gw-card')){el.className='ins';SFX.card();hint.textContent='';
+    if(el.dataset.st===''){el.dataset.st='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
+    if(el.dataset.st==='open'&&e.target.closest('.gw-card')){el.dataset.st='ins';SFX.card();hint.textContent='';
       setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},420);
-      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
+      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.dataset.st='';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
         setTimeout(()=>{if(SV.m===m)el.classList.add('out');},1000);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},1350);},760);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
@@ -3934,13 +3933,18 @@ function cardHtml(){
   return '<div class="bcard" id="atmCard"><div class="bc-bank">KELLERBANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
     '<div class="bc-name">'+esc((MP.name||'GAST').toUpperCase())+'</div><div class="bc-logo"><i></i><i></i></div></div>';
 }
+// Portemonnaie mit Karte (Automat und Geldautomat): Zustand über data-st am .gwrap (enter, '', open, ins)
+function walletHtml(id){const inner=cardHtml().replace(/^<div class="bcard" id="atmCard">/,'').replace(/<\/div>$/,'');
+  return '<div class="gw" id="'+id+'"><div class="gw-back"></div><div class="gw-card">'+inner+'</div><div class="gw-pocket"></div><div class="gw-flap"><span>◆</span></div></div>';}
 function atmRender(){
   const scr=atmEl('atmScr'),stage=atmEl('atmStage');if(!scr||!stage)return;
   const s=ATM.step;
   if(s==='wallet'||s==='open'||s==='insert'){
     scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
-    if(!stage.querySelector('.wallet'))stage.innerHTML='<div class="wallet" id="atmWallet"><div class="w-back"></div>'+cardHtml()+'<div class="w-flap"><span>◆</span></div></div><p class="atm-hint" id="atmHint"></p>';
-    const w=atmEl('atmWallet');w.classList.toggle('open',s!=='wallet');
+    let gw=stage.querySelector('.gwrap');
+    if(!gw){stage.innerHTML='<div class="gwrap" data-st="enter">'+walletHtml('atmWallet')+'</div><p class="atm-hint" id="atmHint"></p>';gw=stage.querySelector('.gwrap');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{if(gw.dataset.st==='enter')gw.dataset.st=ATM.step==='wallet'?'':ATM.step==='open'?'open':'ins';}));}
+    else gw.dataset.st=s==='wallet'?'':s==='open'?'open':'ins';
     atmEl('atmHint').textContent=s==='wallet'?'Portemonnaie antippen':s==='open'?'Karte antippen':'';
     return;
   }
@@ -3995,7 +3999,7 @@ document.addEventListener('click',e=>{
   if(!ATM.open)return;const t=e.target.closest('#pAtm [data-go],#pAtm [data-k],#pAtm [data-add],#pAtm [data-all],#pAtm [data-ok],#pAtm [data-to],#pAtm [data-undo],#atmWallet');if(!t)return;
   if(t.id==='atmWallet'){
     if(ATM.step==='wallet'){ATM.step='open';SFX.click();atmRender();}
-    else if(ATM.step==='open'&&e.target.closest('#atmCard')){ATM.step='insert';SFX.card();atmRender();const c=atmEl('atmCard');c.classList.add('in');
+    else if(ATM.step==='open'&&e.target.closest('.gw-card')){ATM.step='insert';SFX.card();atmRender();
       setTimeout(()=>{if(!ATM.open)return;SFX.clunk();ATM.step='load';atmRender();setTimeout(()=>{if(!ATM.open)return;SFX.ding();ATM.step='menu';atmSay('');atmRender();},1300);},850);}
     return;
   }

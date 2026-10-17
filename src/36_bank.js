@@ -86,13 +86,18 @@ function cardHtml(){
   return '<div class="bcard" id="atmCard"><div class="bc-bank">KELLERBANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
     '<div class="bc-name">'+esc((MP.name||'GAST').toUpperCase())+'</div><div class="bc-logo"><i></i><i></i></div></div>';
 }
+// Portemonnaie mit Karte (Automat und Geldautomat): Zustand über data-st am .gwrap (enter, '', open, ins)
+function walletHtml(id){const inner=cardHtml().replace(/^<div class="bcard" id="atmCard">/,'').replace(/<\/div>$/,'');
+  return '<div class="gw" id="'+id+'"><div class="gw-back"></div><div class="gw-card">'+inner+'</div><div class="gw-pocket"></div><div class="gw-flap"><span>◆</span></div></div>';}
 function atmRender(){
   const scr=atmEl('atmScr'),stage=atmEl('atmStage');if(!scr||!stage)return;
   const s=ATM.step;
   if(s==='wallet'||s==='open'||s==='insert'){
     scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
-    if(!stage.querySelector('.wallet'))stage.innerHTML='<div class="wallet" id="atmWallet"><div class="w-back"></div>'+cardHtml()+'<div class="w-flap"><span>◆</span></div></div><p class="atm-hint" id="atmHint"></p>';
-    const w=atmEl('atmWallet');w.classList.toggle('open',s!=='wallet');
+    let gw=stage.querySelector('.gwrap');
+    if(!gw){stage.innerHTML='<div class="gwrap" data-st="enter">'+walletHtml('atmWallet')+'</div><p class="atm-hint" id="atmHint"></p>';gw=stage.querySelector('.gwrap');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{if(gw.dataset.st==='enter')gw.dataset.st=ATM.step==='wallet'?'':ATM.step==='open'?'open':'ins';}));}
+    else gw.dataset.st=s==='wallet'?'':s==='open'?'open':'ins';
     atmEl('atmHint').textContent=s==='wallet'?'Portemonnaie antippen':s==='open'?'Karte antippen':'';
     return;
   }
@@ -147,7 +152,7 @@ document.addEventListener('click',e=>{
   if(!ATM.open)return;const t=e.target.closest('#pAtm [data-go],#pAtm [data-k],#pAtm [data-add],#pAtm [data-all],#pAtm [data-ok],#pAtm [data-to],#pAtm [data-undo],#atmWallet');if(!t)return;
   if(t.id==='atmWallet'){
     if(ATM.step==='wallet'){ATM.step='open';SFX.click();atmRender();}
-    else if(ATM.step==='open'&&e.target.closest('#atmCard')){ATM.step='insert';SFX.card();atmRender();const c=atmEl('atmCard');c.classList.add('in');
+    else if(ATM.step==='open'&&e.target.closest('.gw-card')){ATM.step='insert';SFX.card();atmRender();
       setTimeout(()=>{if(!ATM.open)return;SFX.clunk();ATM.step='load';atmRender();setTimeout(()=>{if(!ATM.open)return;SFX.ding();ATM.step='menu';atmSay('');atmRender();},1300);},850);}
     return;
   }

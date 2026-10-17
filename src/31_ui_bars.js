@@ -11,16 +11,15 @@ $('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&RESV===m)cardOut(m
 function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
 function svGate(m){
   const el=$('#svGate');if(!el)return;if(!m||RESV===m){el.hidden=true;return;}
-  el.hidden=false;el.className='enter';
-  const inner=cardHtml().replace(/^<div class="bcard" id="atmCard">/,'').replace(/<\/div>$/,'');
-  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div><div class="gw" id="gWallet"><div class="gw-back"></div><div class="gw-card">'+inner+'</div><div class="gw-pocket"></div><div class="gw-flap"><span>◆</span></div></div><p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.className==='enter')el.className='';}));
+  el.hidden=false;el.className='gwrap';el.dataset.st='enter';
+  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div>'+walletHtml('gWallet')+'<p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.dataset.st==='enter')el.dataset.st='';}));
   const w=el.querySelector('#gWallet'),hint=el.querySelector('#gHint');
   w.addEventListener('click',e=>{e.stopPropagation();
-    if(el.className===''){el.className='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
-    if(el.className==='open'&&e.target.closest('.gw-card')){el.className='ins';SFX.card();hint.textContent='';
+    if(el.dataset.st===''){el.dataset.st='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
+    if(el.dataset.st==='open'&&e.target.closest('.gw-card')){el.dataset.st='ins';SFX.card();hint.textContent='';
       setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},420);
-      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
+      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.dataset.st='';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
         setTimeout(()=>{if(SV.m===m)el.classList.add('out');},1000);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},1350);},760);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
