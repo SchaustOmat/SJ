@@ -786,6 +786,11 @@ function drawReelArea(m,g){
     g.restore();
     g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x,RY,1,CH*3);
   }
+  // Lockmodus: ruht der Automat, wandert ein Glanzstreifen über die Walzen
+  if((m.state==='idle'||m.state==='idle_r')&&!m.info){const t=(now*.35+(m.group.position.x*.13))%1.6;if(t<1){const sx=RX-60+t*(CW*5+120);
+    g.save();g.beginPath();g.rect(RX,RY,CW*5,CH*3);g.clip();g.globalCompositeOperation='lighter';
+    const sg=g.createLinearGradient(sx-30,0,sx+30,0);sg.addColorStop(0,'rgba(255,240,200,0)');sg.addColorStop(.5,'rgba(255,240,200,.16)');sg.addColorStop(1,'rgba(255,240,200,0)');
+    g.fillStyle=sg;g.beginPath();g.moveTo(sx-30,RY);g.lineTo(sx+30,RY);g.lineTo(sx,RY+CH*3);g.lineTo(sx-60,RY+CH*3);g.closePath();g.fill();g.restore();}}
   // Spannung: Walzen, die noch auf das letzte Symbol warten
   if(m.state==='spin')m.reels.forEach((r,i)=>{if(!r.spin||!r.teased||m.remote)return;const x=RX+i*CW;
     g.fillStyle='rgba(255,190,40,'+(.1+.08*Math.sin(now*20)).toFixed(3)+')';g.fillRect(x+1,RY,CW-2,CH*3);
@@ -996,6 +1001,8 @@ function updMachines(dt,F,focusM){
       if(m.state==='idle'&&now>m.demoNext){startSpin(m,true);m.demoNext=now+4+Math.random()*5;}
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
     }
+    // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
+    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
     if(m.topDirty)drawTop(m);
     if(m===RESV)resvSave();
     {const un=m.unlockT&&now-m.unlockT<2.2,held=m.remote||(typeof machineHeld==='function'&&machineHeld(m));

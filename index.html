@@ -274,7 +274,16 @@ body.pc #joyBase,body.pc #joyHint{display:none}
 @keyframes btnBlink{50%{filter:brightness(.6)}}
 .svb.down,.tbb.down{transform:translateY(3px);box-shadow:inset 0 -3px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.3),0 1px 0 #000}
 .c-white{background:#f4f0e8;--gl:#fff}.c-red{background:#ff3a3a;--gl:#ff3a3a}.c-amber{background:#ffb020;--gl:#ffb020}.c-blue{background:#4a9aff;--gl:#4a9aff}.c-green{background:#3adf5a;--gl:#3adf5a}.c-yellow{background:#ffe040;--gl:#ffe040}.c-black{background:#2a2a2a;color:#f4f0e8!important;--gl:#888}
-.svb{background-image:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,0) 45%,rgba(0,0,0,.18))}
+.svb{background-image:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,0) 45%,rgba(0,0,0,.18));position:relative;transition:filter .08s,transform .08s}
+/* Lichtreflex läuft über aktive Knöpfe, START pulsiert, Drücken federt */
+.svb::after{content:'';position:absolute;top:-60%;left:-70%;width:45%;height:220%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-22deg);opacity:0;pointer-events:none}
+.svb.lit::after{animation:svshine 3s ease-in-out infinite}
+.sv-row .svb:nth-child(2).lit::after{animation-delay:.25s}.sv-row .svb:nth-child(3).lit::after{animation-delay:.5s}.sv-row .svb:nth-child(4).lit::after{animation-delay:.75s}.sv-row .svb:nth-child(5).lit::after{animation-delay:1s}
+@keyframes svshine{0%{left:-70%;opacity:0}8%{opacity:1}30%{left:135%;opacity:0}100%{left:135%;opacity:0}}
+.svb.big.lit{animation:svpulse 1.3s ease-in-out infinite}
+@keyframes svpulse{0%,100%{box-shadow:inset 0 -6px 0 rgba(0,0,0,.35),inset 0 4px 0 rgba(255,255,255,.35),0 4px 0 #000,0 0 10px var(--gl,transparent)}50%{box-shadow:inset 0 -6px 0 rgba(0,0,0,.35),inset 0 4px 0 rgba(255,255,255,.35),0 4px 0 #000,0 0 26px var(--gl,transparent),0 0 46px var(--gl,transparent)}}
+.svb.down{transform:translateY(3px) scale(.95)!important;filter:brightness(1.35) saturate(1.2)!important}
+body.pc .svb.lit:hover{transform:translateY(-2px)}
 .svb.lit{box-shadow:inset 0 -6px 0 rgba(0,0,0,.35),inset 0 4px 0 rgba(255,255,255,.35),0 4px 0 #000,0 0 14px var(--gl,transparent)}
 /* PC / Querformat: farbiger, in Gruppen angeordnet */
 body.pc .svb:not(.lit),#slotView.land .svb:not(.lit){filter:brightness(.62) saturate(.8)}
@@ -524,7 +533,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792250668";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792250719";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1962,6 +1971,11 @@ function drawReelArea(m,g){
     g.restore();
     g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x,RY,1,CH*3);
   }
+  // Lockmodus: ruht der Automat, wandert ein Glanzstreifen über die Walzen
+  if((m.state==='idle'||m.state==='idle_r')&&!m.info){const t=(now*.35+(m.group.position.x*.13))%1.6;if(t<1){const sx=RX-60+t*(CW*5+120);
+    g.save();g.beginPath();g.rect(RX,RY,CW*5,CH*3);g.clip();g.globalCompositeOperation='lighter';
+    const sg=g.createLinearGradient(sx-30,0,sx+30,0);sg.addColorStop(0,'rgba(255,240,200,0)');sg.addColorStop(.5,'rgba(255,240,200,.16)');sg.addColorStop(1,'rgba(255,240,200,0)');
+    g.fillStyle=sg;g.beginPath();g.moveTo(sx-30,RY);g.lineTo(sx+30,RY);g.lineTo(sx,RY+CH*3);g.lineTo(sx-60,RY+CH*3);g.closePath();g.fill();g.restore();}}
   // Spannung: Walzen, die noch auf das letzte Symbol warten
   if(m.state==='spin')m.reels.forEach((r,i)=>{if(!r.spin||!r.teased||m.remote)return;const x=RX+i*CW;
     g.fillStyle='rgba(255,190,40,'+(.1+.08*Math.sin(now*20)).toFixed(3)+')';g.fillRect(x+1,RY,CW-2,CH*3);
@@ -2172,6 +2186,8 @@ function updMachines(dt,F,focusM){
       if(m.state==='idle'&&now>m.demoNext){startSpin(m,true);m.demoNext=now+4+Math.random()*5;}
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
     }
+    // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
+    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
     if(m.topDirty)drawTop(m);
     if(m===RESV)resvSave();
     {const un=m.unlockT&&now-m.unlockT<2.2,held=m.remote||(typeof machineHeld==='function'&&machineHeld(m));
