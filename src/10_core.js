@@ -86,6 +86,9 @@ const SFX={
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
+  ausTick(i){tone(1100+(i%8)*110,.035,'square',.05);},
+  ausFan(){for(let i=0;i<20;i++)tone(660*Math.pow(1.0595,i),.05,'square',.07,i*.05);tone(1320,.5,'square',.06,1.0);tone(1760,.5,'square',.05,1.05);},
+  unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };
 let beatTimer=null,beatN=0;

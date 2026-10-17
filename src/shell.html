@@ -315,6 +315,16 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 #slotView .sv-side,#slotView #svStand,#slotView #svCard{pointer-events:auto}
 #svCard{position:absolute;right:max(10px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 8px);z-index:2;background:rgba(7,5,12,.85);border:2px solid var(--gold);color:var(--gold);font-family:var(--f-title);font-size:10px;padding:10px 10px;box-shadow:0 0 0 2px #000}
 #svCard.on{background:var(--gold);color:#1a1000}
+#svGate{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:rgba(4,2,8,.72);pointer-events:auto}
+#svGate[hidden]{display:none}
+.gate-box{display:flex;flex-direction:column;align-items:center;gap:6px}
+.gate-t{font-family:var(--f-title);font-size:14px;color:var(--gold);letter-spacing:.08em;text-shadow:0 0 0 #000,2px 2px 0 #000}
+.gate-h{font-family:var(--f-body);font-size:22px;color:var(--ink);margin:4px 0 0;min-height:1.2em}
+@keyframes gateok{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+#svGate.ok{background:rgba(10,40,16,.75)}
+.gate-ok{font-family:var(--f-title);font-size:22px;color:#3adf5a;text-align:center;letter-spacing:.08em;text-shadow:2px 2px 0 #000;animation:gateok .45s ease-out}
+.gate-ok .lock{font-size:46px;margin-bottom:6px}
+.gate-ok small{display:block;margin-top:10px;font-family:var(--f-body);font-size:20px;color:var(--ink);letter-spacing:0;max-width:280px}
 #slotView.land #svCard{padding:8px;font-size:9px}
 #slotView .sv-info,#slotView .sv-msg{display:none}
 #slotView .sv-side{margin-top:auto;width:min(100%,680px)!important}
@@ -361,7 +371,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     </div>
   </div>
   <button id="svStand">◄ AUFSTEHEN</button>
-  <button id="svCard">KARTE STECKEN</button>
+  <button id="svCard" hidden>KARTE ZIEHEN</button>
+  <div id="svGate" hidden></div>
 </div>
 <div id="pkBar" class="tbar" hidden>
   <div class="pcards" id="pkCards" hidden></div>

@@ -6,8 +6,21 @@ SV.mctx=SV.main.getContext('2d');SV.tctx=SV.top.getContext('2d');SV.mctx.imageSm
 SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
   b.addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});});
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
-$('#svCard').addEventListener('click',()=>{const m=SV.m;if(!m)return;if(RESV===m)cardOut(m);else cardIn(m);});
-function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
+$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&RESV===m)cardOut(m);});
+// Beim Hinsetzen: Portemonnaie raus, Karte antippen -> Karte fährt rein -> ENTSPERRT
+function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
+function svGate(m){
+  const el=$('#svGate');if(!el)return;if(!m||RESV===m){el.hidden=true;return;}
+  el.hidden=false;el.className='';
+  el.innerHTML='<div class="gate-box"><div class="gate-t">KARTE STECKEN</div><div class="wallet" id="gWallet"><div class="w-back"></div>'+cardHtml().replace(' id="atmCard"','')+'<div class="w-flap"><span>◆</span></div></div><p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
+  const w=el.querySelector('#gWallet'),card=w.querySelector('.bcard');
+  w.addEventListener('click',e=>{e.stopPropagation();
+    if(!w.classList.contains('open')){w.classList.add('open');SFX.click();el.querySelector('#gHint').textContent='Karte antippen';return;}
+    if(e.target.closest('.bcard')&&!card.classList.contains('in')){card.classList.add('in');SFX.card();el.querySelector('#gHint').textContent='';
+      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
+        setTimeout(()=>{if(SV.m===m)el.hidden=true;},1300);},550);}});
+}
+function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
 function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.toggle('land',W>H);}
 function svButtons(m){

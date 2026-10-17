@@ -200,6 +200,7 @@ function updateButtons(m){
 function pressButton(m,key){
   if(key==='RISIKO')key='KARTE';
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START')){m.timer=0;timerDone(m);if(m.state!=='gamble')return;}
+  if(typeof svGateOn==='function'&&svGateOn(m))return;
   if(m.btns[key])m.btns[key].press=1;SFX.btn();
   if(m.state==='count'&&key==='START'&&!m.pendingFs){skipCount(m);return;}
   const b=(m.btnModel||btnModel(m))[key];if(!b||!b.lit)return;
@@ -400,6 +401,7 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.07);if(t!==m.gamble.rb){m.gamble.rb=t;SFX.ausTick(t);}}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
       M.fxn++;SFX.coinUp(M.fxn*2);fxBurst(m,cx,cy,14,{spd:110,life:.7});fxFlash(m,.15,'255,230,140');
@@ -450,7 +452,7 @@ function timerDone(m){
       mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;
       if(m.win>=totalBet(m)*10){m.auto=false;startBig(m,m.win);}
       updateButtons(m);if(m.auto)m.timer=1.5;break;
-    case 'gambleNext':m.gamble.busy=false;
+    case 'gambleNext':if(m.gamble&&m.gamble.run){m.gamble.reveal();break;}m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
       else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
@@ -579,7 +581,8 @@ function startGamble(m,kind){
 // Leiter: beginnt beim Einsatz, Stufen in Vielfachen davon (~x1,4).
 // Hoch = eine Stufe, daneben = zwei Stufen runter (unter der untersten = 0).
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
-const LADM=[1,1.5,2,3,4,6,8,12,16,24,32,48,64,100,150,200,300,400,600,800,1200,1600,2400,3200,5000];
+// ab dem 40-fachen Einsatz beginnt die AUSSPIELUNG: Stufen verdoppeln sich, jeder Druck läuft mit didididi
+const LADM=[1,1.5,2,3,4,6,8,12,16,24,40,80,160,320,640,1280,2560,5120],AUS_IDX=LADM.indexOf(40);
 const LADC={};
 function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[];LADM.forEach(x=>{L.push(Math.max(L.length?L[L.length-1]+1:1,Math.round(x*tb)));});return LADC[tb]=L;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const D=i>=2?L[i-2]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
@@ -587,11 +590,20 @@ function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<ladderUp(ladOf(m),gm.idx);gm.last=gm.idx;
   if(gm.up&&gm.idx>=ladOf(m).length-1){gm.busy=false;collect(m);return;}
+  if(gm.idx>=AUS_IDX-1){ // Ausspielung: Lichter rasen erst über die Leiter, dann das Ergebnis
+    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.idx>=AUS_IDX?'AUSSPIELUNG ...':'GEHT ES IN DIE AUSSPIELUNG?';
+    m.state='gambleNext';m.timer=2.0;m.dirty=true;updateButtons(m);return;}
+  ladderResult(m);
+}
+function ladderResult(m){
+  const gm=m.gamble;gm.run=false;
   if(gm.up){gm.idx++;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();
     fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
   else if(gm.idx>=2){gm.idx-=2;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
   else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
-  m.state='gambleNext';m.timer=gm.idx<0?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
+  if(gm.up&&gm.idx>=AUS_IDX&&!gm.ausDone){gm.ausDone=true;SFX.ausFan();m.msg='AUSSPIELUNG! '+fmt(m.win);fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);
+    fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});}
+  m.state='gambleNext';m.timer=gm.idx<0?1.6:gm.ausDone&&gm.up&&gm.idx===AUS_IDX?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
@@ -610,31 +622,35 @@ function gambleRB(m,red){
 }
 /* ---------- RISIKO+ Leiter (wie am echten Gerät: goldene Stufen über den abgedunkelten Walzen) ---------- */
 const LAD_HZ=1.5;
-function goldRung(g,x,y,w,h,lit,txt,col){
+function goldRung(g,x,y,w,h,lit,txt,col,zone){
   const fr=g.createLinearGradient(0,y,0,y+h);fr.addColorStop(0,'#fff0a0');fr.addColorStop(.5,'#c88a10');fr.addColorStop(1,'#6a3a00');
   g.fillStyle='#000';g.fillRect(x-1,y-1,w+2,h+2);g.fillStyle=fr;g.fillRect(x,y,w,h);
   if(lit){const lf=g.createLinearGradient(0,y,0,y+h);lf.addColorStop(0,col==='red'?'#ff8a8a':col==='green'?'#a8ffb0':'#fffbb0');lf.addColorStop(1,col==='red'?'#d01020':col==='green'?'#1fb04a':'#ffc400');g.fillStyle=lf;}
-  else g.fillStyle='#120a02';
+  else g.fillStyle=zone?'#4a0610':'#120a02';
   g.fillRect(x+2,y+2,w-4,h-4);
   px(g,Math.min(h>14?9:8,Math.floor((w-6)/txt.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#f4f0e8';g.fillText(txt,x+w/2,y+h/2+1);
 }
 function drawLadder(m,g,gm){
   // Walzen abdunkeln
   g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
-  const result=m.state==='gambleNext',cur=gm.idx;
+  const run=m.state==='gambleNext'&&gm.run,result=m.state==='gambleNext'&&!run,cur=gm.idx;
   const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
   if(!result&&ph!==gm.ph){gm.ph=ph;if(!gm.preview&&!m.remote)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rows=10,rh=15,w=78,x=200,yb=RY+CH*3+1+dy;
   const ref=result?gm.last:cur,start=clamp(ref-3,0,Math.max(0,ladOf(m).length-rows));
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
+  const nr=Math.max(2,Math.min(rows,ladOf(m).length-start)),per=2*nr-2,rt=Math.floor(m.stateT/.07)%per,rk=start+(rt<nr?rt:per-rt);
   for(let i=0;i<rows;i++){const k=start+i;if(k>=ladOf(m).length)break;const y=yb-rh*(i+2);
     let lit=false,col='y';
-    if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
+    if(run){lit=k===rk;col='red';}
+    else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
     else{if(k===cur+1&&ph)lit=true;if(k===cur-2&&!ph)lit=true;}
-    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col);
+    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col,k>=AUS_IDX);
     if(!result&&k===cur){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(x-2.5,y-2.5,w+5,rh+4);}}
-  const zl=(result&&cur<0)||(!result&&cur<2&&!ph);
+  const zl=!run&&((result&&cur<0)||(!result&&cur<2&&!ph));
+  if(cur>=AUS_IDX-2){px(g,7);g.textAlign='left';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#ff5a3a':'#ffd23a';
+    g.fillText(cur>=AUS_IDX?'AUSSPIELUNG!':'AUSSPIELUNG AB '+fmt(ladOf(m)[AUS_IDX]),26,RY+138+dy*0);}
   goldRung(g,x+12,yb-rh,w-24,rh-2,zl,'0',zl&&result?'red':'y');
   // RISIKO+ Schriftzug und Erfolg links
   g.textAlign='left';g.textBaseline='middle';px(g,15);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',22,RY+20+dy);
@@ -644,7 +660,7 @@ function drawLadder(m,g,gm){
   g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
   {const t=fmt(m.win);px(g,Math.min(14,Math.floor(140/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,168,RY+79);}
   g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
-  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'ZWEI STUFEN RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
+  g.fillText(run?'AUSSPIELUNG LÄUFT ...':result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'ZWEI STUFEN RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
   if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
   if(gm.preview){const pn=m.G.power?Math.floor(m.win/(4*totalBet(m))):0;
     if(pn>0){px(g,7);g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText('POWER = '+pn+' POWER SPIN'+(pn>1?'S':''),26,RY+134);}}
@@ -888,11 +904,12 @@ function drawTop(m){
    Mit gesteckter Karte gehört der Automat dir: Aufstehen geht in jedem Zustand (Leiter, Power Spins …),
    alles bleibt stehen wie es ist. Läuft AUTO, spielt er weiter und hält bei Angeboten/Risiko von selbst an. */
 let RESV=null;
-function cardIn(m){
+function cardIn(m,quiet){
   if(RESV&&RESV!==m){const o=RESV;RESV=null;if(o.win>0||o.power||o.gamble){o.auto=false;if(o.power){o.win+=o.power.left*o.power.cost;o.power=null;}collect(o);}o.dirty=true;}
-  RESV=m;SFX.card();m.dirty=true;svCardSync();toast('Karte steckt. Der Automat bleibt für dich frei, auch wenn du aufstehst.');MP.dirty=true;}
-function cardOut(m){if(RESV!==m)return;RESV=null;SFX.card();m.dirty=true;svCardSync();toast('Karte gezogen.');MP.dirty=true;}
-function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;const on=RESV===SV.m;b.textContent=on?'KARTE ZIEHEN':'KARTE STECKEN';b.classList.toggle('on',on);}
+  RESV=m;m.dirty=true;svCardSync();if(!quiet)toast('Karte steckt. Der Automat bleibt für dich frei, auch wenn du aufstehst.');MP.dirty=true;}
+function cardOut(m){if(RESV!==m)return;if(m.win>0||m.power||m.gamble){toast('Erst den Gewinn nehmen, dann die Karte ziehen.');return;}
+  RESV=null;m.auto=false;SFX.card();m.dirty=true;svCardSync();toast('Karte gezogen.');MP.dirty=true;if(SV.m===m)svGate(m);}
+function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=RESV!==SV.m;b.textContent='KARTE ZIEHEN';b.classList.add('on');}
 /* ---------- per frame ---------- */
 function updMachines(dt,F,focusM){
   F.machines.forEach(m=>{

@@ -516,7 +516,7 @@ function frame(){
     const mm=Math.hypot(mx,mz);
     const spr=(keys.ShiftLeft||keys.ShiftRight)&&mm>.01&&canMove;P.spr=(P.spr||0)+((spr?1:0)-(P.spr||0))*Math.min(1,dt*8);const spd=3.3*(1+P.spr*.75);
     if(mm>.01&&canMove){const [nx,nz]=collide(P.x+mx*spd*dt,P.z+mz*spd*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;
-      P.bob+=real*3.1;P.stepAcc+=real;if(P.stepAcc>.85){P.stepAcc=0;SFX.step();}}
+      P.bob+=real*3.1*(1-(P.spr||0)*.3);P.stepAcc+=real;if(P.stepAcc>.85*(1+(P.spr||0)*.8)&&now-(P.stepT||0)>.3){P.stepAcc=0;P.stepT=now;SFX.step();}}
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
