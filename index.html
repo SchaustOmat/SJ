@@ -66,6 +66,11 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 #joyBase{position:fixed;z-index:5;width:124px;height:124px;margin:-62px 0 0 -62px;border-radius:50%;border:2px solid rgba(41,240,255,.5);background:rgba(41,240,255,.07);pointer-events:none;opacity:.55;transition:opacity .2s}
 #joyBase.on{opacity:1;transition:none}
 #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,46,136,.6);border:2px solid var(--neon);box-shadow:0 0 14px rgba(255,46,136,.6)}
+#ytWrap{position:fixed;left:-420px;top:0;width:200px;height:113px;opacity:0;pointer-events:none;z-index:-1}
+.ibtn.on{background:var(--gold);color:#1a1000;box-shadow:0 0 12px var(--gold)}
+.rd-now{font-family:var(--f-body);font-size:20px;color:var(--gold);margin:0 0 6px;overflow-wrap:anywhere}
+.rd-ctl{align-items:center;gap:8px}.rd-ctl .btn{color:var(--ink)}.rd-ctl b{font-family:var(--f-title);font-size:11px;color:var(--ink);margin-left:auto}
+#rdUrl{flex:1;min-width:0;background:var(--black);color:var(--gold);border:2px solid var(--line);font-family:var(--f-body);font-size:18px;padding:8px 10px;user-select:text;-webkit-user-select:text}
 #fxCv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25;image-rendering:pixelated}
 @keyframes shk{0%,100%{transform:translate(-50%,-50%)}15%{transform:translate(calc(-50% - 9px),calc(-50% + 4px))}35%{transform:translate(calc(-50% + 8px),calc(-50% - 3px))}55%{transform:translate(calc(-50% - 5px),calc(-50% + 2px))}75%{transform:translate(calc(-50% + 3px),-50%)}}
 .panel.shk{animation:shk .45s ease-out}
@@ -389,11 +394,13 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="icons">
     <button class="ibtn" id="chatBtn" aria-label="Chat" hidden>SAG</button>
     <button class="ibtn" id="micBtn" aria-label="Voice-Chat" hidden>MIC</button>
+    <button class="ibtn" id="radioBtn" aria-label="Radio">RADIO</button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat umschalten" aria-pressed="false">⟲</button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus">♪</button>
     <button class="ibtn" id="helpBtn" aria-label="Steuerung">?</button>
   </div>
 </div>
+<div id="ytWrap"><div id="ytBox"></div></div>
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
@@ -475,6 +482,13 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="atmFront"><div class="atmScr" id="atmScr"></div><div class="atmSlot"><i></i></div></div>
   <div id="atmStage"></div>
 </section>
+<section id="pRadio" class="panel" hidden aria-label="Radio">
+  <header><h2>RADIO</h2><button class="x" data-close>ZU</button></header>
+  <p class="rd-now" id="rdNow">Noch nichts.</p>
+  <div class="row" style="flex-wrap:nowrap"><input id="rdUrl" autocomplete="off" placeholder="YouTube-Link einfügen"><button class="btn gold" id="rdGo">ABSPIELEN</button></div>
+  <div class="row rd-ctl"><button class="btn" id="rdDown">LEISER</button><button class="btn hot" id="rdPlay">PLAY</button><button class="btn" id="rdUp">LAUTER</button><b id="rdVol">60 %</b></div>
+  <p class="mps" style="color:var(--dim)">Im Multiplayer-Raum hören alle dasselbe: gleicher Song, gleiche Stelle, gleiche Lautstärke, Play und Pause für alle.</p>
+</section>
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">
   <header><h2>STEUERUNG</h2><button class="x" data-close>WEITER</button></header>
   <button class="btn gold" id="gfxBtn">GRAFIK: SCHARF</button>
@@ -506,7 +520,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792249910";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792250372";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -786,7 +800,7 @@ let beatTimer=null,beatN=0;
 function setBeat(on){
   if(beatTimer){clearInterval(beatTimer);beatTimer=null;}
   if(!on)return;
-  beatTimer=setInterval(()=>{if(!AC||muted||focus)return;beatN++;tone(62,.18,'sine',.2,0,38);if(beatN%2===0)noise(.04,.03,7000,.25);if(beatN%4===2)tone(110,.12,'square',.04,.25);},500);
+  beatTimer=setInterval(()=>{if(!AC||muted||focus||(typeof RADIO!=='undefined'&&RADIO.st&&RADIO.st.p<0))return;beatN++;tone(62,.18,'sine',.2,0,38);if(beatN%2===0)noise(.04,.03,7000,.25);if(beatN%4===2)tone(110,.12,'square',.04,.25);},500);
 }
 
 /* ---------- three ---------- */
@@ -3045,7 +3059,7 @@ function mpSync(peers){
       if(MP.started)toast(name+' ist jetzt im Keller.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
-    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;mpApplyActivity(a,pr);bankPeer(a,pr);
+    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);
     a.ms=Number.isInteger(pr.ms)&&pr.ms>=0&&pr.ms<6?pr.ms:-1;a.mt=typeof pr.mt==='string'&&TABLES[pr.mt]?pr.mt:'';
     const sitting=a.act==='slot'||a.act==='poker'||a.act==='hilo'||a.act==='mtable';avPose(a,sitting);
     a.n.anim=a.act==='slot'?'slot':sitting?'cards':'idle';
@@ -4061,6 +4075,66 @@ document.addEventListener('click',e=>{
   atmRender();
 });
 bankPresence();
+
+
+/* ---- 37_radio.js ---- */
+/* =========================================================
+   RADIO: YouTube-Link rein, Play/Pause, leiser/lauter.
+   Im Multiplayer-Raum für alle gleich: gleicher Song, gleiche Stelle,
+   gleiche Lautstärke, gleicher Play/Pause-Zustand (neueste Änderung gewinnt).
+   ========================================================= */
+const RADIO={st:null,player:null,ready:false,loading:false,applied:'',want:null};
+// st = {v:Video-ID, t0:Startzeit (ms, wenn es läuft), p:Position in s (wenn pausiert) oder -1, vol:0..100, ts:Änderungszeit, by:Name}
+function ytId(u){u=String(u||'').trim();let m=u.match(/(?:youtu\.be\/|v=|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/);if(m)return m[1];if(/^[A-Za-z0-9_-]{11}$/.test(u))return u;return '';}
+function radioLoadApi(){
+  if(RADIO.ready||RADIO.loading)return;RADIO.loading=true;
+  window.onYouTubeIframeAPIReady=()=>{
+    RADIO.player=new YT.Player('ytBox',{width:'200',height:'113',playerVars:{playsinline:1,controls:0,disablekb:1,modestbranding:1,rel:0},
+      events:{onReady:()=>{RADIO.ready=true;radioApply(true);},onStateChange:e=>{radioUi();if(e.data===0&&RADIO.st&&RADIO.st.p<0){/* Ende: von vorn */radioSet({t0:Date.now(),p:-1});}}}});};
+  const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=()=>{RADIO.loading=false;toast('YouTube konnte nicht laden.');};document.head.appendChild(s);
+}
+function radioPos(st){return st.p>=0?st.p:Math.max(0,(Date.now()-st.t0)/1000);}
+// gemeinsamen Zustand auf den eigenen Player anwenden
+function radioApply(force){
+  const st=RADIO.st,P=RADIO.player;radioUi();if(!st||!RADIO.ready||!P)return;
+  const key=st.v+'|'+st.ts;if(!force&&key===RADIO.applied){return;}RADIO.applied=key;
+  try{
+    const cur=P.getVideoData&&P.getVideoData().video_id;
+    if(cur!==st.v){if(st.p>=0)P.cueVideoById(st.v,st.p);else P.loadVideoById(st.v,radioPos(st));}
+    else{const d=Math.abs(P.getCurrentTime()-radioPos(st));if(d>2.5)P.seekTo(radioPos(st),true);
+      if(st.p>=0)P.pauseVideo();else P.playVideo();}
+    P.setVolume(clamp(st.vol,0,100));if(st.vol<=0)P.mute();else P.unMute();
+  }catch(e){}
+}
+function radioSet(ch){
+  const base=RADIO.st||{v:'',t0:Date.now(),p:0,vol:60};
+  RADIO.st=Object.assign({},base,ch,{ts:Date.now(),by:MP.name||'GAST'});
+  if(typeof MP!=='undefined'){MP.me.rd=RADIO.st;MP.dirty=true;}
+  radioLoadApi();radioApply(true);
+}
+// von Mitspielern: neueste Änderung übernehmen
+function radioRemote(rd){
+  if(!rd||typeof rd!=='object')return;const v=ytId(rd.v),ts=+rd.ts;if(!v||!Number.isFinite(ts))return;
+  if(RADIO.st&&RADIO.st.ts>=ts)return;
+  RADIO.st={v,t0:+rd.t0||Date.now(),p:Number.isFinite(+rd.p)?+rd.p:-1,vol:clamp(+rd.vol||0,0,100),ts,by:cleanText(rd.by,14)};
+  MP.me.rd=RADIO.st;radioLoadApi();radioApply(false);
+  if(RADIO.st.p<0&&!RADIO.ready)toast(RADIO.st.by+' spielt Radio. Tippe auf RADIO zum Mithören.');
+}
+function radioUi(){
+  const st=RADIO.st,b=$('#radioBtn');if(b)b.classList.toggle('on',!!(st&&st.v&&st.p<0));
+  const el=$('#rdNow');if(!el)return;
+  let title='';try{title=RADIO.player&&RADIO.player.getVideoData?RADIO.player.getVideoData().title||'':'';}catch(e){}
+  el.textContent=st&&st.v?(st.p<0?'▶ ':'❚❚ ')+(title||st.v)+(st.by?' · von '+st.by:''):'Noch nichts. Link einfügen und abspielen.';
+  $('#rdVol').textContent=(st?st.vol:60)+' %';$('#rdPlay').textContent=st&&st.p<0?'PAUSE':'PLAY';
+}
+$('#radioBtn').addEventListener('click',()=>{SFX.click();radioLoadApi();openPanel('pRadio');radioUi();if(RADIO.st)radioApply(true);});
+$('#rdGo').addEventListener('click',()=>{const v=ytId($('#rdUrl').value);if(!v){toast('Das ist kein YouTube-Link.');return;}SFX.click();radioSet({v,t0:Date.now(),p:-1});$('#rdUrl').value='';});
+$('#rdUrl').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')$('#rdGo').click();});
+$('#rdPlay').addEventListener('click',()=>{const st=RADIO.st;if(!st||!st.v){toast('Erst einen Link einfügen.');return;}SFX.click();
+  if(st.p<0)radioSet({p:radioPos(st)});else radioSet({t0:Date.now()-st.p*1000,p:-1});});
+$('#rdDown').addEventListener('click',()=>{SFX.click();radioSet({vol:Math.max(0,(RADIO.st?RADIO.st.vol:60)-10)});});
+$('#rdUp').addEventListener('click',()=>{SFX.click();radioSet({vol:Math.min(100,(RADIO.st?RADIO.st.vol:60)+10)});});
+setInterval(()=>{if(RADIO.st&&RADIO.ready&&RADIO.st.p<0){try{const d=Math.abs(RADIO.player.getCurrentTime()-radioPos(RADIO.st));if(d>4)RADIO.player.seekTo(radioPos(RADIO.st),true);}catch(e){}}radioUi();},3000);
 
 
 /* ---- 90_main.js ---- */

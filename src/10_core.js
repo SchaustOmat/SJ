@@ -96,7 +96,7 @@ let beatTimer=null,beatN=0;
 function setBeat(on){
   if(beatTimer){clearInterval(beatTimer);beatTimer=null;}
   if(!on)return;
-  beatTimer=setInterval(()=>{if(!AC||muted||focus)return;beatN++;tone(62,.18,'sine',.2,0,38);if(beatN%2===0)noise(.04,.03,7000,.25);if(beatN%4===2)tone(110,.12,'square',.04,.25);},500);
+  beatTimer=setInterval(()=>{if(!AC||muted||focus||(typeof RADIO!=='undefined'&&RADIO.st&&RADIO.st.p<0))return;beatN++;tone(62,.18,'sine',.2,0,38);if(beatN%2===0)noise(.04,.03,7000,.25);if(beatN%4===2)tone(110,.12,'square',.04,.25);},500);
 }
 
 /* ---------- three ---------- */
