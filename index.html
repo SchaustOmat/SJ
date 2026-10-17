@@ -243,6 +243,20 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   #standBtn{top:calc(env(safe-area-inset-top,0px) + 112px)}
 }
 #app.rotated #hudTop .mid{order:0;width:auto}
+.pcards{display:flex;justify-content:center;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.pcg{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pcg.me .pcs{padding:3px;border:2px solid var(--gold);border-radius:6px}
+.pcg.fold{opacity:.35}
+.pcl{font-family:var(--f-title);font-size:8px;letter-spacing:.12em;color:var(--dim)}
+.pcs{display:flex;gap:5px}
+.pc{width:42px;height:58px;background:#f6f0de;color:#101018;border-radius:5px;box-shadow:0 0 0 2px #000,2px 3px 0 #000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:"Arial Black",Arial,sans-serif;font-weight:900;font-size:19px;line-height:1}
+.pc b{font-family:"Segoe UI Symbol","DejaVu Sans",Arial,sans-serif;font-size:20px}
+.pc.red{color:#d0102a}
+.pc.empty{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px var(--line)}
+.pc.sm{width:30px;height:42px;font-size:14px}.pc.sm b{font-size:14px}
+.pshow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;width:100%}
+.psn{font-family:var(--f-title);font-size:8px;color:var(--gold);margin-left:8px}
+@media (min-width:700px){.pc{width:52px;height:72px;font-size:24px}.pc b{font-size:26px}}
 </style>
 <div id="app">
 <canvas id="game"></canvas>
@@ -276,10 +290,12 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   <button id="svStand">◄ AUFSTEHEN</button>
 </div>
 <div id="pkBar" class="tbar" hidden>
+  <div class="pcards" id="pkCards" hidden></div>
   <div class="tb-info"><span id="pkInfo"></span><span id="pkMsg"></span></div>
   <div class="tb-row"><button class="tbb c-red" id="pk-FOLD">FOLD</button><button class="tbb c-green" id="pk-CALL">CHECK</button><button class="tbb c-white sm" id="pk-MINUS">−</button><button class="tbb c-amber" id="pk-RAISE">RAISE</button><button class="tbb c-white sm" id="pk-PLUS">+</button><button class="tbb c-yellow" id="pk-ALLIN">ALL-IN</button></div>
 </div>
 <div id="hlBar" class="tbar" hidden>
+  <div class="pcards" id="hlView" hidden></div>
   <div class="tb-info"><span id="hlInfo"></span><span id="hlMsg"></span></div>
   <div class="tb-row" id="hlRow"><button class="tbb c-white sm" id="hl-MINUS">−</button><button class="tbb c-white sm" id="hl-PLUS">+</button><button class="tbb c-green" id="hl-GEBEN">GEBEN</button><button class="tbb c-yellow" id="hl-NEHMEN">NEHMEN</button><button class="tbb c-red" id="hl-WEITER">WEITER</button></div>
   <div class="tb-row" id="hlCards" hidden><button class="tbb c-amber lit" id="hlc-0">KARTE 1</button><button class="tbb c-amber lit" id="hlc-1">KARTE 2</button><button class="tbb c-amber lit" id="hlc-2">KARTE 3</button><button class="tbb c-amber lit" id="hlc-3">KARTE 4</button></div>
@@ -343,7 +359,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792167527";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792225127";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -615,12 +631,11 @@ const cardTexCache={};
 function cardFaceTex(c){
   if(cardTexCache[c])return cardTexCache[c];
   const r=c%13,s=(c/13)|0,red=s===1||s===2;
-  const t=canvasTex(64,90,(g,w,h)=>{
-    g.fillStyle='#f4eedc';g.fillRect(0,0,w,h);g.fillStyle='#c8bfa4';g.fillRect(0,h-2,w,2);g.fillRect(w-2,0,2,h);
-    g.fillStyle=red?'#c8182c':'#141018';
-    px(g,r===8?11:14);g.textAlign='left';g.textBaseline='top';g.fillText(RANKN[r],4,5);
-    g.font='bold 16px "DejaVu Sans",Arial,sans-serif';g.fillText(SUITS[s],5,22);
-    g.font='bold 44px "DejaVu Sans",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(SUITS[s],w/2+4,h/2+12);
+  const t=canvasTex(128,180,(g,w,h)=>{
+    g.fillStyle='#f6f0de';g.fillRect(0,0,w,h);g.strokeStyle='#b8ae90';g.lineWidth=4;g.strokeRect(2,2,w-4,h-4);
+    g.fillStyle=red?'#d0102a':'#101018';
+    g.font='bold 54px "Arial Black",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(RANKN[r],w/2,52);
+    g.font='bold 72px "DejaVu Sans","Segoe UI Symbol",Arial,sans-serif';g.fillText(SUITS[s],w/2,124);
   },0,0,true);
   cardTexCache[c]=t;return t;
 }
@@ -629,7 +644,7 @@ function cardBackTex(){if(backTex)return backTex;backTex=canvasTex(64,90,(g,w,h)
   for(let y=4;y<h-4;y++)for(let x=4;x<w-4;x++){g.fillStyle=((x+y)>>2)%2?'#7a1426':'#3a0812';g.fillRect(x,y,1,1);}
   g.fillStyle='#ffcf3a';px(g,10);g.textAlign='center';g.textBaseline='middle';g.fillText('SK',w/2,h/2);},0,0,true);return backTex;}
 const cardEdge=new THREE.MeshLambertMaterial({color:0xe8e0c8});
-const CARD_W=.24,CARD_H=.34;
+const CARD_W=.27,CARD_H=.38;
 function makeCard(parent){
   const m=new THREE.Mesh(new THREE.BoxGeometry(CARD_W,.006,CARD_H),[cardEdge,cardEdge,new THREE.MeshLambertMaterial({map:cardBackTex()}),new THREE.MeshLambertMaterial({map:cardBackTex()}),cardEdge,cardEdge]);
   m.userData.face=null;parent.add(m);return m;
@@ -1391,13 +1406,13 @@ function buildPoker(F){
     const wx=cx+d.pos[0],wz=cz+d.pos[1];
     const n=npc(F,{x:wx,z:wz,rot:faceTo(wx,wz,cx,cz),sit:true,anim:'cards',lines:LINES.poker,name:d.name,glasses:d.glasses,color:d.color,hair:d.hair,noCol:true});
     mesh(new THREE.BoxGeometry(.45,.06,.45),lam({color:0x6a1020}),wx,.6,wz,F.group);col(F,wx,wz,.55,.55);
-    const lab=spriteLabel(192,56,.24);lab.position.set(cx+d.pos[0]*.62,1.3,cz+d.pos[1]*.62);F.group.add(lab);
+    const lab=spriteLabel(192,56,.2);lab.position.set(wx,1.78,wz);F.group.add(lab);
     PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:1500+Math.round(Math.random()*15)*100,hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
   });
   const dl=npc(F,{x:cx,z:cz-2.55,rot:0,anim:'dealer',lines:["Blinds 10 und 20.","Setz dich, wenn du dich traust.","Karten kommen."],name:'DEALERIN',color:0x1a1a1e,hair:0xb02a5a});
   PK.dealerNpc=dl;
   // pot sprite
-  PK.potSprite=spriteLabel(256,64,.34);PK.potSprite.position.set(cx,1.25,cz-.95);F.group.add(PK.potSprite);
+  PK.potSprite=spriteLabel(256,64,.2);PK.potSprite.position.set(cx,1.02,cz-.75);F.group.add(PK.potSprite);
   // dealer button
   const dbt=labelTex(32,32,(c)=>{c.fillStyle='#f4f0e8';c.beginPath();c.arc(16,16,15,0,TAU);c.fill();c.fillStyle='#141018';px(c,14);c.textAlign='center';c.textBaseline='middle';c.fillText('D',16,17);});
   PK.dbtn=mesh(new THREE.CylinderGeometry(.07,.07,.02,12),[lam({color:0xe8e8e8}),lam({map:dbt}),lam({color:0xe8e8e8})],cx,.9,cz,F.group);
@@ -1543,14 +1558,14 @@ function post(i,amt,lbl){const s=PK.seats[i];const a=Math.min(amt,s.stack);s.sta
 function dealCardTo(s,r,c,delay){
   const m=makeCard(PK.F.group);m.rotation.z=Math.PI;m.position.set(PK.cx,1.0,PK.cz-2.1);m.visible=false;PK.cards.push(m);s.meshes.push(m);
   let to;
-  if(s.human){to=new THREE.Vector3(PK.cx-.14+r*.28,.905,PK.cz+1.55);}
+  if(s.human){to=new THREE.Vector3(PK.cx-.16+r*.32,.905,PK.cz+1.5);}
   else{const p=seatSpot(s,.66),ang=Math.atan2(s.pos[0],s.pos[1]);to=new THREE.Vector3(p.x+Math.cos(ang)*(r?.14:-.14),.9,p.z-Math.sin(ang)*(r?.14:-.14));m.rotation.y=ang;}
   setTimeout(()=>{m.visible=true;SFX.card();moveTo(m,to,.32,.25,()=>{if(s.human){setCardFace(m,c);flipTo(m,true,.3);}});},delay*1000);
 }
 function dealBoard(n,done){
   for(let i=0;i<n;i++){const c=PK.deck.pop();PK.board.push(c);const idx=PK.board.length-1;
     const m=makeCard(PK.F.group);m.rotation.z=Math.PI;m.position.set(PK.cx,1.0,PK.cz-2.1);PK.cards.push(m);PK.boardMeshes.push(m);setCardFace(m,c);
-    const to=new THREE.Vector3(PK.cx-.56+idx*.28,.9,PK.cz-.12);
+    const to=new THREE.Vector3(PK.cx-.62+idx*.31,.9,PK.cz-.12);
     setTimeout(()=>{SFX.card();moveTo(m,to,.3,.2,()=>flipTo(m,true,.28));},i*180);}
   later(n*.18+.75,done);
 }
@@ -1828,7 +1843,7 @@ function mpLocalState(){
   else if(EL.phase==='moving')a='elev';
   return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
 }
-const EXTRA_SEATS={poker:[[-.95,2.55],[.95,2.55],[-1.55,2.1],[1.55,2.1]],hilo:[[-.8,1.3],[.8,1.3],[-1.3,.9],[1.3,.9]]};
+const EXTRA_SEATS={poker:[[-1.95,0],[1.95,0],[-1.3,1.95],[1.3,1.95]],hilo:[[-1.55,.1],[1.55,.1],[-1.3,-.6],[1.3,-.6]]};
 function seatAvatars(){
   ['poker','hilo'].forEach(tp=>{
     const T=tp==='poker'?PK:HL;const list=[];MP.avatars.forEach((a,k)=>{if(a.act===tp&&a.f===1)list.push([k,a]);});
@@ -1996,7 +2011,19 @@ function pkBarSync(){
   $('#pkInfo').textContent='STACK '+fmt(h.stack)+' · POT '+fmt(potTotal())+(humanTurn()&&toCall>0?' · ZAHLEN '+fmt(toCall):'');
   $('#pkMsg').textContent=humanTurn()?'DU BIST DRAN':(PK.info||PK.msg||'');
   $('#pkMsg').classList.toggle('go',humanTurn());
+  const live=PK.stage!=='off'&&!h.out&&h.hole.length===2;
+  let html='';
+  if(live){
+    html+='<div class="pcg"><span class="pcl">TISCH</span><div class="pcs">';
+    for(let i=0;i<5;i++)html+=PK.board[i]!==undefined?cardHTML(PK.board[i]):'<span class="pc empty"></span>';
+    html+='</div></div><div class="pcg me'+(h.folded?' fold':'')+'"><span class="pcl">DU</span><div class="pcs">'+cardHTML(h.hole[0])+cardHTML(h.hole[1])+'</div></div>';
+  }
+  if(PK.stage==='show'){
+    html+='<div class="pshow">'+PK.seats.filter(x=>!x.human&&!x.folded&&x.hole.length===2).map(x=>'<span class="psn">'+x.name+'</span>'+cardHTML(x.hole[0],1)+cardHTML(x.hole[1],1)).join('')+'</div>';
+  }
+  const el=$('#pkCards');if(el.innerHTML!==html)el.innerHTML=html;el.hidden=!html;
 }
+function cardHTML(c,sm){const r=c%13,s=(c/13)|0,red=s===1||s===2;return '<span class="pc'+(red?' red':'')+(sm?' sm':'')+'">'+RANKN[r]+'<b>'+SUITS[s]+'</b></span>';}
 /* ---- Höher/Tiefer ---- */
 const HLB={btn:{}};
 ['MINUS','PLUS','GEBEN','NEHMEN','WEITER'].forEach(k=>{const b=$('#hl-'+k);HLB.btn[k]=b;
@@ -2008,6 +2035,12 @@ function hlBarSync(){
   const pick=HL.state==='pick';$('#hlCards').hidden=!pick;$('#hlRow').hidden=pick;
   $('#hlInfo').textContent=HL.state==='bet'?'EINSATZ '+fmt(hlStake()):'IM SPIEL '+fmt(HL.pending)+(HL.state==='decide'?' → WEITER: '+fmt(HL.pending*2):'');
   $('#hlMsg').textContent=HL.msg||(HL.state==='bet'?'EINSATZ WÄHLEN, DANN GEBEN':'');
+  let html='';
+  if(HL.open!==null&&HL.state!=='bet'&&HL.state!=='deal'){
+    html='<div class="pcg"><span class="pcl">BANK</span><div class="pcs">'+cardHTML(HL.open)+'</div></div>';
+    if(HL.pick>=0&&HL.state!=='pick')html+='<div class="pcg me"><span class="pcl">DEINE</span><div class="pcs">'+cardHTML(HL.hidden[HL.pick])+'</div></div>';
+  }
+  const el=$('#hlView');if(el.innerHTML!==html)el.innerHTML=html;el.hidden=!html;
 }
 function barsFor(type){if(PK.console)PK.console.visible=type!=='poker';if(HL.cg)HL.cg.visible=type!=='hilo';$('#pkBar').hidden=type!=='poker';$('#hlBar').hidden=type!=='hilo';if(type==='poker')pkBarSync();if(type==='hilo')hlBarSync();}
 
@@ -2437,7 +2470,7 @@ function setFloor(i){
 }
 function resize(){
   const w=LW(),h=LH();
-  let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=Math.max(1,s-1);
+  let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo')?1:Math.max(1,s-1);
   const iw=Math.ceil(w/s),ih=Math.ceil(h/s);renderer.setSize(iw,ih,false);
   camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
   if(typeof svLayout==='function')svLayout();
