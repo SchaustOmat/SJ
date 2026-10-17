@@ -282,7 +282,7 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble'||m.state==='menu'||m.state==='boot')m.dirty=true;
+  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot')m.dirty=true;
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
   if(hot){const h=(now*.6)%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
@@ -345,7 +345,7 @@ function startGamble(m,kind){
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
 const LADDER_UP=.31; // fair: bei hoch/runter um eine Stufe ist ab ~0,33 Dauerdrücken ein Gewinn-Trick
-const LADDER=[10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000];
+const LADDER=[10,20,40,60,100,200,300,400,600,1000,1500,2000,3000,4000,6000,10000,14000,20000,30000,50000,100000,200000,500000];
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<LADDER_UP;gm.last=gm.idx;
@@ -361,7 +361,7 @@ function gambleRB(m,red){
   SFX.card();
   if(isRed===red){m.win*=2;gm.n++;m.msg='RICHTIG! '+fmt(m.win);SFX.win();}
   else{m.msg='VERLOREN';m.win=0;m.disp=0;SFX.lose();}
-  m.state='gambleNext';m.timer=1.3;updateButtons(m);
+  m.state='gambleNext';m.timer=isRed===red?1.3:2.2;m.dirty=true;updateButtons(m);
 }
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
