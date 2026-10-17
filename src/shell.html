@@ -140,6 +140,9 @@ body.pc #joyBase,body.pc #joyHint{display:none}
 .btn{background:var(--black);border:2px solid var(--line);box-shadow:0 0 0 2px #000,3px 3px 0 #000;padding:10px 12px;font-family:var(--f-title);font-size:10px;letter-spacing:.06em}
 .btn:active{transform:translate(2px,2px);box-shadow:0 0 0 2px #000,1px 1px 0 #000}
 .btn.hot{background:var(--neon);color:#12040a;border-color:#000}
+.sens{display:flex;align-items:center;gap:10px;font-family:var(--f-title);font-size:9px;letter-spacing:.06em;color:var(--ink)}
+.sens input{flex:1;min-width:0;accent-color:var(--gold);height:28px}
+.sens b{color:var(--gold);font-weight:normal;min-width:4.5em;text-align:right}
 .btn.gold{background:var(--gold);color:#1a1000;border-color:#000}
 .btn:disabled{opacity:.4}
 .lbl{font-family:var(--f-title);font-size:8px;color:var(--dim);letter-spacing:.12em}
@@ -338,7 +341,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
-<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · ESC MAUS FREI</small></div>
+<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · SHIFT SPRINTEN · ESC MAUS FREI</small></div>
 <button id="prompt" hidden></button>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
 
@@ -417,9 +420,10 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">
   <header><h2>STEUERUNG</h2><button class="x" data-close>WEITER</button></header>
   <button class="btn gold" id="gfxBtn">GRAFIK: SCHARF</button>
+  <label class="sens"><span>UMSCHAUEN</span><input type="range" id="sensIn" min="0.2" max="3" step="0.1" value="1"><b id="sensVal">1.0×</b></label>
   <div class="help" style="display:flex;flex-direction:column;gap:10px">
     <p><b>Links:</b> Daumen ziehen zum Laufen. <b>Rechts:</b> wischen zum Umschauen.</p>
-    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen und mit der Maus umschauen. Klick oder E benutzt. Beim Spielen und mit Esc ist die Maus wieder frei.</p>
+    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen, Shift sprintet, mit der Maus umschauen (Empfindlichkeit oben bei UMSCHAUEN). Klick oder E benutzt. Beim Spielen und mit Esc ist die Maus wieder frei.</p>
     <p><b>Antippen:</b> Automat, Tisch, Aufzug oder Person. Ist es weiter weg, läufst du hin.</p>
     <p><b>Automaten &amp; Tische:</b> Du setzt dich hin und drückst die großen Knöpfe unten. Oben links: Aufstehen.</p>
     <p><b>Aufzug:</b> grünen Knopf rufen, rein, in der Kabine 2 oder EG drücken.</p>

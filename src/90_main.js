@@ -204,7 +204,7 @@ document.addEventListener('pointerlockchange',()=>{pointers.clear();pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
 document.addEventListener('pointerlockerror',()=>{lockFail=true;pcUi();});
 document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
-  P.yaw-=e.movementX*.0024;P.pitch=clamp(P.pitch-e.movementY*.0024,-1.2,1.1);});
+  P.yaw-=e.movementX*.0024*SENS;P.pitch=clamp(P.pitch-e.movementY*.0024*SENS,-1.2,1.1);});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
 
 let focus=null,camAnim=null;
@@ -292,7 +292,7 @@ cv.addEventListener('pointermove',e=>{
   if(locked)return;
   if(p.mode==='joy'){let vx=lx-joy.cx,vy=ly-joy.cy;const m=Math.hypot(vx,vy),R=52;if(m>R){vx*=R/m;vy*=R/m;}
     joyKnob.style.transform='translate('+vx+'px,'+vy+'px)';joy.vx=vx/R;joy.vy=vy/R;if(m>6)walk=null;}
-  else{const s=e.pointerType==='mouse'?.0045:.0062;
+  else{const s=(e.pointerType==='mouse'?.0045:.0062)*SENS;
     if(focus){if(p.moved>14){focus.ly=clamp(focus.ly-dx*s*.6,-.7,.7);focus.lp=clamp(focus.lp-dy*s*.6,-.45,.45);}}
     else{P.yaw-=dx*s;P.pitch=clamp(P.pitch-dy*s,-1.2,1.1);}}
 });
@@ -369,8 +369,8 @@ function interact(act){
 }
 function talk(n){
   SFX.click();
-  if(n.special==='bartender'&&chips<100&&BANK.bal>=100){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
-  if(n.special==='bartender'&&chips<100){setChips(chips+20000,true);say(n,'Pleite? Hier, 20.000 aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 beim Barkeeper.');return;}
+  if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
+  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 20.000 aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -454,6 +454,8 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
+const BAR_MIN=2000; // darunter gibt der Barkeeper 20.000
+let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 let GFX='sharp';try{GFX=localStorage.getItem('nk_gfx')||'sharp';}catch(e){}
 function resize(){
   const w=LW(),h=LH();let iw,ih;
@@ -473,6 +475,8 @@ addEventListener('resize',()=>{if(rot)applyRot();else resize();});
 $('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
 function gfxLabel(){$('#gfxBtn').textContent='GRAFIK: '+(GFX==='sharp'?'SCHARF':'RETRO (PS1)');}
+const sensIn=$('#sensIn');sensIn.value=String(SENS);$('#sensVal').textContent=SENS.toFixed(1)+'×';
+sensIn.addEventListener('input',()=>{SENS=clamp(+sensIn.value||1,.2,3);$('#sensVal').textContent=SENS.toFixed(1)+'×';store('nk_sens',SENS);});
 $('#gfxBtn').addEventListener('click',()=>{GFX=GFX==='sharp'?'retro':'sharp';store('nk_gfx',GFX);gfxLabel();resize();});gfxLabel();
 $('#chatBtn').addEventListener('click',()=>{openPanel('pChat');});
 $('#onlineTag').addEventListener('click',()=>{if(window.NK_STANDALONE){openPanel('pMulti');lobbyOpen();return;}if(!MP.room)toast('Nicht verbunden. Der Link allein reicht nicht: Du musst über TEILEN mit deiner E-Mail eingeladen sein und eingeloggt mit genau dieser E-Mail öffnen.');else if(!MP.online)toast('Verbunden. Warte auf deinen Kollegen…');else toast((MP.online+1)+' Spieler im Keller.');});
@@ -505,12 +509,13 @@ function frame(){
             if(mv<.15){if(walk.act&&d<walk.act.reach+2.2){const a=walk.act;walk=null;interact(a);}else{walk=null;marker.visible=false;}}}}}
     }
     const mm=Math.hypot(mx,mz);
-    if(mm>.01&&canMove){const [nx,nz]=collide(P.x+mx*3.3*dt,P.z+mz*3.3*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;
+    const spr=(keys.ShiftLeft||keys.ShiftRight)&&mm>.01&&canMove;P.spr=(P.spr||0)+((spr?1:0)-(P.spr||0))*Math.min(1,dt*8);const spd=3.3*(1+P.spr*.75);
+    if(mm>.01&&canMove){const [nx,nz]=collide(P.x+mx*spd*dt,P.z+mz*spd*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;
       P.bob+=real*3.1;P.stepAcc+=real;if(P.stepAcc>.85){P.stepAcc=0;SFX.step();}}
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
-    else{tp=tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);ty=P.yaw;tpi=P.pitch;tf=LW()<LH()?82:64;}
+    else{tp=tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
     if(camAnim){camAnim.t+=dt;const k=ease(Math.min(1,camAnim.t/camAnim.dur));
       camera.position.lerpVectors(camAnim.fromPos,tp,k);camera.rotation.set(camAnim.fromPitch+(tpi-camAnim.fromPitch)*k,angLerp(camAnim.fromYaw,ty,k),0);camera.fov=camAnim.fromFov+(tf-camAnim.fromFov)*k;
       if(camAnim.t>=camAnim.dur)camAnim=null;}
