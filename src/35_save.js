@@ -9,7 +9,7 @@ function totalWealth(){
   if(typeof PK!=='undefined'&&PK.sitting)t+=PK.human.stack;
   if(typeof MT!=='undefined'&&MT.deducted&&mtMySeat()>=0)t+=TABLES[MT.table].view.seats[mtMySeat()].st;
   if(typeof HL!=='undefined'&&HL.pending>0)t+=HL.pending;
-  if(typeof focus!=='undefined'&&focus&&focus.type==='slot'&&focus.m.win>0)t+=focus.m.win;
+  if(typeof focus!=='undefined'&&focus&&focus.type==='slot'){const m=focus.m;if(m.win>0)t+=m.win;if(m.power)t+=m.power.left*m.power.cost;}
   return Math.max(0,Math.round(t));
 }
 let saveT=null,cloudDoc=null;

@@ -120,7 +120,8 @@ function netRoomObj(){return {presence(p){NET.mine=Object.assign({},p);return Pr
 function netLeave(silent){
   if(typeof VC!=='undefined'&&VC.state)vcStop();
   if(NET.timer){clearInterval(NET.timer);NET.timer=null;}
-  if(NET.cli){try{if(NET.ok)NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,JSON.stringify({bye:1}));NET.cli.end(true);}catch(e){}NET.cli=null;}
+  if(NET.cli){try{if(NET.ok){NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,JSON.stringify({bye:1}));if(!Object.keys(NET.states).length)NET.cli.publish('sinanskeller/lobby/'+NET.code,'',{qos:0,retain:true});}NET.cli.end(true);}catch(e){}NET.cli=null;}
+  NET.lobbyT=0;
   NET.states={};NET.seen={};NET.ok=false;NET.code='';MP.room=null;MP.online=0;mpClear();$('#chatBtn').hidden=true;
   if(!silent)netStatus('Nicht verbunden.');else mpTag();
 }
@@ -129,6 +130,9 @@ function netPeers(){const out=[{peer:NET.myId,isMe:true,kind:'viewer',guest:fals
   for(const id in NET.states)out.push({peer:id,isMe:false,kind:'viewer',guest:false,presence:NET.states[id]});return out;}
 function netTick(){
   if(!NET.ok||!NET.cli)return;
+  // Raum in der Raumliste anzeigen (alle 15 s, retained)
+  const tl=Date.now();if(tl-(NET.lobbyT||0)>15000){NET.lobbyT=tl;const names=[MP.name||'GAST'];for(const id in NET.states)names.push(cleanText(NET.states[id].n,14)||'GAST');
+    try{NET.cli.publish('sinanskeller/lobby/'+NET.code,JSON.stringify({c:NET.code,h:names[0],p:names.slice(0,6),t:tl}),{qos:0,retain:true});}catch(e){}}
   const js=JSON.stringify({s:NET.mine}),tn=Date.now();
   if(js!==NET.lastJs||tn-(NET.lastPub||0)>2000){NET.lastJs=js;NET.lastPub=tn;try{NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,js,{qos:0});}catch(e){}}
   const t=Date.now();let ch=false;for(const id in NET.seen)if(t-NET.seen[id]>7000){delete NET.seen[id];delete NET.states[id];ch=true;}
@@ -169,6 +173,29 @@ function netConnect(asHost){
   cli.on('offline',()=>{if(NET.cli===cli&&NET.ok)netStatus('Verbindung weg, versuche erneut…');});
   cli.on('error',()=>{});
 }
+/* ---------- Raumliste: offene Räume anzeigen, antippen = beitreten ---------- */
+const LOBBY={cli:null,rooms:{},bi:0,timer:null};
+function lobbyRender(){
+  const el=$('#mpRooms');if(!el)return;const t=Date.now();
+  const list=Object.values(LOBBY.rooms).filter(r=>t-r.t<75000&&r.c!==NET.code).sort((a,b)=>b.t-a.t);
+  if(!list.length){el.innerHTML='<p class="mps" style="color:var(--dim)">'+(LOBBY.cli&&LOBBY.ok?'Gerade kein offener Raum. Hoste einen, dann sehen ihn die anderen hier.':'Suche Räume…')+'</p>';return;}
+  el.innerHTML='';list.forEach(r=>{const b=document.createElement('button');b.className='btn mproom';
+    const a=document.createElement('span');a.textContent=r.h+' · RAUM '+r.c;const sm=document.createElement('small');sm.textContent=r.p.length+' SPIELER · REIN';
+    b.append(a,sm);b.addEventListener('click',()=>{SFX.click();lobbyClose();$('#mpCode').value=r.c;netStart(false,r.c);});el.appendChild(b);});
+}
+function lobbyOpen(){
+  if(!STANDALONE||typeof mqtt==='undefined')return;lobbyClose();LOBBY.rooms={};LOBBY.ok=false;lobbyRender();
+  const url=BROKERS[LOBBY.bi%BROKERS.length];let cli;
+  try{cli=mqtt.connect(url,{clientId:'skl_'+Math.random().toString(36).slice(2,10),clean:true,connectTimeout:6000,reconnectPeriod:0,keepalive:30});}catch(e){return;}
+  LOBBY.cli=cli;const fail=setTimeout(()=>{if(LOBBY.cli===cli&&!LOBBY.ok){try{cli.end(true);}catch(e){}LOBBY.cli=null;LOBBY.bi++;if(LOBBY.bi<BROKERS.length*2&&openId==='pMulti')lobbyOpen();}},7000);
+  cli.on('connect',()=>{clearTimeout(fail);LOBBY.ok=true;cli.subscribe('sinanskeller/lobby/+',{qos:0});lobbyRender();});
+  cli.on('message',(topic,buf)=>{const code=topic.split('/')[2];if(!/^\d{4}$/.test(code||''))return;
+    const txt=buf.toString();if(!txt){delete LOBBY.rooms[code];lobbyRender();return;}
+    try{const d=JSON.parse(txt);if(!d||typeof d.t!=='number')return;LOBBY.rooms[code]={c:code,h:cleanText(d.h,14)||'GAST',p:Array.isArray(d.p)?d.p.slice(0,6):[],t:Math.min(d.t,Date.now())};lobbyRender();}catch(e){}});
+  cli.on('error',()=>{});
+  LOBBY.timer=setInterval(lobbyRender,5000);
+}
+function lobbyClose(){if(LOBBY.timer){clearInterval(LOBBY.timer);LOBBY.timer=null;}if(LOBBY.cli){try{LOBBY.cli.end(true);}catch(e){}LOBBY.cli=null;}LOBBY.ok=false;}
 function netNext(asHost){NET.tries++;NET.bi++;if(NET.tries>=BROKERS.length){netLeave(true);netStatus('Kein Server erreichbar. Internet prüfen und nochmal versuchen.');return;}netConnect(asHost);}
 if(STANDALONE){
   $('#mpHost').addEventListener('click',()=>{SFX.click();const c=($('#mpCode').value||'').replace(/\D/g,'').slice(0,4);netStart(true,c.length===4?c:String(1000+(Math.random()*9000|0)));});

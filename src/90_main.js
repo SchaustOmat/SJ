@@ -243,7 +243,7 @@ function enterFocus(type,m){
 function leaveFocus(){
   if(!focus)return;
   const f=focus;
-  if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext'].includes(m.state)||(m.power&&m.power.spinning)){toast('Erst das Spiel beenden.');return;}
+  if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
@@ -362,6 +362,7 @@ let openId=null,busy=false;
 function openPanel(id){if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
 function closePanel(){if(!openId)return;
   if(openId==='pAtm')atmClosed();
+  if(openId==='pMulti'&&typeof lobbyClose==='function')lobbyClose();
   if(openId==='pRoulette'&&!R.spinning){let s=0;for(const k in R.bets)s+=R.bets[k];if(s>0){setChips(chips+s);toast(fmt(s)+' Chips Einsatz zurück.');}R.bets={};}$('#'+openId).hidden=true;$('#veil').hidden=true;openId=null;locked=false;curAct=null;}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)closePanel();}));
 $('#veil').addEventListener('click',()=>{if(!busy)closePanel();});
@@ -448,7 +449,7 @@ $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
 function gfxLabel(){$('#gfxBtn').textContent='GRAFIK: '+(GFX==='sharp'?'SCHARF':'RETRO (PS1)');}
 $('#gfxBtn').addEventListener('click',()=>{GFX=GFX==='sharp'?'retro':'sharp';store('nk_gfx',GFX);gfxLabel();resize();});gfxLabel();
 $('#chatBtn').addEventListener('click',()=>{openPanel('pChat');});
-$('#onlineTag').addEventListener('click',()=>{if(window.NK_STANDALONE){openPanel('pMulti');return;}if(!MP.room)toast('Nicht verbunden. Der Link allein reicht nicht: Du musst über TEILEN mit deiner E-Mail eingeladen sein und eingeloggt mit genau dieser E-Mail öffnen.');else if(!MP.online)toast('Verbunden. Warte auf deinen Kollegen…');else toast((MP.online+1)+' Spieler im Keller.');});
+$('#onlineTag').addEventListener('click',()=>{if(window.NK_STANDALONE){openPanel('pMulti');lobbyOpen();return;}if(!MP.room)toast('Nicht verbunden. Der Link allein reicht nicht: Du musst über TEILEN mit deiner E-Mail eingeladen sein und eingeloggt mit genau dieser E-Mail öffnen.');else if(!MP.online)toast('Verbunden. Warte auf deinen Kollegen…');else toast((MP.online+1)+' Spieler im Keller.');});
 document.querySelectorAll('#pChat [data-say]').forEach(b=>b.addEventListener('click',()=>{mpSay(b.dataset.say);closePanel();}));
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const i=$('#chatIn');mpSay(i.value);i.value='';closePanel();});
 $('#chatIn').addEventListener('keydown',e=>e.stopPropagation());

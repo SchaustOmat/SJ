@@ -15,7 +15,7 @@ function smOpen(m){
   if(!m.booted){m.booted=true;m.state='boot';m.stateT=0;m.timer=0;SFX.ding();}else m.state='menu';
   m.dirty=true;updateButtons(m);
 }
-function smStart(m){const id=SPIELOMAT.games[m.menuIdx][0];setMachineGame(m,id);m.state='idle';slotIdleMsg(m);SFX.fsIntro();m.dirty=true;m.topDirty=true;updateButtons(m);}
+function smStart(m){const id=SPIELOMAT.games[m.menuIdx][0];setMachineGame(m,id);m.state='splash';m.stateT=0;m.timer=2;m.msg='VIEL GLÜCK!';SFX.fsIntro();m.dirty=true;m.topDirty=true;updateButtons(m);}
 function smButtons(m,B){
   const menu=m.state==='menu';
   B('MENU','MENÜ','white',false);B('INFO','INFO','white',false);B('AUTO','AUTO','blue',false);B('KARTE','RISIKO KARTE','red',false);B('LEITER','RISIKO LEITER','yellow',false);
@@ -29,6 +29,7 @@ function smPress(m,key){
   m.dirty=true;
 }
 function smTap(m,uv){
+  if(m.state==='poffer')return offerTap(m,uv);
   if(m.state!=='menu'||!uv)return false;
   const x=uv.x*320,y=(1-uv.y)*240,T=SM_TILE;
   for(let i=0;i<SPIELOMAT.games.length;i++){const c=i%T.cols,r=i/T.cols|0,tx=T.x0+c*(T.w+T.gx),ty=T.y0+r*(T.h+T.gy);

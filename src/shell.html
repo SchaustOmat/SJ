@@ -108,6 +108,9 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .bc-num{position:absolute;left:10px;top:62px;font-size:11px;letter-spacing:.08em;text-shadow:1px 1px 0 #000}
 .bc-name{position:absolute;left:10px;bottom:9px;font-size:7px;color:#e8e0ff;max-width:110px;overflow:hidden;white-space:nowrap}
 .bc-logo{position:absolute;right:8px;bottom:6px;display:flex}.bc-logo i{width:20px;height:20px;border-radius:50%;background:#ff3a3a;opacity:.9}.bc-logo i+i{background:#ffcf3a;margin-left:-8px}
+.mprooms{display:flex;flex-direction:column;gap:6px}
+.mproom{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+.mproom small{font-family:var(--f-body);font-size:18px;color:var(--dim);letter-spacing:0}
 /* Panels */
 #veil{position:fixed;inset:0;z-index:19;background:rgba(4,2,8,.55)}
 .panel{position:fixed;z-index:20;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 24px));
@@ -387,10 +390,12 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <section id="pMulti" class="panel" hidden aria-label="Multiplayer">
   <header><h2>MULTIPLAYER <span style="color:var(--dim);font-size:9px">V3 SERVER</span></h2><button class="x" data-close>ZURÜCK</button></header>
   <p class="mps" id="mpStatus">Nicht verbunden.</p>
+  <div class="lbl">OFFENE RÄUME</div>
+  <div id="mpRooms" class="mprooms"><p class="mps" style="color:var(--dim)">Suche Räume…</p></div>
   <button class="btn hot" id="mpHost">RAUM HOSTEN</button>
   <div class="row" style="flex-wrap:nowrap"><input id="mpCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="CODE"><button class="btn gold" id="mpJoin">BEITRETEN</button></div>
   <button class="btn" id="mpLeave">VERLASSEN</button>
-  <p class="mps" style="color:var(--dim)">Eigenen Code eintippen und RAUM HOSTEN, oder leer lassen für einen Zufallscode. Der andere tippt denselben Code ein und drückt BEITRETEN. Funktioniert über WLAN und Mobilfunk.</p>
+  <p class="mps" style="color:var(--dim)">Wer hostet, erscheint oben bei OFFENE RÄUME. Die anderen tippen den Raum einfach an und sind drin. Code eintippen geht auch noch. Funktioniert über WLAN und Mobilfunk.</p>
 </section>
 <section id="pAtm" class="panel atm" hidden aria-label="Geldautomat">
   <header><h2>GELDAUTOMAT</h2><button class="x" data-close>KARTE RAUS</button></header>
