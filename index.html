@@ -67,11 +67,12 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 #joyBase.on{opacity:1;transition:none}
 #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,46,136,.6);border:2px solid var(--neon);box-shadow:0 0 14px rgba(255,46,136,.6)}
 #ytWrap{position:fixed;left:-420px;top:0;width:200px;height:113px;opacity:0;pointer-events:none;z-index:-1}
+#radioBtn{width:auto;min-width:0;padding:0 7px;font-size:8px}
 .ibtn.on{background:var(--gold);color:#1a1000;box-shadow:0 0 12px var(--gold)}
 .rd-now{font-family:var(--f-body);font-size:20px;color:var(--gold);margin:0 0 6px;overflow-wrap:anywhere}
 .rd-ctl{align-items:center;gap:8px}.rd-ctl .btn{color:var(--ink)}.rd-ctl b{font-family:var(--f-title);font-size:11px;color:var(--ink);margin-left:auto}
 #rdUrl{flex:1;min-width:0;background:var(--black);color:var(--gold);border:2px solid var(--line);font-family:var(--f-body);font-size:18px;padding:8px 10px;user-select:text;-webkit-user-select:text}
-#vig{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,0,.45) 75%,rgba(0,0,0,.82) 100%)}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.18) 82%,rgba(0,0,0,.42) 100%)}
 #fxCv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25;image-rendering:pixelated}
 @keyframes shk{0%,100%{transform:translate(-50%,-50%)}15%{transform:translate(calc(-50% - 9px),calc(-50% + 4px))}35%{transform:translate(calc(-50% + 8px),calc(-50% - 3px))}55%{transform:translate(calc(-50% - 5px),calc(-50% + 2px))}75%{transform:translate(calc(-50% + 3px),-50%)}}
 .panel.shk{animation:shk .45s ease-out}
@@ -533,7 +534,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792250719";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792251034";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -822,7 +823,7 @@ const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:false,powerPreferenc
 renderer.setPixelRatio(1);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07050c);
-scene.fog=new THREE.Fog(0x040207,2.5,16);
+scene.fog=new THREE.Fog(0x06040a,3,19);
 const camera=new THREE.PerspectiveCamera(70,1,.03,60);
 camera.rotation.order='YXZ';
 const snapRes={value:new THREE.Vector2(160,120)};
@@ -4324,7 +4325,7 @@ function buildWorld(){
   pointLight(A,0x29f0ff,9.2,3,-1,1.3,9);
   pointLight(A,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(A,0x8a5cff,-5,3,7.5,1.2,11,true);
-  A.ambient=0x3a2c58;
+  A.ambient=0x44366a;
   // ----- 2. STOCK -----
   seed=4242;
   const B=makeFloor('2. STOCK · VIP');
@@ -4360,10 +4361,10 @@ function buildWorld(){
   pointLight(B,0xffcf3a,9.3,3,4,1.3,9);
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
-  B.ambient=0x4a2032;
+  B.ambient=0x56283a;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.34); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
+  ambient=new THREE.AmbientLight(0x4a3a66,.66); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 

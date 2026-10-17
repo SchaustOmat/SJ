@@ -105,7 +105,7 @@ const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:false,powerPreferenc
 renderer.setPixelRatio(1);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07050c);
-scene.fog=new THREE.Fog(0x040207,2.5,16);
+scene.fog=new THREE.Fog(0x06040a,3,19);
 const camera=new THREE.PerspectiveCamera(70,1,.03,60);
 camera.rotation.order='YXZ';
 const snapRes={value:new THREE.Vector2(160,120)};
