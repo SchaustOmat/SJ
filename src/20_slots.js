@@ -188,7 +188,7 @@ function btnModel(m){
   B('AUTO',m.auto?'STOP':'AUTO','blue',idle||show||m.auto,m.auto);
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
   B('KARTE','RISIKO KARTE','red',canRisk,canRisk);
-  const canLadder=canRisk&&m.win>=ladOf(m)[0];
+  const canLadder=canRisk; // Leiter geht bei jedem Gewinn
   B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
   B('START',s==='spin'?'STOP':show?'NEHMEN':'START','green',idle||show||(s==='spin'&&!m.fs));
   return o;
@@ -577,9 +577,9 @@ function startGamble(m,kind){
   m.present=null;m.auto=false;
   if(kind==='ladder'){
     let idx=-1;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=m.win)idx=i;
-    if(idx<0){m.msg='GEWINN ZU KLEIN FÜR DIE LEITER';updateButtons(m);return;}
-    const rest=m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
-    m.win=ladOf(m)[idx];m.disp=m.win;
+    // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
+    const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
+    if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
     if(idx>=ladOf(m).length-1){collect(m);return;}
     m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
     if(idx>=AUS_I){m.gamble.last=idx;m.gamble.up=true;ausShow(m);m.dirty=true;m.topDirty=true;return;}}
@@ -611,6 +611,7 @@ function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.s
   m.dirty=true;updateButtons(m);}
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;const L=ladOf(m);gm.last=gm.idx;
+  if(gm.idx<0){const up=Math.random()<m.win/L[0]*.98;gm.target=up?0:-2;gm.up=up;ladderResult(m);return;}
   const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}
   gm.target=up?(gm.idx===AUS_I-1?ausLand():gm.idx+1):ladDown(gm.idx);gm.up=up;
   ladderResult(m);
