@@ -190,7 +190,7 @@ function joyRest(){joyBase.style.left='calc(env(safe-area-inset-left,0px) + 90px
   joyHint.style.left='calc(env(safe-area-inset-left,0px) + 28px)';joyHint.style.top='calc(100% - env(safe-area-inset-bottom,0px) - 22px)';}
 joyRest();
 // PC: kein Joystick, Klick fängt die Maus (Umschauen mit der Maus), beim Spielen/Esc ist sie wieder frei
-let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false;
+let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false,lockOK=false,lockErrT=0;
 const pcHint=$('#pcHint'),cross=$('#cross');
 const mouseLocked=()=>document.pointerLockElement===cv;
 function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}}
@@ -200,9 +200,11 @@ function pcUi(){
   const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
   if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
 }
-document.addEventListener('pointerlockchange',()=>{pointers.clear();pcUi();});
+document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;pointers.clear();pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
-document.addEventListener('pointerlockerror',()=>{lockFail=true;pcUi();});
+// Hat es schon einmal geklappt, ist ein Fehler nur die Sperrzeit des Browsers direkt nach Esc: einfach nochmal klicken lassen
+document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi();return;}
+  if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
 document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
   P.yaw-=e.movementX*.0024*SENS;P.pitch=clamp(P.pitch-e.movementY*.0024*SENS,-1.2,1.1);});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
