@@ -57,6 +57,11 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 #joyBase{position:fixed;z-index:5;width:124px;height:124px;margin:-62px 0 0 -62px;border-radius:50%;border:2px solid rgba(41,240,255,.5);background:rgba(41,240,255,.07);pointer-events:none;opacity:.55;transition:opacity .2s}
 #joyBase.on{opacity:1;transition:none}
 #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,46,136,.6);border:2px solid var(--neon);box-shadow:0 0 14px rgba(255,46,136,.6)}
+#cross{position:fixed;z-index:5;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#fff;box-shadow:0 0 0 2px #000;pointer-events:none}
+#pcHint{position:fixed;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;max-width:calc(100% - 32px);box-sizing:border-box;padding:14px 18px;background:rgba(10,6,16,.82);border:2px solid var(--cyan,#29f0ff);
+  font-family:var(--f-title);font-size:14px;color:#fff;text-align:center;letter-spacing:.08em;line-height:1.5}
+#pcHint small{display:block;margin-top:8px;font-family:var(--f-body);font-size:16px;letter-spacing:0;opacity:.85}
+body.pc #joyBase,body.pc #joyHint{display:none}
 #joyHint{position:fixed;z-index:5;pointer-events:none;font-family:var(--f-title);font-size:8px;color:var(--dim);letter-spacing:.1em;text-align:center;width:124px}
 
 .bubble{max-width:min(240px,70vw);overflow-wrap:anywhere;position:fixed;z-index:5;left:0;top:0;transform:translate(-50%,-100%);background:var(--paper);color:var(--paperInk);font-family:var(--f-body);font-size:19px;line-height:1.05;padding:4px 8px 5px;max-width:200px;text-align:center;box-shadow:0 0 0 2px #000,3px 3px 0 #000;pointer-events:none}
@@ -327,6 +332,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 </div>
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
+<div id="cross" hidden></div>
+<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · ESC MAUS FREI</small></div>
 <button id="prompt" hidden></button>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
 
@@ -407,6 +414,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <button class="btn gold" id="gfxBtn">GRAFIK: SCHARF</button>
   <div class="help" style="display:flex;flex-direction:column;gap:10px">
     <p><b>Links:</b> Daumen ziehen zum Laufen. <b>Rechts:</b> wischen zum Umschauen.</p>
+    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen und mit der Maus umschauen. Klick oder E benutzt. Beim Spielen und mit Esc ist die Maus wieder frei.</p>
     <p><b>Antippen:</b> Automat, Tisch, Aufzug oder Person. Ist es weiter weg, läufst du hin.</p>
     <p><b>Automaten &amp; Tische:</b> Du setzt dich hin und drückst die großen Knöpfe unten. Oben links: Aufstehen.</p>
     <p><b>Aufzug:</b> grünen Knopf rufen, rein, in der Kabine 2 oder EG drücken.</p>

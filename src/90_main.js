@@ -189,6 +189,23 @@ function applyRot(){
 function joyRest(){joyBase.style.left='calc(env(safe-area-inset-left,0px) + 90px)';joyBase.style.top='calc(100% - env(safe-area-inset-bottom,0px) - 98px)';joyKnob.style.transform='translate(0,0)';joyBase.classList.remove('on');
   joyHint.style.left='calc(env(safe-area-inset-left,0px) + 28px)';joyHint.style.top='calc(100% - env(safe-area-inset-bottom,0px) - 22px)';}
 joyRest();
+// PC: kein Joystick, Klick fängt die Maus (Umschauen mit der Maus), beim Spielen/Esc ist sie wieder frei
+let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false;
+const pcHint=$('#pcHint'),cross=$('#cross');
+const mouseLocked=()=>document.pointerLockElement===cv;
+function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}}
+function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
+function pcUi(){
+  document.body.classList.toggle('pc',PC);
+  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
+  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
+}
+document.addEventListener('pointerlockchange',()=>{pointers.clear();pcUi();});
+// Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
+document.addEventListener('pointerlockerror',()=>{lockFail=true;pcUi();});
+document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
+  P.yaw-=e.movementX*.0024;P.pitch=clamp(P.pitch-e.movementY*.0024,-1.2,1.1);});
+addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
 
 let focus=null,camAnim=null;
 function focusPose(){
@@ -231,7 +248,7 @@ function focusPose(){
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
-  focus={type,m,ly:0,lp:0};
+  focus={type,m,ly:0,lp:0};freeMouse();
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
@@ -251,13 +268,17 @@ function leaveFocus(){
   else if(f.type==='mtable'){const T=f.m,si=mtMySeat(T);mtLeaveSeat();const p=mtSeatPos(T,si>=0?si:0,T.R+.95);P.x=p.x;P.z=p.z;P.yaw=Math.atan2(-(T.cx-p.x),-(T.cz-p.z));}
   P.pitch=-.05;
   camAnim={t:0,dur:.5,fromPos:camera.position.clone(),fromYaw:camera.rotation.y,fromPitch:camera.rotation.x,fromFov:camera.fov,dir:-1};
-  focus=null;svClose();barsFor(null);$('#standBtn').hidden=true;joyBase.hidden=false;joyHint.hidden=false;
+  focus=null;svClose();barsFor(null);$('#standBtn').hidden=true;joyBase.hidden=PC;joyHint.hidden=PC;
   resize();
 }
 $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
+  if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button!==0)return;
+    if(mouseLocked()){if(curAct)interact(curAct);else tapAt(LW()/2,LH()/2,true);}
+    else grabMouse();
+    return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   const [lx,ly]=toLocal(e.clientX,e.clientY);
   const leftSide=!focus&&lx<LW()*.45&&e.pointerType!=='mouse';
@@ -289,7 +310,7 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
-function tapAt(x,y){
+function tapAt(x,y,noWalk){
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
   const hits=ray.intersectObjects(hitList(),false);if(!hits.length)return;
   if(focus){
@@ -303,7 +324,7 @@ function tapAt(x,y){
   }
   const h=hits[0],act=h.object.userData.act;
   if(act&&act.pos){const d=Math.hypot(act.pos.x-P.x,act.pos.z-P.z);if(h.distance<4.2&&d<act.reach+1.6)interact(act);else startWalk(act.pos.x,act.pos.z,act);}
-  else if(h.object.userData.floor){startWalk(h.point.x,h.point.z,null);}
+  else if(h.object.userData.floor&&!noWalk){startWalk(h.point.x,h.point.z,null);}
 }
 function startWalk(x,z,act){walk={x,z,act,t:0,lx:P.x,lz:P.z};marker.position.set(x,.03,z);marker.visible=!act;SFX.click();}
 function collide(px,pz){
@@ -359,7 +380,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeou
    PANELS (Roulette, Hilfe)
    ========================================================= */
 let openId=null,busy=false;
-function openPanel(id){if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
+function openPanel(id){freeMouse();if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
 function closePanel(){if(!openId)return;
   if(openId==='pAtm')atmClosed();
   if(openId==='pMulti'&&typeof lobbyClose==='function')lobbyClose();
@@ -459,7 +480,7 @@ const clock=new THREE.Clock(),tmpV=new THREE.Vector3();
 let chatterT=4,flickT=0;
 function frame(){
   requestAnimationFrame(frame);
-  const dt=Math.min(.05,clock.getDelta());now+=dt;
+  const dt=Math.min(.05,clock.getDelta());now+=dt;pcUi();
   if(F){
     updTweens(dt);elevStep(dt);
     let mx=0,mz=0;
@@ -526,7 +547,7 @@ fontWait.then(()=>{
   mpInit();cloudSaveInit();
   $('#start').addEventListener('click',()=>{
     MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.started=true;MP.dirty=true;mpTag();
-    initAudio();$('#start').hidden=true;$('#hudTop').hidden=false;joyBase.hidden=false;joyHint.hidden=false;locked=false;started=true;
+    initAudio();$('#start').hidden=true;$('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
     if(!seen)openPanel('pHelp');
     try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
