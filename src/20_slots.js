@@ -128,7 +128,9 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const stool=new THREE.Group();g.add(stool);stool.position.set(0,0,.98);
   mesh(new THREE.CylinderGeometry(.04,.14,.65,6),lam({color:0x2a2a30}),0,.32,0,stool);
   mesh(new THREE.CylinderGeometry(.23,.23,.09,8),lam({color:0x6a1020}),0,.69,0,stool);
-  const m={F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
+  const slotFr=box(.2,.04,.03,chrome,.2,1.81,.165,g);box(.15,.01,.034,dark,.2,1.81,.167,g);
+  const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.035,.035,.036,cardLed,.35,1.81,.166,g);
+  const m={cardSlot:slotFr,cardLed,F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
     reels:[0,1,2,3,4].map(i=>({pos:Math.random()*G.strips[i].length,spin:false,stopAt:0,target:0,bounce:0,teased:false})),
     stops:[0,0,0,0,0],grid:null,ev:null,present:null,fs:null,gamble:null,auto:false,info:false,npc:null,demoNext:now+3+Math.random()*6,demo:false,
     msg:'',dirty:true,topDirty:true,stateT:0,timer:0,expand:null,history:[]};
@@ -279,7 +281,25 @@ function fxStep(m,dt){
   B.acc+=dt*(30+Math.max(0,B.tier)*15);
   while(B.acc>1){B.acc--;F.parts.push({x:Math.random()*320,y:-6,vx:(Math.random()-.5)*30,vy:40+Math.random()*80,g:150,life:0,max:2.2,col:'#ffd23a',sz:4+Math.random()*2,coin:true,ph:Math.random()*TAU});}
 }
+function unlockShow(m){
+  m.unlockT=now;SFX.unlock();SFX.ausFan();fxFlash(m,1,'120,255,140');fxShake(m,.6,true);
+  fxBurst(m,160,110,70,{coin:true,spd:200,up:110,sz:5,life:1.6});fxBurst(m,160,110,60,{cols:['#3adf5a','#a8ffb0','#fff','#ffd23a'],spd:240,life:1});
+  m.dirty=true;}
+function drawUnlock(m,g){const t=now-(m.unlockT||-9);if(t>2.2)return;m.dirty=true;
+  const a=t<.15?t/.15:t>1.8?Math.max(0,(2.2-t)/.4):1;g.save();g.globalAlpha=a;
+  g.fillStyle='rgba(0,30,8,.72)';g.fillRect(0,0,320,240);
+  g.save();g.translate(160,100);g.rotate(now*.9);for(let i=0;i<16;i++){g.rotate(TAU/16);g.fillStyle=i%2?'rgba(60,255,120,.22)':'rgba(255,230,120,.12)';g.beginPath();g.moveTo(0,0);g.lineTo(-22,-260);g.lineTo(22,-260);g.closePath();g.fill();}g.restore();
+  // Schloss springt auf
+  const op=clamp((t-.2)/.35,0,1),pop=1+Math.max(0,.35-Math.abs(t-.55))*1.2;g.save();g.translate(160,78);g.scale(pop,pop);
+  g.lineWidth=7;g.strokeStyle='#d8dce8';g.beginPath();g.arc(0,-14-op*10,15,Math.PI,0);g.lineTo(15,-14-op*10+(op>0?0:0));g.stroke();
+  const bg=g.createLinearGradient(0,-14,0,22);bg.addColorStop(0,'#fff2a0');bg.addColorStop(1,'#c88a10');g.fillStyle=bg;g.fillRect(-22,-14,44,36);g.strokeStyle='#5a3a00';g.lineWidth=2;g.strokeRect(-22,-14,44,36);
+  g.fillStyle='#3a2000';g.beginPath();g.arc(0,2,5,0,TAU);g.fill();g.fillRect(-2,2,4,10);g.restore();
+  const sc=1+Math.sin(t*10)*.04+(t<.5?(.5-t)*1.2:0);g.save();g.translate(160,140);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,22);
+  g.lineWidth=8;g.strokeStyle='#002a08';g.strokeText('ENTSPERRT',0,0);const tg=g.createLinearGradient(0,-11,0,11);tg.addColorStop(0,'#e8ffe0');tg.addColorStop(.5,'#3adf5a');tg.addColorStop(1,'#0a6a1a');g.fillStyle=tg;g.fillText('ENTSPERRT',0,0);g.restore();
+  px(g,7);g.textAlign='center';g.fillStyle='#f4f0e8';g.fillText('DER AUTOMAT GEHÖRT DIR',160,168);
+  g.restore();}
 function fxDraw(m,g){
+  drawUnlock(m,g);
   const F=m.fx;if(!F)return;
   if(F.big)drawBig(m,g);
   for(const p of F.parts){const a=1-p.life/p.max;
@@ -429,7 +449,8 @@ function slotStep(m,dt){
   if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
-  if(m.fx&&m.fx.big&&!m.fx.big.out)m.ledMat.color.setHex(Math.floor(now*14)%2?0xffffff:0xffc020);
+  if(m.unlockT&&now-m.unlockT<2.2)m.ledMat.color.setHSL((now*3)%1,1,.55);
+  else if(m.fx&&m.fx.big&&!m.fx.big.out)m.ledMat.color.setHex(Math.floor(now*14)%2?0xffffff:0xffc020);
   else if(hot){const h=(now*(m.state==='count'?2:.6))%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
   // button blink & press
   for(const k in m.btns){const b=m.btns[k];const on=b.lit&&(!b.blink||Math.floor(now*3)%2===0);b.mat.color.setHex(on?0xffffff:b.lit?0xaaaaaa:0x3a3a3a);
@@ -889,8 +910,8 @@ function drawGamble(m,g){
 }
 function drawScreen(m){
   const g=m.scr.userData.ctx;SYMSET=m.G.id==='pharao'?'LP':'';
-  if(m.state==='boot'||m.state==='menu'){smDraw(m,g);m.scr.needsUpdate=true;m.dirty=false;return;}
-  if(m.state==='splash'){drawSplash(m,g);m.scr.needsUpdate=true;m.dirty=false;return;}
+  if(m.state==='boot'||m.state==='menu'){smDraw(m,g);m.dirty=false;fxDraw(m,g);m.scr.needsUpdate=true;return;}
+  if(m.state==='splash'){drawSplash(m,g);m.dirty=false;fxDraw(m,g);m.scr.needsUpdate=true;return;}
   const sh=m.fx&&m.fx.shake>0?m.fx.shake:0;
   g.save();if(sh){g.fillStyle='#000';g.fillRect(0,0,320,240);g.translate((Math.random()-.5)*sh*12,(Math.random()-.5)*sh*9);}
   bgFor(m,g);drawHeader(m,g);
@@ -905,8 +926,8 @@ function drawScreen(m){
         px(g,7);g.textAlign='center';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText(t,RX+CW*5-w/2-2,RY+10);}}
     if(m.state==='fsRetrig'||m.state==='fsEnd'){g.fillStyle='rgba(0,0,0,.7)';g.fillRect(RX+20,RY+40,CW*5-40,70);g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';
       g.fillText(m.state==='fsEnd'?'GEWONNEN':'+'+m.G.free.count+' FREISPIELE',160,RY+64);px(g,10);g.fillStyle='#fff';g.fillText(m.state==='fsEnd'?fmt(m.win):'NOCHMAL!',160,RY+90);}}
-  drawBar(m,g);drawFly(m,g);fxDraw(m,g);g.restore();
-  m.scr.needsUpdate=true;m.dirty=false;
+  drawBar(m,g);drawFly(m,g);m.dirty=false;fxDraw(m,g);g.restore();
+  m.scr.needsUpdate=true;
 }
 function drawTop(m){
   const g=m.top.userData.ctx,G=m.G;SYMSET=G.id==='pharao'?'LP':'';
@@ -977,6 +998,8 @@ function updMachines(dt,F,focusM){
     }
     if(m.topDirty)drawTop(m);
     if(m===RESV)resvSave();
+    {const un=m.unlockT&&now-m.unlockT<2.2,held=m.remote||(typeof machineHeld==='function'&&machineHeld(m));
+      m.cardLed.color.setHex(un?(Math.floor(now*12)%2?0x7aff7a:0x0a6a1a):m===RESV?0x3adf5a:held?0xff2020:0x3a0606);}
     if(m===focusM||m===RESV){const pw=m.win+(m.power?m.power.left*m.power.cost:0);if(pw!==m.savedWin){m.savedWin=pw;store('nk_slotpend',pw>0?pw:null);}}
     if(m.dirty&&(m===focusM||d<9))drawScreen(m);
     if(m===focusM)svDraw(m);

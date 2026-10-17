@@ -17,10 +17,16 @@ function svGate(m){
   const w=el.querySelector('#gWallet'),hint=el.querySelector('#gHint');
   w.addEventListener('click',e=>{e.stopPropagation();
     if(el.dataset.st===''){el.dataset.st='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
-    if(el.dataset.st==='open'&&e.target.closest('.gw-card')){el.dataset.st='ins';SFX.card();hint.textContent='';
+    if(el.dataset.st==='open'&&e.target.closest('.gw-card')){
+      // Ziel: der Kartenschlitz am Automaten (auf den Bildschirm projiziert)
+      const card=w.querySelector('.gw-card'),cr=card.getBoundingClientRect();let tx=innerWidth/2,ty=innerHeight*.12;
+      try{const v=m.cardSlot.getWorldPosition(new THREE.Vector3()).project(camera);tx=(v.x*.5+.5)*innerWidth;ty=(-v.y*.5+.5)*innerHeight;}catch(_){}
+      card.style.setProperty('--fx',(tx-(cr.left+cr.width/2))+'px');card.style.setProperty('--fy',(ty-(cr.top+cr.height/2))+'px');
+      const sl=el.querySelector('.gate-slot');if(sl){sl.style.left=tx+'px';sl.style.top=ty+'px';}
+      el.dataset.st='ins';SFX.card();hint.textContent='';
       setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},420);
-      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);SFX.unlock();el.className='ok';el.dataset.st='';el.innerHTML='<div class="gate-ok"><div class="lock">🔓</div>ENTSPERRT<small>Der Automat gehört dir, auch wenn du aufstehst.</small></div>';
-        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},1000);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},1350);},760);}});
+      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);noise(.12,.15,1800);el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);
+        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},700);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
