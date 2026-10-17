@@ -126,7 +126,7 @@ function buildWorld(){
   pointLight(A,0x29f0ff,9.2,3,-1,1.3,9);
   pointLight(A,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(A,0x8a5cff,-5,3,7.5,1.2,11,true);
-  A.ambient=0x4a3a66;
+  A.ambient=0x3a2c58;
   // ----- 2. STOCK -----
   seed=4242;
   const B=makeFloor('2. STOCK · VIP');
@@ -162,10 +162,10 @@ function buildWorld(){
   pointLight(B,0xffcf3a,9.3,3,4,1.3,9);
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
-  B.ambient=0x5a2a3a;
+  B.ambient=0x4a2032;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.6);scene.add(ambient);
+  ambient=new THREE.AmbientLight(0x4a3a66,.34); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 
