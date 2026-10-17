@@ -261,7 +261,7 @@ function enterFocus(type,m){
   resize();
 }
 function leaveFocus(){
-  if(!focus)return;
+  if(!focus)return;UFX.tension('mtable',false);
   const f=focus;
   if(f.type==='slot'&&f.m===RESV){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}

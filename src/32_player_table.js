@@ -295,6 +295,11 @@ function mtBarSync(){
   const T=focus&&focus.type==='mtable'?focus.m:null;if(!T)return;
   const V=T.view,my=mtMySeat(T),s=my>=0?V.seats[my]:null;
   const turn=!!(s&&V.toAct===my&&isBetting(V));
+  // Effekte wie am Bot-Tisch: Sieg-Banner, Verlust-Blitz, Herzschlag bei All-in
+  if(V&&V.stage==='show'&&s&&MT.fxKey!==V.next){MT.fxKey=V.next;
+    if(s.l&&s.l[0]==='+'){SFX.big();UFX.banner('DU GEWINNST',0,1);UFX.float(LW()/2,LH()*.56,cleanText(s.l,30),'#ffd23a');UFX.burst(LW()/2,LH()*.5,40,{coin:true,sz:9,spd:380,up:240,life:1.5});}
+    else if(s.c&&!s.f){SFX.lose();UFX.flash(.4,'255,40,40');UFX.shake(.35);}}
+  UFX.tension('mtable',!!(s&&isBetting(V)&&s.c&&!s.f&&V.seats.some(x=>x&&x.a&&!x.f)));
   const toCall=s?Math.max(0,V.curBet-s.b):0,minTo=s?Math.min(s.b+s.st,V.curBet+V.minRaise):0,maxTo=s?s.b+s.st:0;
   if(s&&turn)MT.raiseTo=clamp(MT.raiseTo||minTo,minTo,maxTo);
   const B=(k,label,lit)=>{const b=MTB.btn[k];if(b.textContent!==label)b.textContent=label;b.classList.toggle('lit',!!lit);};
