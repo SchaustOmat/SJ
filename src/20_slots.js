@@ -792,7 +792,7 @@ function drawBar(m,g){
 function drawHeader(m,g){
   g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,320,RY-4);
   px(g,8);g.textBaseline='middle';g.textAlign='left';g.fillStyle='#ffd23a';g.fillText(m.G.title,6,12);
-  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);g.fillText(m.lines+' LINIEN × '+betLine(m),314,12);
+  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);g.fillText(m.lines+' LINIEN × '+fmt(betLine(m)),314,12);
   if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=t.length*6+10;g.fillStyle='#3adf5a';g.fillRect(160-w/2,5,w,13);g.fillStyle='#001a04';g.textAlign='center';g.fillText(t,160,12);}
 }
 function drawInfo(m,g){

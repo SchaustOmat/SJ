@@ -379,7 +379,7 @@ function interact(act){
 function talk(n){
   SFX.click();
   if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
-  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 20.000 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 € beim Barkeeper.');return;}
+  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 200 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 200 € beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -399,8 +399,8 @@ $('#veil').addEventListener('click',()=>{if(!busy)closePanel();});
 function setBusy(v){busy=v;document.querySelectorAll('[data-close]').forEach(b=>b.disabled=v);}
 function chipSel(el,vals,init,onPick){
   let cur=init;el.innerHTML='';
-  vals.forEach(v=>{const b=document.createElement('button');b.className='chip c'+v;b.textContent=v;b.setAttribute('aria-pressed',String(v===cur));
-    b.addEventListener('click',()=>{cur=v;el.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.textContent===cur)));SFX.chip();onPick&&onPick(v);});el.appendChild(b);});
+  vals.forEach(v=>{const b=document.createElement('button');b.className='chip c'+v;b.dataset.v=v;b.textContent=v<100?v+'ct':(v/100)+'€';b.setAttribute('aria-pressed',String(v===cur));
+    b.addEventListener('click',()=>{cur=v;el.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.dataset.v===cur)));SFX.chip();onPick&&onPick(v);});el.appendChild(b);});
   return ()=>cur;
 }
 const R={bets:{},last:{},spinning:false,W:newWheel(),act:null,rid:0,ridx:0};
@@ -413,7 +413,7 @@ function mkBet(parent,key,label,cls){const b=document.createElement('button');b.
 OUTS.forEach(([k,l,c])=>mkBet($('#rOuts'),k,l,c));
 (function(){const g=$('#rNums');mkBet(g,'n0','0','z');
   for(let r=0;r<3;r++)for(let c=0;c<12;c++){const n=c*3+(3-r);const b=mkBet(g,'n'+n,String(n),REDS.has(n)?'r':'b');b.style.gridRow=String(r+1);b.style.gridColumn=String(c+2);}})();
-function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum+=v;const a=betBtns[k].a;a.hidden=!v;a.textContent=v>=1000?(v/1000).toFixed(1).replace('.0','')+'k':v;}
+function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum+=v;const a=betBtns[k].a;a.hidden=!v;a.textContent=v<100?v+'ct':(v/100).toLocaleString('de-DE',{maximumFractionDigits:2})+'€';}
   $('#rSum').textContent=fmt(sum);$('#rAgain').disabled=R.spinning||!Object.keys(R.last).length;$('#rSpin').disabled=R.spinning;$('#rClear').disabled=R.spinning||!sum;}
 function rMsg(t,cls){const e=$('#rRes');e.textContent=t;e.className='res'+(cls?' '+cls:'');}
 function placeBet(k){if(R.spinning)return;const v=rChip();if(chips<v){rMsg('NICHT GENUG GELD','lose');SFX.lose();return;}
@@ -463,7 +463,7 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
-const BAR_MIN=2000; // darunter gibt der Barkeeper 20.000
+const BAR_MIN=2000; // unter 20 € gibt der Barkeeper 200 € (Werte in Cent)
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 let GFX='sharp';try{GFX=localStorage.getItem('nk_gfx')||'sharp';}catch(e){}
 function resize(){

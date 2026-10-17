@@ -131,7 +131,7 @@ function atmRender(){
   const max=s==='dep'?chips:BANK.bal;
   scr.innerHTML=head+'<div class="as-title">'+esc(t)+'</div><div class="as-row"><span>VERFÜGBAR</span><b>'+fmt(max)+'</b></div>'+
     '<div class="as-amt">'+(ATM.amt?fmt(+ATM.amt):'0')+'</div>'+msg+
-    '<div class="as-quick"><button class="as-btn" data-add="1000">+1.000</button><button class="as-btn" data-add="10000">+10.000</button><button class="as-btn" data-add="100000">+100.000</button><button class="as-btn" data-all="1">ALLES</button></div>'+
+    '<div class="as-quick"><button class="as-btn" data-add="1000">+10 €</button><button class="as-btn" data-add="10000">+100 €</button><button class="as-btn" data-add="100000">+1.000 €</button><button class="as-btn" data-all="1">ALLES</button></div>'+
     '<div class="as-keys">'+['1','2','3','4','5','6','7','8','9','C','0','000'].map(k=>'<button class="as-key'+(k==='C'?' red':'')+'" data-k="'+k+'">'+k+'</button>').join('')+'</div>'+
     '<div class="as-grid"><button class="as-btn" data-go="menu">ABBRUCH</button><button class="as-btn ok" data-ok="1">BESTÄTIGEN</button></div>';
 }

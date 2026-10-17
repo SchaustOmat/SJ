@@ -26,7 +26,7 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - 90_main.js: Welt, Kamera, Steuerung, Panels, Roulette-Tisch.
 
 ## Regeln vom Nutzer
-- Startchips 20.000, Barkeeper gibt 20.000 unter 2.000 Chips (nicht wenn mind. 2.000 auf dem Konto).
+- Geld intern in Cent (fmt zeigt 20000 als 200,00 €). Start 200 €, Barkeeper gibt 200 € unter 20 € (nicht wenn mind. 20 € auf dem Konto).
 - Geld darf nie verloren gehen/zurückgesetzt werden.
 - Leiter: Werte wie echtes Merkur-Gerät (bei Level 40: 15,30,60,120,240,400,800,1200,1600,2000,3200,5400,14000), auf Einsatz umgerechnet, unterste Stufe = Einsatz; hoch eine Stufe / sonst zwei runter, fair (2 % Vorteil); ab 10× Einsatz AUSSPIELUNG mit didididi. Spammbar, nicht automatisch nach Gewinn öffnen.
 - Automaten: beim Hinsetzen Portemonnaie/Karte stecken (ENTSPERRT), Karte hält den Automaten (Aufstehen in jedem Zustand).

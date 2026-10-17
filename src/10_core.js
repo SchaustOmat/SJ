@@ -2,7 +2,8 @@
 const $=s=>document.querySelector(s);
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const fmt=n=>Math.round(n).toLocaleString('de-DE')+' €';
+// Geld wird intern in Cent gezählt (10 = 0,10 €)
+const fmt=n=>(Math.round(n)/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const app=$('#app');
 
 /* ---------- chips ---------- */

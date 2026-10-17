@@ -384,7 +384,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="crt"></div>
 
 <div id="hudTop" class="hud" hidden>
-  <div class="tag" id="chipsTag"><span class="k">GELD </span><span class="v" id="chips">20.000</span></div>
+  <div class="tag" id="chipsTag"><span class="k">GELD </span><span class="v" id="chips">200,00 €</span></div>
   <div class="mid"><div class="tag" id="floorTag">EG · HALLE</div><button class="tag" id="onlineTag" hidden>MULTI</button></div>
   <div class="icons">
     <button class="ibtn" id="chatBtn" aria-label="Chat" hidden>SAG</button>
@@ -491,7 +491,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
     <p><b>⟲ oben:</b> Querformat, falls sich die App nicht mitdreht.</p>
-    <p style="color:var(--dim)">Nur Spielgeld. Pleite? Der Barkeeper im EG gibt dir 20.000. Am PC: WASD, Maus ziehen, klicken, Leertaste = Start.</p>
+    <p style="color:var(--dim)">Nur Spielgeld. Pleite? Der Barkeeper im EG gibt dir 200 €. Am PC: WASD, Maus ziehen, klicken, Leertaste = Start.</p>
   </div>
 </section>
 </div>
@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792245571";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792245821";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -692,7 +692,8 @@ var PokerCore=(function(){
 const $=s=>document.querySelector(s);
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const fmt=n=>Math.round(n).toLocaleString('de-DE')+' €';
+// Geld wird intern in Cent gezählt (10 = 0,10 €)
+const fmt=n=>(Math.round(n)/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const app=$('#app');
 
 /* ---------- chips ---------- */
@@ -1001,7 +1002,7 @@ const LINES={
   slot:["Gleich kommt das Buch...","Drei Bücher. Nur drei.","Risiko? Immer Risiko.","Psst. Ich bin im Flow.","Der hier ist heiß, ich spür's."],
   busy:["Besetzt! Such dir 'nen eigenen.","Finger weg, der ist meiner.","Der gibt gleich. Geh weiter."],
   bouncer:["Aufzug geht in den 2. Stock. Benimm dich da oben.","Oben spielen die Großen.","Keine Fotos.","Ausgang? Welcher Ausgang?"],
-  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 20.000 für dich."],
+  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
   dealer:["Faites vos jeux.","Einsätze bitte.","Rien ne va plus.","Setz oder geh weiter."],
   vip:["Hier oben wird's ernst.","Gestern hab ich den Laden fast leergeräumt.","Setz dich, wenn du dich traust.","Die Musik ist zu laut. Perfekt."],
   poker:["All-in. Spaß.","Ich hab nix. Oder doch?","Zeig mal deine Karten.","Du blinzelst. Bluff.","Der Flop gehört mir.","River, sei nett."]
@@ -1949,7 +1950,7 @@ function drawBar(m,g){
 function drawHeader(m,g){
   g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,320,RY-4);
   px(g,8);g.textBaseline='middle';g.textAlign='left';g.fillStyle='#ffd23a';g.fillText(m.G.title,6,12);
-  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);g.fillText(m.lines+' LINIEN × '+betLine(m),314,12);
+  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);g.fillText(m.lines+' LINIEN × '+fmt(betLine(m)),314,12);
   if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=t.length*6+10;g.fillStyle='#3adf5a';g.fillRect(160-w/2,5,w,13);g.fillStyle='#001a04';g.textAlign='center';g.fillText(t,160,12);}
 }
 function drawInfo(m,g){
@@ -2233,7 +2234,7 @@ function pressPBtn(key){
 function later(sec,fn){PK.wait=sec;PK.next=fn;}
 function pokerSit(){
   if(PK.sitting)return true;
-  const buy=chips;if(buy<500){toast('Du brauchst mindestens 500 € für den Tisch.');return false;}
+  const buy=chips;if(buy<500){toast('Du brauchst mindestens 5 € für den Tisch.');return false;}
   setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;PK.sitting=true;store('nk_pstack',PK.human.stack);
   PK.info='BUY-IN '+fmt(buy)+' · GLEICH GEHT\'S LOS';PK.msg='NEUE RUNDE';drawPot();updConsole();
   say(PK.dealerNpc,'Willkommen am Tisch. Blinds 50 und 100.',3);
@@ -3977,7 +3978,7 @@ function atmRender(){
   const max=s==='dep'?chips:BANK.bal;
   scr.innerHTML=head+'<div class="as-title">'+esc(t)+'</div><div class="as-row"><span>VERFÜGBAR</span><b>'+fmt(max)+'</b></div>'+
     '<div class="as-amt">'+(ATM.amt?fmt(+ATM.amt):'0')+'</div>'+msg+
-    '<div class="as-quick"><button class="as-btn" data-add="1000">+1.000</button><button class="as-btn" data-add="10000">+10.000</button><button class="as-btn" data-add="100000">+100.000</button><button class="as-btn" data-all="1">ALLES</button></div>'+
+    '<div class="as-quick"><button class="as-btn" data-add="1000">+10 €</button><button class="as-btn" data-add="10000">+100 €</button><button class="as-btn" data-add="100000">+1.000 €</button><button class="as-btn" data-all="1">ALLES</button></div>'+
     '<div class="as-keys">'+['1','2','3','4','5','6','7','8','9','C','0','000'].map(k=>'<button class="as-key'+(k==='C'?' red':'')+'" data-k="'+k+'">'+k+'</button>').join('')+'</div>'+
     '<div class="as-grid"><button class="as-btn" data-go="menu">ABBRUCH</button><button class="as-btn ok" data-ok="1">BESTÄTIGEN</button></div>';
 }
@@ -4397,7 +4398,7 @@ function interact(act){
 function talk(n){
   SFX.click();
   if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
-  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 20.000 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 € beim Barkeeper.');return;}
+  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 200 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 200 € beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -4417,8 +4418,8 @@ $('#veil').addEventListener('click',()=>{if(!busy)closePanel();});
 function setBusy(v){busy=v;document.querySelectorAll('[data-close]').forEach(b=>b.disabled=v);}
 function chipSel(el,vals,init,onPick){
   let cur=init;el.innerHTML='';
-  vals.forEach(v=>{const b=document.createElement('button');b.className='chip c'+v;b.textContent=v;b.setAttribute('aria-pressed',String(v===cur));
-    b.addEventListener('click',()=>{cur=v;el.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.textContent===cur)));SFX.chip();onPick&&onPick(v);});el.appendChild(b);});
+  vals.forEach(v=>{const b=document.createElement('button');b.className='chip c'+v;b.dataset.v=v;b.textContent=v<100?v+'ct':(v/100)+'€';b.setAttribute('aria-pressed',String(v===cur));
+    b.addEventListener('click',()=>{cur=v;el.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.dataset.v===cur)));SFX.chip();onPick&&onPick(v);});el.appendChild(b);});
   return ()=>cur;
 }
 const R={bets:{},last:{},spinning:false,W:newWheel(),act:null,rid:0,ridx:0};
@@ -4431,7 +4432,7 @@ function mkBet(parent,key,label,cls){const b=document.createElement('button');b.
 OUTS.forEach(([k,l,c])=>mkBet($('#rOuts'),k,l,c));
 (function(){const g=$('#rNums');mkBet(g,'n0','0','z');
   for(let r=0;r<3;r++)for(let c=0;c<12;c++){const n=c*3+(3-r);const b=mkBet(g,'n'+n,String(n),REDS.has(n)?'r':'b');b.style.gridRow=String(r+1);b.style.gridColumn=String(c+2);}})();
-function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum+=v;const a=betBtns[k].a;a.hidden=!v;a.textContent=v>=1000?(v/1000).toFixed(1).replace('.0','')+'k':v;}
+function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum+=v;const a=betBtns[k].a;a.hidden=!v;a.textContent=v<100?v+'ct':(v/100).toLocaleString('de-DE',{maximumFractionDigits:2})+'€';}
   $('#rSum').textContent=fmt(sum);$('#rAgain').disabled=R.spinning||!Object.keys(R.last).length;$('#rSpin').disabled=R.spinning;$('#rClear').disabled=R.spinning||!sum;}
 function rMsg(t,cls){const e=$('#rRes');e.textContent=t;e.className='res'+(cls?' '+cls:'');}
 function placeBet(k){if(R.spinning)return;const v=rChip();if(chips<v){rMsg('NICHT GENUG GELD','lose');SFX.lose();return;}
@@ -4481,7 +4482,7 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
-const BAR_MIN=2000; // darunter gibt der Barkeeper 20.000
+const BAR_MIN=2000; // unter 20 € gibt der Barkeeper 200 € (Werte in Cent)
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 let GFX='sharp';try{GFX=localStorage.getItem('nk_gfx')||'sharp';}catch(e){}
 function resize(){

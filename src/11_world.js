@@ -98,7 +98,7 @@ const LINES={
   slot:["Gleich kommt das Buch...","Drei Bücher. Nur drei.","Risiko? Immer Risiko.","Psst. Ich bin im Flow.","Der hier ist heiß, ich spür's."],
   busy:["Besetzt! Such dir 'nen eigenen.","Finger weg, der ist meiner.","Der gibt gleich. Geh weiter."],
   bouncer:["Aufzug geht in den 2. Stock. Benimm dich da oben.","Oben spielen die Großen.","Keine Fotos.","Ausgang? Welcher Ausgang?"],
-  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 20.000 für dich."],
+  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
   dealer:["Faites vos jeux.","Einsätze bitte.","Rien ne va plus.","Setz oder geh weiter."],
   vip:["Hier oben wird's ernst.","Gestern hab ich den Laden fast leergeräumt.","Setz dich, wenn du dich traust.","Die Musik ist zu laut. Perfekt."],
   poker:["All-in. Spaß.","Ich hab nix. Oder doch?","Zeig mal deine Karten.","Du blinzelst. Bluff.","Der Flop gehört mir.","River, sei nett."]

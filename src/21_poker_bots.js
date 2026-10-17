@@ -138,7 +138,7 @@ function pressPBtn(key){
 function later(sec,fn){PK.wait=sec;PK.next=fn;}
 function pokerSit(){
   if(PK.sitting)return true;
-  const buy=chips;if(buy<500){toast('Du brauchst mindestens 500 € für den Tisch.');return false;}
+  const buy=chips;if(buy<500){toast('Du brauchst mindestens 5 € für den Tisch.');return false;}
   setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;PK.sitting=true;store('nk_pstack',PK.human.stack);
   PK.info='BUY-IN '+fmt(buy)+' · GLEICH GEHT\'S LOS';PK.msg='NEUE RUNDE';drawPot();updConsole();
   say(PK.dealerNpc,'Willkommen am Tisch. Blinds 50 und 100.',3);
