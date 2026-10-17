@@ -383,7 +383,7 @@ function startSpin(m,demo){
   m.ovr=null;
   if(m.G.walkWild&&!demo){if(m.fs&&m.G.free.shields){let sc=0;for(let r=0;r<3;r++)for(let c=0;c<5;c++)if(m.grid[r][c]===m.G.scatter)sc++;
       const l0=SlotEngine.tizLevel(m.fs.sh);m.fs.sh=(m.fs.sh||0)+sc;m.fs.lvUp=SlotEngine.tizLevel(m.fs.sh)>l0;}
-    const h=m.fs?SlotEngine.tizHeight(m.fs.sh):1;m.ww=SlotEngine.walk(m.G,m.grid,m.ww,h);m.wwc=wwCells(m.ww);}
+    const h=m.fs?SlotEngine.tizHeight(m.fs.sh):1;m.ww=SlotEngine.walk(m.G,m.grid,m.ww,h);m.wwc=wwCells(m.ww);m.wwT=now;}
   else if(!m.G.walkWild){m.ww=null;m.wwc=null;}
   if(m.fs&&m.G.free&&m.G.free.superspin&&!demo){const ss=SlotEngine.superspin(m.G,m.grid,m.lines,payLine(m),Math.random,true);if(ss.grid!==m.grid){m.ovr=ss.grid;m.grid=ss.grid;m.ssSteps=ss.steps;}m.ev=ss.ev;}
   else if(m.G.walkWild&&m.fs&&!demo)m.ev=SlotEngine.tizEval(m.G,m.grid,m.lines,payLine(m),m.fs.sh,true);
@@ -795,7 +795,6 @@ function drawReelArea(m,g){
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
     if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;
-    const bigCol=!r.spin&&m.wwc&&m.wwc['0,'+i]&&m.wwc['1,'+i]&&m.wwc['2,'+i],gold=m.fs&&m.G.walkWild&&SlotEngine.tizLevel(m.fs.sh)>=3;
     for(let k=0;k<4;k++){
       const idx=((fl+k-1)%L+L)%L,y=RY+(k-off)*CH+bo;
       const sym=S[idx];
@@ -803,9 +802,7 @@ function drawReelArea(m,g){
       if(m.present&&m.present.items.length&&!r.spin&&(m.state==='show'||m.state==='count'||m.state==='fsShow')){const it=m.present.items[m.present.idx];const row=k;
         hl=it.cells.some(([cr,cc])=>cr===row&&cc===i);alpha=hl?1:.4;}
       g.globalAlpha=alpha;
-      if(k<3&&bigCol&&m.wwc[k+','+i])continue;
-      if(k<3&&!r.spin&&m.wwc&&m.wwc[k+','+i]){const gl=g.createRadialGradient(x+CW/2,y+CH/2,4,x+CW/2,y+CH/2,CW*.7);gl.addColorStop(0,'rgba(255,230,140,.7)');gl.addColorStop(1,'rgba(255,160,40,0)');
-        g.fillStyle=gl;g.fillRect(x+1,y,CW-2,CH);g.globalAlpha=1;g.drawImage(symCanvas(m.G.wild),x+(CW-46)/2,y+(CH-46)/2,46,46);continue;}
+      if(k<3&&!r.spin&&m.wwc&&m.wwc[k+','+i]){g.globalAlpha=1;continue;} // Schwert kommt in drawWalkers drüber
       if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){g.fillStyle='rgba(60,200,255,.22)';g.fillRect(x+1,y,CW-2,CH);g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
       if(k<3&&!r.spin&&mystHas(m.myst,k,i)){drawMystCell(m,g,x+1,y,CW-2,CH,k,i);g.globalAlpha=1;continue;}
       const im=symCanvas(sym);
@@ -817,13 +814,10 @@ function drawReelArea(m,g){
       else g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2,46,46);
       g.globalAlpha=1;
     }
-    if(bigCol){const gl=g.createLinearGradient(x,0,x+CW,0);gl.addColorStop(0,gold?'rgba(255,200,40,.15)':'rgba(255,160,40,.1)');gl.addColorStop(.5,gold?'rgba(120,60,0,.75)':'rgba(255,230,140,.6)');gl.addColorStop(1,gold?'rgba(255,200,40,.15)':'rgba(255,160,40,.1)');
-      g.fillStyle=gl;g.fillRect(x+1,RY,CW-2,CH*3);const pl=1+Math.sin(now*5+i)*.03,w=CW*1.05*pl,h=(CH*3-4)*pl;
-      g.save();g.translate(x+CW/2,RY+CH*1.5);g.scale(pl,pl);drawBigSword(g,CH*3-8,gold);g.restore();
-      if(gold&&Math.random()<.3)fxBurst(m,x+CW/2,RY+Math.random()*CH*3,1,{spd:20,up:30,life:.5,sz:2});}
     g.restore();
     g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x,RY,1,CH*3);
   }
+  if(m.ww&&m.ww.length)drawWalkers(m,g);
   // Lockmodus: ruht der Automat, wandert ein Glanzstreifen über die Walzen
   if((m.state==='idle'||m.state==='idle_r')&&!m.info){const t=(now*.35+(m.group.position.x*.13))%1.6;if(t<1){const sx=RX-60+t*(CW*5+120);
     g.save();g.beginPath();g.rect(RX,RY,CW*5,CH*3);g.clip();g.globalCompositeOperation='lighter';
@@ -898,6 +892,21 @@ function drawBigSword(g,H,gold){const top=-H/2,bot=H/2,bw=12;
   g.fillStyle=gold?'#6a2a00':'#5a1a08';g.fillRect(-4,top+8,8,19);g.fillStyle='rgba(255,255,255,.18)';for(let i=0;i<4;i++)g.fillRect(-4,top+10+i*4,8,1);
   g.fillStyle=cg;g.beginPath();g.arc(0,top+6,6,0,Math.PI*2);g.fill();
   g.fillStyle='#e02020';g.fillRect(-3,top+28,6,6);g.fillStyle='#ff9a9a';g.fillRect(-2,top+29,2,2);}
+// Tizona: wandernde Schwerter. Bereits stehende Schwerter bleiben beim Drehen sichtbar und ziehen eine Walze nach links,
+// neue erscheinen erst, wenn ihre Walze steht.
+function drawWalkers(m,g){const gold=m.fs&&m.G.walkWild&&SlotEngine.tizLevel(m.fs.sh)>=3,k=clamp((now-(m.wwT||0))/.45,0,1),e=k*k*(3-2*k);
+  g.save();g.beginPath();g.rect(RX,RY,CW*5,CH*3);g.clip();
+  m.ww.forEach(w=>{if(w.fresh&&m.reels[w.c].spin)return;
+    const cx=w.fresh?w.c:w.c+1-e,x=RX+cx*CW,hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0))),y=RY+r0*CH,H=hh*CH;
+    g.fillStyle='rgba(30,18,8,.9)';g.fillRect(x+1,y,CW-2,H);
+    const gl=g.createLinearGradient(x,0,x+CW,0);gl.addColorStop(0,gold?'rgba(255,200,40,.15)':'rgba(255,160,40,.12)');gl.addColorStop(.5,gold?'rgba(170,90,0,.8)':'rgba(255,220,130,.55)');gl.addColorStop(1,gold?'rgba(255,200,40,.15)':'rgba(255,160,40,.12)');
+    g.fillStyle=gl;g.fillRect(x+1,y,CW-2,H);
+    if(k<1&&!w.fresh){g.fillStyle='rgba(255,220,120,'+(.35*(1-k)).toFixed(3)+')';g.fillRect(x+CW-2,y,CW*(1-e)*.6,H);} // Schweif beim Rüberziehen
+    if(hh===3){const pl=1+Math.sin(now*5+w.c)*.03;g.save();g.translate(x+CW/2,RY+CH*1.5);g.scale(pl,pl);drawBigSword(g,CH*3-8,gold);g.restore();
+      if(gold&&Math.random()<.3)fxBurst(m,x+CW/2,RY+Math.random()*CH*3,1,{spd:20,up:30,life:.5,sz:2});}
+    else for(let i=0;i<hh;i++)g.drawImage(symCanvas(m.G.wild),x+(CW-46)/2,y+i*CH+(CH-46)/2,46,46);
+  });
+  g.restore();}
 function goldSword(){if(goldSword.c)return goldSword.c;const c=document.createElement('canvas');c.width=c.height=48;const x=c.getContext('2d');x.drawImage(symCanvas('SCHWERT'),0,0,48,48);
   x.globalCompositeOperation='source-atop';const gr=x.createLinearGradient(0,0,48,48);gr.addColorStop(0,'rgba(255,250,190,.75)');gr.addColorStop(.5,'rgba(255,190,30,.6)');gr.addColorStop(1,'rgba(180,90,0,.7)');x.fillStyle=gr;x.fillRect(0,0,48,48);return goldSword.c=c;}
 function drawHeader(m,g){
