@@ -44,7 +44,7 @@ function hlUpdate(){
   c.textAlign='center';px(c,9);c.fillStyle=s==='pick'?'#3adf5a':'#f4f0e8';c.fillText(HL.msg||(s==='bet'?'EINSATZ WÄHLEN, DANN GEBEN':''),160,36);
   px(c,7);c.fillStyle='#ff5ab0';
   if(s==='pick'||s==='decide')c.fillText('HÖHER ×2 · GLEICH BLEIBT · TIEFER WEG',160,54);
-  if(s==='decide')c.fillText('WEITER: '+fmt(HL.pending)+' → '+fmt(HL.pending*2),160,54);
+  if(s==='decide')c.fillText('WEITER: '+fmt(HL.pending)+' AUF '+fmt(HL.pending*2),160,54);
   HL.tex.needsUpdate=true;
   if(typeof hlBarSync==='function')hlBarSync();
 }

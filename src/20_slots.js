@@ -869,7 +869,7 @@ function drawGamble(m,g){
   px(g,8);g.fillStyle='#ffd23a';g.textAlign='center';g.textBaseline='middle';
   if(gm.kind==='ladder'){drawLadder(m,g,gm);return;}
   if(gm.kind==='rb'){
-    g.fillText('RISIKO  '+fmt(m.win)+' → '+fmt(m.win*2),160,RY+10);
+    g.fillText('RISIKO  '+fmt(m.win)+' AUF '+fmt(m.win*2),160,RY+10);
     m.history.slice(0,6).forEach((c,i)=>drawCard(c,RX+8+i*30,RY+24,24,34,true));
     const blinkRed=Math.floor(now*3)%2===0;
     if(m.state==='gambleNext'&&gm.card!==null)drawCard(gm.card,160-30,RY+66,60,84,true,'#fff');
@@ -920,10 +920,11 @@ function drawTop(m){
     g.textAlign='center';g.textBaseline='middle';px(g,G.title.length>9?18:22);
     g.lineWidth=6;g.strokeStyle='#000';g.strokeText(G.title,128,38);
     const tg=g.createLinearGradient(0,22,0,54);tg.addColorStop(0,'#fff8c0');tg.addColorStop(.5,'#ffc020');tg.addColorStop(1,'#a05a00');g.fillStyle=tg;g.fillText(G.title,128,38);
-    px(g,8);g.fillStyle='#f4f0e8';g.fillText(G.sub,128,66);
+    const fitC=(t,y,w,sz)=>{let z=sz;px(g,z);while(z>5&&g.measureText(t).width>w){z--;px(g,z);}g.textAlign='center';g.fillText(t,128,y);};
+    g.fillStyle='#f4f0e8';fitC(G.sub,66,128,8);
     px(g,7);g.fillStyle='#ffd23a';
-    const D=G.id==='book'?['10 FREISPIELE MIT','WACHSENDEM SYMBOL']:G.power?['GEWINNE ← → UND MITTE','POWER SPINS AB 4× EINSATZ']:G.free?G.free.desc:['5 LINIEN · RISIKO','KARTE ODER LEITER'];
-    g.fillText(D[0],128,88);g.fillText(D[1],128,100);
+    const D=G.id==='book'?['10 FREISPIELE MIT','WACHSENDEM SYMBOL']:G.power?['LINKS, RECHTS, MITTE','POWER SPINS AB 4×']:G.free?G.free.desc:['5 LINIEN · RISIKO','KARTE ODER LEITER'];
+    fitC(D[0],88,128,7);fitC(D[1],100,128,7);
   }
   m.top.needsUpdate=true;m.topDirty=false;m.topVer=(m.topVer||0)+1;
 }
