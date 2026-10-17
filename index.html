@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792249492";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792249718";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1749,7 +1749,8 @@ function startGamble(m,kind){
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
 // Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
 // Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
-const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,14000]; // in Cent wie am Gerät bei Level 0,10 €
+const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,14000,18000,22000,26000,30000]; // in Cent bei Level 0,10 €; ab 140 € RISIKO+ (linke Spalte bis 300 €)
+const PLUS_I=13; // erste Stufe der Risiko+-Spalte (180 €)
 const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
 const LADC={};
@@ -1759,7 +1760,7 @@ function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=tb/10
 const ladDown=i=>i>=AUS_I?-1:i>=2?i-2:-1;
 // Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
 const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05];
-const ausEV=L=>L.slice(AUS_I).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
+const ausEV=L=>L.slice(AUS_I,AUS_I+AUS_LAND.length).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
 function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_I+k;}return AUS_I;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[i+1];return (L[i]-D)/(nx-D)*.98;};
 // AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
@@ -1818,9 +1819,9 @@ function drawLadder(m,g,gm){
   const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k+1,yOf=p=>yb-rh*(p+2);
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
   // laufendes Licht: über die oberen Stufen hin und her
-  const nu=L.length-AUS_I,st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_I+((st*7919+st*st*31+13)%nu);
+  const nu=PLUS_I-AUS_I,st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_I+((st*7919+st*st*31+13)%nu);
   const upT=cur+1,dnT=ladDown(cur);
-  for(let k=0;k<L.length;k++){const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
+  for(let k=0;k<PLUS_I;k++){const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
     let lit=false,col='y';
     if(run){lit=k===rk;col='red';}
     else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
@@ -1830,19 +1831,24 @@ function drawLadder(m,g,gm){
   {const y=yOf(AUS_I),lit=run?true:(!result&&cur===AUS_I-1&&ph);goldRung(g,x+3,y,W-6,rh-1.4,lit,'AUSSPIELUNG',lit?'red':'y',true);}
   const zl=!run&&((result&&cur<0)||(!result&&dnT<0&&!ph));
   goldRung(g,x+18,yb-rh,W-36,rh-1.4,zl,'0',zl&&result?'red':'y');
-  // RISIKO+ Schriftzug und Erfolg links
-  g.textAlign='left';g.textBaseline='middle';px(g,15);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',22,RY+20+dy);
-  const tg=g.createLinearGradient(0,RY+10,0,RY+30);tg.addColorStop(0,'#fff6a0');tg.addColorStop(1,'#e07a00');g.fillStyle=tg;g.fillText('RISIKO',22,RY+20+dy);
-  px(g,12);g.fillStyle='#ff3a3a';g.strokeText('+',122,RY+14+dy);g.fillText('+',122,RY+14+dy);
-  px(g,7);g.fillStyle='#e8e0cc';g.fillText('ERFOLG',26,RY+56);
-  g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
-  {const t=fmt(m.disp);px(g,Math.min(14,Math.floor(140/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,168,RY+79);}
-  g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
-  g.fillText(run?'AUSSPIELUNG LÄUFT ...':result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
-  if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
-  if(gm.preview){const pn=m.G.power?Math.floor(m.win/(4*totalBet(m))):0;
-    if(pn>0){px(g,7);g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText('POWER = '+pn+' POWER SPIN'+(pn>1?'S':''),26,RY+134);}}
-  else if(!result&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';g.fillText('TEILEN = HÄLFTE SICHERN',26,RY+120);}
+  // RISIKO+-Spalte (links neben der Leiter): 100 · 140 · 180 · 220 · 260 · 300 €
+  {const PV=[L[PLUS_I-3]===undefined?0:Math.round(10000*totalBet(m)/10),L[PLUS_I-1]].concat(L.slice(PLUS_I)),bh=19,bx=118,bw=70;
+    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,col='y';
+      if(k>=PLUS_I||k===PLUS_I-1){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===cur&&k===PLUS_I-1)lit=lit||false;}}
+      g.fillStyle='#000';g.fillRect(bx-2,y-2,bw+4,bh+4);g.fillStyle=lit?(col==='green'?'#3adf5a':'#ffd23a'):'#2a0608';g.fillRect(bx,y,bw,bh);
+      g.strokeStyle=k===cur&&!run?'#fff':'#c01020';g.lineWidth=k===cur&&!run?2:1.5;g.strokeRect(bx+1,y+1,bw-2,bh-2);
+      const t=fmt(v).replace(' €','');px(g,Math.min(9,Math.floor((bw-8)/t.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2,y+bh/2+1);});}
+  // RISIKO+ Schriftzug und Erfolg ganz links
+  g.textAlign='left';g.textBaseline='middle';px(g,13);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',24,RY+16+dy);
+  const tg=g.createLinearGradient(0,RY+8,0,RY+26);tg.addColorStop(0,'#fff6a0');tg.addColorStop(1,'#e07a00');g.fillStyle=tg;g.fillText('RISIKO',24,RY+16+dy);
+  px(g,11);g.fillStyle='#ff3a3a';g.strokeText('+',100,RY+10+dy);g.fillText('+',100,RY+10+dy);
+  px(g,7);g.fillStyle='#e8e0cc';g.fillText('ERFOLG',26,RY+48);
+  g.fillStyle='#000';g.fillRect(24,RY+56,88,26);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+56,88,26);
+  {const t=fmt(m.disp);px(g,Math.min(12,Math.floor(82/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,108,RY+70);}
+  g.fillStyle='#9b8fb3';
+  fitL(g,run?'AUSSPIELUNG ...':result?(cur<0?'VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):cur>=PLUS_I-1?'RISIKO+ BIS 300':'LEITER = HOCH',26,RY+96,86,6);
+  if(!result&&!run&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';fitL(g,'TEILEN = HÄLFTE',26,RY+110,86,6);}
+  g.fillStyle='#9b8fb3';fitL(g,'START = NEHMEN',26,RY+124,86,6);
   g.restore();
 }
 function drawSplash(m,g){
