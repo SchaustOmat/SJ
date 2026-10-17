@@ -63,7 +63,7 @@ var SlotEngine=(function(){
       wild:'SCHWERT',scatter:'SCHILD',walkWild:true,top:'RITTER',
       pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,40,150],'A':[0,0,0,10,40,150],
            'TRUHE':[0,0,0,20,75,500],'HANDS':[0,0,0,20,75,500],'BURG':[0,0,10,50,500,1000],'ROSS':[0,0,10,50,500,1000],'RITTER':[0,0,10,100,1000,5000]},
-      scatterPay:[0,0,0,0,0,0],free:{count:10,byCount:[0,0,0,10,15,20],trigger:3,shields:true,desc:['10-20 FREISPIELE','SCHWERT WÄCHST']},counts:null},
+      scatterPay:[0,0,0,0,0,0],free:{count:10,trigger:3,shields:true,desc:['10 FREISPIELE','4 SCHILDE = GRÖSSERES SCHWERT']},counts:null},
     // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
     doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
       wild:'BUCH',scatter:'BUCH',doppel:true,
@@ -127,10 +127,17 @@ var SlotEngine=(function(){
   // Tizona: wandernde Schwerter. ww = [{c,r,h}] aus der letzten Runde; sie ziehen eine Walze nach links,
   // neue Schwerter kommen dazu. h = Höhe (1-3, in Freispielen durch Schilde). Rückgabe: neue Liste, Raster wird überschrieben.
   function walk(G,g,ww,h){var out=[],i,c,r;
-    (ww||[]).forEach(function(w){if(w.c-1>=0)out.push({c:w.c-1,r:w.r,h:w.h});});
+    (ww||[]).forEach(function(w){if(w.c-1>=0)out.push({c:w.c-1,r:w.r,h:Math.max(w.h,h||1)});});
     for(c=0;c<5;c++)for(r=0;r<3;r++)if(g[r][c]===G.wild&&!out.some(function(w){return w.c===c;}))out.push({c:c,r:r,h:h||1,fresh:true});
     out.forEach(function(w){var hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(i=0;i<hh;i++)g[r0+i][w.c]=G.wild;});
     return out;}
+  // Tizona: Schild-Stufe in den Freispielen (je 4 Schilde eine Stufe: 1 Feld, 2 Felder, ganze Walze, goldene Schwerter)
+  function tizLevel(sh){return Math.min(3,Math.floor((sh||0)/4));}
+  function tizHeight(sh){return [1,2,3,3][tizLevel(sh)];}
+  // Gratis-Spin, solange nach dem Weiterwandern noch ein Schwert auf den Walzen steht
+  function wwPending(ww){return !!(ww&&ww.some(function(w){return w.c>=1;}));}
+  // goldene Schwerter verdoppeln jeden Gewinn, an dem ein Schwert beteiligt ist
+  function tizEval(G,g,lines,betLine,sh,fs){return evaluate(tizLevel(sh)>=3?Object.assign({},G,{wildDouble:true}):G,g,lines,betLine,null,fs);}
   // Zentaurus Superspin: Gewinnpositionen bleiben, der Rest wird neu ausgespielt, solange der Gewinn steigt
   function superspin(G,g,lines,betLine,rnd,fs){var S=stripsOf(G,fs),ev=evaluate(G,g,lines,betLine,null,fs),best=ev.total,steps=0,gg=g;
     if(best<=0)return {grid:g,total:0,steps:0,ev:ev};
@@ -140,6 +147,6 @@ var SlotEngine=(function(){
       var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
     return {grid:gg,total:best,steps:steps,ev:ev};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
 })();
 if(typeof module!=='undefined')module.exports=SlotEngine;
