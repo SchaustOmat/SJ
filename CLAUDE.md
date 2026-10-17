@@ -28,6 +28,6 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 ## Regeln vom Nutzer
 - Startchips 20.000, Barkeeper gibt 20.000 wenn pleite (nicht wenn Geld auf dem Konto).
 - Geld darf nie verloren gehen/zurückgesetzt werden.
-- Leiter: fair (tools/ Simulation), unterste Stufe 10, muss spammbar sein, Optik/Tempo wie Merkur (RISIKO+, Teilen).
-- Quoten der Automaten ~94–97 %, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' 1 2000000`).
+- Leiter: unterste Stufe = Einsatz, Stufen Vielfache vom Einsatz, hoch eine Stufe / sonst zwei runter, Chance ~50–74 % (fair, 2 % Vorteil), spammbar, ruhig blinkend. Nicht automatisch nach Gewinn öffnen, nur per Knopf.
+- Quoten aller Automaten 97 %, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' <scale> 2000000`, andere Spiele mit tools/slot_sim.js).
 - Text darf nie aus dem Bild laufen, Hoch- und Querformat müssen gehen.

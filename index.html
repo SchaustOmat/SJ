@@ -451,7 +451,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792241762";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792242432";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -494,7 +494,7 @@ var SlotEngine=(function(){
       wild:'DIAMANT',scatter:'LORE',
       pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
            'LATERNE':[0,0,0,20,80,300],'HACKE':[0,0,0,25,100,400],'NUGGET':[0,0,5,40,200,1000],'DIAMANT':[0,0,10,100,500,2500]},
-      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
+      scatterPay:[0,0,0,0,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
     // Joker verdoppelt jeden Gewinn, Freispiele x3
     reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'DELFIN',scatter:'MUSCHEL',wildDouble:true,
@@ -511,7 +511,7 @@ var SlotEngine=(function(){
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
       // Verdeckte Walzen: manchmal werden 1-3 Walzen verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/30,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
+      mystery:{chance:1/45,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
       pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
            'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
@@ -1076,22 +1076,22 @@ const UFX=(function(){
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
 const BK=['10','J','Q','K','A','ANKH','SKARAB','PYRAMIDE','MASKE','BUCH'];
 const FK=['KIRSCHE','ZITRONE','ORANGE','PFLAUME','TRAUBE','MELONE','SIEBEN','STERN'];
-SlotEngine.setup('book',[R_([6,6,5,5,4,3,2,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,2],BK),R_([8,7,7,6,6,3,3,2,1,1],BK),R_([8,8,7,7,6,3,3,2,1,1],BK)],101);
-SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,2],FK)],202);
+SlotEngine.setup('book',[R_([6,6,5,5,4,3,2,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,1],BK),R_([7,7,6,6,5,3,3,2,1,2],BK),R_([8,7,7,6,6,3,3,2,1,1],BK),R_([8,8,7,7,6,3,3,2,1,1],BK)],101,null,1.045);
+SlotEngine.setup('fruit',[R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,1],FK),R_([4,5,5,5,3,3,2,2],FK)],202,null,1.035);
 (function(){
   const BASE=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,2,1],[7,7,6,6,5,3,3,2,2,2],[8,7,7,6,6,3,3,2,2,1],[8,8,7,7,6,3,3,2,1,1]];
   const MINEFS=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,5,1],[7,7,6,6,5,3,3,2,5,2],[8,7,7,6,6,3,3,2,5,1],[8,8,7,7,6,3,3,2,1,1]];
   const K={viking:['10','J','Q','K','A','AXT','SCHILD','DRACHE','HELM','RUNE'],mine:['10','J','Q','K','A','LATERNE','HACKE','NUGGET','DIAMANT','LORE'],
     reef:['10','J','Q','K','A','FISCH','SEESTERN','PERLE','DELFIN','MUSCHEL'],temple:['10','J','Q','K','A','KELCH','SCHLANGE','STATUE','FEUER','TEMPEL']};
   const mk=(id,rows)=>rows.map(a=>R_(a,K[id]));
-  SlotEngine.setup('viking',mk('viking',BASE),301,null,1.34);
-  SlotEngine.setup('mine',mk('mine',BASE),302,mk('mine',MINEFS),1.48);
-  SlotEngine.setup('reef',mk('reef',BASE),303,null,.8);
-  SlotEngine.setup('temple',mk('temple',BASE),304,null,1.35);
+  SlotEngine.setup('viking',mk('viking',BASE),301,null,1.382);
+  SlotEngine.setup('mine',mk('mine',BASE),302,mk('mine',MINEFS),1.503);
+  SlotEngine.setup('reef',mk('reef',BASE),303,null,.832);
+  SlotEngine.setup('temple',mk('temple',BASE),304,null,1.392);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[9,9,9,8,8,4,4,3,2,1]].map(a=>R_(a,PH)),401,null,.76);
+  SlotEngine.setup('pharao',[[9,9,9,8,8,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[12,12,11,10,9,4,4,3,2,1],[10,10,9,9,8,4,4,3,2,1],[9,9,9,8,8,4,4,3,2,1]].map(a=>R_(a,PH)),401,null,.768);
 })();
-const GAMEINFO={book:{rtp:'94,4',fs:'187',hit:'2,7'},fruit:{rtp:'94,1',fs:null,hit:'5,2'},viking:{rtp:'94',fs:'203',hit:'3,3'},mine:{rtp:'94',fs:'203',hit:'3,3'},reef:{rtp:'94',fs:'203',hit:'3,3'},temple:{rtp:'94',fs:'203',hit:'3,3'},pharao:{rtp:'95,7',fs:null,hit:'2,1',power:'21'}};
+const GAMEINFO={book:{rtp:'97',fs:'187',hit:'2,7'},fruit:{rtp:'97',fs:null,hit:'5,2'},viking:{rtp:'97',fs:'203',hit:'3,3'},mine:{rtp:'97',fs:'201',hit:'3,3'},reef:{rtp:'97',fs:'203',hit:'3,3'},temple:{rtp:'97',fs:'204',hit:'3,4'},pharao:{rtp:'97',fs:null,hit:'2,1',power:'21'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -1255,7 +1255,7 @@ function btnModel(m){
   B('AUTO',m.auto?'STOP':'AUTO','blue',idle||show||m.auto,m.auto);
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
   B('KARTE','RISIKO KARTE','red',canRisk,canRisk);
-  const canLadder=canRisk&&m.win>=LADDER[0];
+  const canLadder=canRisk&&m.win>=ladOf(m)[0];
   B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
   B('START',s==='spin'?'STOP':show?'NEHMEN':'START','green',idle||show||(s==='spin'&&!m.fs));
   return o;
@@ -1296,7 +1296,7 @@ function pressButton(m,key){
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
-      if(m.state==='show'){startGamble(m,key==='KARTE'?'rb':'ladder');if(key==='LEITER'&&m.state==='gamble'&&m.gamble)ladderPress(m);}break;
+      if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
     case 'START':
       if(s==='idle')startSpin(m);
       else if(s==='show'){collect(m);startSpin(m);}
@@ -1502,7 +1502,7 @@ function timerDone(m){
     case 'gambleNext':m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
-      else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=LADDER.length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
+      else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
       else{m.state='gamble';m.msg=m.gamble.kind==='ladder'?'LEITER DRÜCKEN ODER NEHMEN':'ROT ODER SCHWARZ?';}}
       m.dirty=true;m.topDirty=true;updateButtons(m);break;
   }
@@ -1617,35 +1617,37 @@ function drawPower(m,g){
 function startGamble(m,kind){
   m.present=null;m.auto=false;
   if(kind==='ladder'){
-    let idx=-1;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=m.win)idx=i;
+    let idx=-1;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=m.win)idx=i;
     if(idx<0){m.msg='GEWINN ZU KLEIN FÜR DIE LEITER';updateButtons(m);return;}
-    const rest=m.win-LADDER[idx];if(rest>0){setChips(chips+rest);}
-    m.win=LADDER[idx];m.disp=m.win;
-    if(idx>=LADDER.length-1){collect(m);return;}
-    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:m.state==='show'&&m.ladPrev?now-1:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
+    const rest=m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
+    m.win=ladOf(m)[idx];m.disp=m.win;
+    if(idx>=ladOf(m).length-1){collect(m);return;}
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
-// Leiter: feine Stufen (~x1,25). Chance pro Stufe so, dass Drücken fair ist (minimal unter 50/50 der Wertänderung):
-// p = (L[i]-L[i-1]) / (L[i+1]-L[i-1]) * 0.97  ->  meist 42-46 % hoch
-const LADDER=[10,13,16,20,25,30,40,50,60,80,100,130,160,200,250,300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,6000,8000,
-  10000,13000,16000,20000,25000,30000,40000,50000,60000,80000,100000,130000,160000,200000,250000,300000,400000,500000];
-const ladderUp=i=>i>=LADDER.length-1?0:(LADDER[i]-(i>0?LADDER[i-1]:0))/(LADDER[i+1]-(i>0?LADDER[i-1]:0))*.97;
+// Leiter: beginnt beim Einsatz, Stufen in Vielfachen davon (~x1,4).
+// Hoch = eine Stufe, daneben = zwei Stufen runter (unter der untersten = 0).
+// p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
+const LADM=[1,1.5,2,3,4,6,8,12,16,24,32,48,64,100,150,200,300,400,600,800,1200,1600,2400,3200,5000];
+const LADC={};
+function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const L=[];LADM.forEach(x=>{L.push(Math.max(L.length?L[L.length-1]+1:1,Math.round(x*tb)));});return LADC[tb]=L;}
+const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const D=i>=2?L[i-2]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
-  gm.up=Math.random()<ladderUp(gm.idx);gm.last=gm.idx;
-  if(gm.up&&gm.idx>=LADDER.length-1){gm.busy=false;collect(m);return;}
-  if(gm.up){gm.idx++;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();
+  gm.up=Math.random()<ladderUp(ladOf(m),gm.idx);gm.last=gm.idx;
+  if(gm.up&&gm.idx>=ladOf(m).length-1){gm.busy=false;collect(m);return;}
+  if(gm.up){gm.idx++;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();
     fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
-  else if(gm.idx>0){gm.idx--;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
+  else if(gm.idx>=2){gm.idx-=2;m.win=ladOf(m)[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
   else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
   m.state='gambleNext';m.timer=gm.idx<0?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
   const gm=m.gamble;if(!gm||gm.busy||gm.idx<1)return;
-  const half=m.win/2;let j=0;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=half)j=i;
-  const pay=m.win-LADDER[j];setChips(chips+pay,true);gm.idx=j;m.win=LADDER[j];m.disp=m.win;
+  const half=m.win/2;let j=0;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=half)j=i;
+  const pay=m.win-ladOf(m)[j];setChips(chips+pay,true);gm.idx=j;m.win=ladOf(m)[j];m.disp=m.win;
   m.msg='GETEILT · '+fmt(pay)+' GUTGESCHRIEBEN';SFX.chip();fxBurst(m,100,RY+78,20,{coin:true,sz:4,spd:120,up:90,life:1.2});m.dirty=true;updateButtons(m);
 }
 function gambleRB(m,red){
@@ -1674,15 +1676,15 @@ function drawLadder(m,g,gm){
   if(!result&&ph!==gm.ph){gm.ph=ph;if(!gm.preview)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rows=10,rh=15,w=78,x=200,yb=RY+CH*3+1+dy;
-  const ref=result?gm.last:cur,start=clamp(ref-3,0,Math.max(0,LADDER.length-rows));
+  const ref=result?gm.last:cur,start=clamp(ref-3,0,Math.max(0,ladOf(m).length-rows));
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
-  for(let i=0;i<rows;i++){const k=start+i;if(k>=LADDER.length)break;const y=yb-rh*(i+2);
+  for(let i=0;i<rows;i++){const k=start+i;if(k>=ladOf(m).length)break;const y=yb-rh*(i+2);
     let lit=false,col='y';
     if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
-    else{if(k===cur+1&&ph)lit=true;if(k===cur-1&&!ph)lit=true;}
-    goldRung(g,x,y,w,rh-1,lit,fmt(LADDER[k]),col);
+    else{if(k===cur+1&&ph)lit=true;if(k===cur-2&&!ph)lit=true;}
+    goldRung(g,x,y,w,rh-1,lit,fmt(ladOf(m)[k]),col);
     if(!result&&k===cur){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(x-2.5,y-2.5,w+5,rh+4);}}
-  const zl=(result&&cur<0)||(!result&&cur===0&&!ph);
+  const zl=(result&&cur<0)||(!result&&cur<2&&!ph);
   goldRung(g,x+12,yb-rh,w-24,rh-2,zl,'0',zl&&result?'red':'y');
   // RISIKO+ Schriftzug und Erfolg links
   g.textAlign='left';g.textBaseline='middle';px(g,15);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',22,RY+20+dy);
@@ -1692,7 +1694,7 @@ function drawLadder(m,g,gm){
   g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
   px(g,14);g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(fmt(m.win),168,RY+79);
   g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
-  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'EINE STUFE RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
+  g.fillText(result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'ZWEI STUFEN RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
   if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
   if(gm.preview){const pn=m.G.power?Math.floor(m.win/(4*totalBet(m))):0;
     if(pn>0){px(g,7);g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText('POWER = '+pn+' POWER SPIN'+(pn>1?'S':''),26,RY+134);}}
@@ -1887,8 +1889,9 @@ function drawScreen(m){
   else if(m.state==='fsIntro')drawFsIntro(m,g);
   else if(m.state==='gamble'||(m.state==='gambleNext'&&m.gamble)){if(m.gamble.kind==='ladder')drawReelArea(m,g);drawGamble(m,g);}
   else{drawReelArea(m,g);if(m.info)drawInfo(m,g);
-    else if(m.state==='show'&&!m.auto&&m.win>=LADDER[0]){let idx=0;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=m.win)idx=i;
-      const lp=m.ladPrev&&m.ladPrev.at===m.stateAt?m.ladPrev:(m.ladPrev={at:m.stateAt,t0:now,ph:0,preview:true});lp.idx=idx;drawLadder(m,g,lp);}
+    else if(m.G.power&&(m.state==='show'||m.state==='count')&&!(m.fx&&m.fx.big)){const pn=Math.floor(m.win/(4*totalBet(m)));
+      if(pn>0){const t='= '+pn+' POWER SPIN'+(pn>1?'S':''),w=t.length*7+12;g.fillStyle='rgba(0,0,0,.8)';g.fillRect(RX+CW*5-w-2,RY+2,w,15);g.strokeStyle='#3adf5a';g.lineWidth=1;g.strokeRect(RX+CW*5-w-1.5,RY+2.5,w-1,14);
+        px(g,7);g.textAlign='center';g.textBaseline='middle';g.fillStyle=Math.floor(now*3)%2?'#3adf5a':'#d0ff80';g.fillText(t,RX+CW*5-w/2-2,RY+10);}}
     if(m.state==='fsRetrig'||m.state==='fsEnd'){g.fillStyle='rgba(0,0,0,.7)';g.fillRect(RX+20,RY+40,CW*5-40,70);g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';
       g.fillText(m.state==='fsEnd'?'GEWONNEN':'+'+m.G.free.count+' FREISPIELE',160,RY+64);px(g,10);g.fillStyle='#fff';g.fillText(m.state==='fsEnd'?fmt(m.win):'NOCHMAL!',160,RY+90);}}
   drawBar(m,g);fxDraw(m,g);g.restore();

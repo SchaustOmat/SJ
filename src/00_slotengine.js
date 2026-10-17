@@ -35,7 +35,7 @@ var SlotEngine=(function(){
       wild:'DIAMANT',scatter:'LORE',
       pay:{'10':[0,0,0,5,20,80],'J':[0,0,0,5,20,80],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,30,120],'A':[0,0,0,10,30,120],
            'LATERNE':[0,0,0,20,80,300],'HACKE':[0,0,0,25,100,400],'NUGGET':[0,0,5,40,200,1000],'DIAMANT':[0,0,10,100,500,2500]},
-      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
+      scatterPay:[0,0,0,0,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
     // Joker verdoppelt jeden Gewinn, Freispiele x3
     reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[5,10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'DELFIN',scatter:'MUSCHEL',wildDouble:true,
@@ -52,7 +52,7 @@ var SlotEngine=(function(){
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES10,lineOpts:[10],betOpts:[1,2,3,5,10,20,50,100,200,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
       // Verdeckte Walzen: manchmal werden 1-3 Walzen verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/30,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
+      mystery:{chance:1/45,k:[.7,.25,.05],w:{'10':6,'J':6,'Q':6,'K':5,'A':5,'SMARAGD':3,'SAPHIR':3,'RUBIN':1.5,'BRILLANT':1,'PHARAO':.5}},
       pay:{'10':[0,0,0,8,20,70],'J':[0,0,0,8,20,70],'Q':[0,0,0,8,20,70],'K':[0,0,0,15,35,150],'A':[0,0,0,15,35,150],
            'SMARAGD':[0,0,0,35,70,200],'SAPHIR':[0,0,0,35,70,200],'RUBIN':[0,0,0,50,150,3000],'BRILLANT':[0,0,0,75,350,4000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null}
