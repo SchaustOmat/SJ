@@ -139,7 +139,11 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .c10{background:#3a6ad6}.c25{background:#2a9a5a}.c50{background:#c42a3a}.c100{background:#1a1a1a}.c500{background:#7a3ad6}
 
 .rwrap{display:flex;gap:12px;align-items:center}
-.rwrap canvas{width:180px;height:180px;image-rendering:pixelated;flex:none;max-width:45%;height:auto;aspect-ratio:1}
+.rwrap canvas{width:170px;height:auto;flex:none;max-width:45%;aspect-ratio:1;transition:width .35s,max-width .35s}
+.rwrap.big{flex-direction:column;gap:6px}
+.rwrap.big canvas{width:min(340px,100%,calc(100vh - 170px));max-width:100%}
+.rwrap.big .res{font-size:13px}
+#wcWheel{display:block;width:min(200px,50vw);height:auto;aspect-ratio:1;margin:4px auto 0}
 .rwrap .res{flex:1;min-width:0}
 .outs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .bet{position:relative;border:2px solid #000;font-family:var(--f-title);font-size:8px;padding:10px 2px;letter-spacing:.04em;background:var(--felt,#0f5a3e);color:#fff}
@@ -353,14 +357,14 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="tb-row" id="hlRow"><button class="tbb c-white sm" id="hl-MINUS">−</button><button class="tbb c-white sm" id="hl-PLUS">+</button><button class="tbb c-green" id="hl-GEBEN">GEBEN</button><button class="tbb c-yellow" id="hl-NEHMEN">NEHMEN</button><button class="tbb c-red" id="hl-WEITER">WEITER</button></div>
   <div class="tb-row" id="hlCards" hidden><button class="tbb c-amber lit" id="hlc-0">KARTE 1</button><button class="tbb c-amber lit" id="hlc-1">KARTE 2</button><button class="tbb c-amber lit" id="hlc-2">KARTE 3</button><button class="tbb c-amber lit" id="hlc-3">KARTE 4</button></div>
 </div>
-<div id="watchCard" hidden></div>
+<div id="watchCard" hidden><div id="wcBody"></div><canvas id="wcWheel" width="240" height="240" hidden></canvas></div>
 <div id="toast" hidden></div>
 <div id="bubbles"></div>
 <div id="veil" hidden></div>
 
 <section id="pRoulette" class="panel" hidden aria-label="Roulette">
   <header><h2 id="rTitle">ROULETTE</h2><button class="x" data-close>ZURÜCK</button></header>
-  <div class="rwrap"><canvas id="rCan" width="96" height="96"></canvas><div class="res" id="rRes">SETZ DEINE CHIPS</div></div>
+  <div class="rwrap"><canvas id="rCan" width="400" height="400"></canvas><div class="res" id="rRes">SETZ DEINE CHIPS</div></div>
   <div class="row end"><span class="lbl">CHIPWERT</span><div class="chipsel" id="rChips"></div></div>
   <div class="outs" id="rOuts"></div>
   <div class="nwrap"><div class="ngrid" id="rNums"></div></div>

@@ -85,7 +85,7 @@ function elevStep(dt){
 let ambient,marker;
 function buildWorld(){
   T.felt=canvasTex(64,32,feltT);
-  T.wheel=canvasTex(48,48,wheelTop);
+  T.wheel=canvasTex(128,128,wheelTop);
   T.wood=canvasTex(16,16,woodT,1,1);T.metal=canvasTex(16,16,metalT,1,1);
   // ----- EG -----
   const A=makeFloor('EG · HALLE');
@@ -372,7 +372,7 @@ function chipSel(el,vals,init,onPick){
     b.addEventListener('click',()=>{cur=v;el.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',String(+c.textContent===cur)));SFX.chip();onPick&&onPick(v);});el.appendChild(b);});
   return ()=>cur;
 }
-const R={bets:{},last:{},spinning:false,wheelA:0,ballA:0,ballR:46,anim:null,act:null};
+const R={bets:{},last:{},spinning:false,W:newWheel(),act:null,rid:0,ridx:0};
 const rChip=chipSel($('#rChips'),[10,50,100,500],10);
 const rCan=$('#rCan'),rCtx=rCan.getContext('2d');
 const OUTS=[['red','ROT','r'],['black','SCHWARZ','b'],['even','GERADE',''],['odd','UNGERADE',''],['low','1–18',''],['high','19–36',''],['d1','1–12',''],['d2','13–24',''],['d3','25–36','']];
@@ -393,11 +393,8 @@ $('#rAgain').addEventListener('click',()=>{let need=0;for(const k in R.last)need
 $('#rSpin').addEventListener('click',()=>{
   let sum=0;for(const k in R.bets)sum+=R.bets[k];if(!sum){rMsg('ERST CHIPS SETZEN','lose');return;}
   R.spinning=true;setBusy(true);renderBets();rMsg('RIEN NE VA PLUS');
-  const idx=Math.random()*37|0,step=TAU/37;
-  const target=-Math.PI/2-(idx+.5)*step;
-  const wa0=R.wheelA,wa1=target+TAU*Math.ceil((wa0+TAU*3-target)/TAU);
-  const ba0=R.ballA,ba1=-Math.PI/2-TAU*Math.ceil((-Math.PI/2-(ba0-TAU*5))/TAU);
-  R.anim={t:0,dur:4.6,wa0,wa1,ba0,ba1,idx,lastP:-1};
+  const idx=Math.random()*37|0;R.rid=Date.now()%1e9;R.ridx=idx;
+  wheelStart(R.W,idx);$('.rwrap').classList.add('big');$('#pRoulette').scrollTop=0;
   if(R.act)F.roulettes[R.act.id].spin=true;SFX.reelStart();
 });
 function payMult(k,n){const red=REDS.has(n);switch(k){case'red':return n&&red?2:0;case'black':return n&&!red?2:0;case'even':return n&&n%2===0?2:0;case'odd':return n%2===1?2:0;
@@ -413,27 +410,12 @@ function finishSpin(n){
   const fans=F.rouletteFans||[];const f=fans[Math.random()*fans.length|0];
   if(f)say(f,win>0?['Glückspilz.','Na sieh mal an!','Das war MEINE Zahl!'][Math.random()*3|0]:['Pech, Kumpel.','Die Bank gewinnt immer.','Haha. Nochmal?'][Math.random()*3|0],3);
 }
-function drawWheel(){
-  const g=rCtx,cx=48,cy=48,step=TAU/37;g.clearRect(0,0,96,96);
-  g.fillStyle='#2a1408';g.beginPath();g.arc(cx,cy,47,0,TAU);g.fill();g.fillStyle='#5a3418';g.beginPath();g.arc(cx,cy,44,0,TAU);g.fill();
-  for(let i=0;i<37;i++){const a0=R.wheelA+i*step;g.fillStyle=colOf(ORDER[i]);g.beginPath();g.moveTo(cx+Math.cos(a0)*30,cy+Math.sin(a0)*30);g.arc(cx,cy,40,a0,a0+step);g.arc(cx,cy,30,a0+step,a0,true);g.closePath();g.fill();}
-  g.fillStyle='#4a2a12';g.beginPath();g.arc(cx,cy,29,0,TAU);g.fill();
-  g.fillStyle='#c8b070';for(let i=0;i<4;i++){const a=R.wheelA+i*Math.PI/2;g.fillRect(cx+Math.cos(a)*16-2,cy+Math.sin(a)*16-2,4,4);}
-  g.beginPath();g.arc(cx,cy,7,0,TAU);g.fill();
-  g.fillStyle='#ffcf3a';g.beginPath();g.moveTo(cx-4,1);g.lineTo(cx+4,1);g.lineTo(cx,7);g.closePath();g.fill();
-  g.fillStyle='#ffffff';g.beginPath();g.arc(cx+Math.cos(R.ballA)*R.ballR,cy+Math.sin(R.ballA)*R.ballR,2.6,0,TAU);g.fill();
-}
 function updRoulette(dt){
-  const a=R.anim;
-  if(a){a.t+=dt;const k=Math.min(1,a.t/a.dur);
-    R.wheelA=a.wa0+(a.wa1-a.wa0)*ease(k);R.ballA=a.ba0+(a.ba1-a.ba0)*(1-Math.pow(1-k,2.2));
-    const s=clamp((k-.55)/.45,0,1);R.ballR=46-10*(s*s*(3-2*s));
-    const pk=Math.floor(((R.ballA-R.wheelA)%TAU+TAU)%TAU/(TAU/37));if(pk!==a.lastP&&k>.5&&k<.98){a.lastP=pk;SFX.tick();}
-    if(k>=1){R.anim=null;R.ballA=-Math.PI/2;finishSpin(ORDER[a.idx]);}
-  } else R.wheelA+=dt*.5;
-  drawWheel();
+  const W=R.W,done=wheelStep(W,dt,true);
+  if(done!==null){finishSpin(done);setTimeout(()=>{if(!R.spinning)$('.rwrap').classList.remove('big');},2600);}
+  if(openId==='pRoulette')drawWheelCanvas(rCtx,rCan.width,W);
 }
-function openRoulette(act){R.act=act;$('#rTitle').textContent=act.title||'ROULETTE';$('#pRoulette').classList.toggle('vip',floorIdx===1);renderBets();rMsg('SETZ DEINE CHIPS');R.ballR=36;R.ballA=-Math.PI/2;openPanel('pRoulette');}
+function openRoulette(act){R.act=act;$('#rTitle').textContent=act.title||'ROULETTE';$('#pRoulette').classList.toggle('vip',floorIdx===1);renderBets();rMsg('SETZ DEINE CHIPS');$('.rwrap').classList.remove('big');openPanel('pRoulette');}
 
 /* =========================================================
    FLOORS, RESIZE, LOOP
@@ -523,7 +505,7 @@ function frame(){
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
       n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,60,lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
     if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=.15;updatePrompt();}}else if(!promptEl.hidden)promptEl.hidden=true;
-    if(openId==='pRoulette'||R.anim)updRoulette(dt);
+    if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
   renderer.render(scene,camera);
 }

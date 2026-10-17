@@ -6,7 +6,7 @@
    ========================================================= */
 function allMachines(){return floors.flatMap(f=>f.machines);}
 function mpActivity(){
-  if(!focus){if(openId==='pRoulette'){const t=$('#rRes').textContent;let sum=0;for(const k in R.bets)sum+=R.bets[k];return {g:'roulette',msg:cleanText(t,40),b:sum,sp:R.spinning?1:0};}return null;}
+  if(!focus){if(openId==='pRoulette'){const t=$('#rRes').textContent;let sum=0;for(const k in R.bets)sum+=R.bets[k];return {g:'roulette',msg:cleanText(t,40),b:sum,sp:R.spinning?1:0,rid:R.rid,ri:R.ridx,rt:R.act?R.act.id:0,re:R.W.anim?Math.round(R.W.anim.t*10)/10:0};}return null;}
   if(focus.type==='slot'){const m=focus.m;
     return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
       fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):''};}
@@ -21,7 +21,7 @@ function cleanGx(gx){
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
   return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
     l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),
-    c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9)};
+    c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9),rid:num(gx.rid,0,1e9),ri:num(gx.ri,0,36),rt:num(gx.rt,0,3),re:Number.isFinite(+gx.re)?clamp(+gx.re,0,WHEEL_DUR):0};
 }
 // Automat eines Mitspielers in der eigenen Welt nachspielen
 function mirrorSlot(a,gx,credit){
@@ -44,21 +44,31 @@ function mirrorSlot(a,gx,credit){
   m.dirty=true;
 }
 function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.demo=false;m.fs=null;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
+// Roulette eines Mitspielers live mitdrehen (Rad im Zuschauer-Fenster + 3D-Tisch)
+function remoteRoulette(a,gx){
+  if(!a.rw)a.rw=newWheel();
+  if(gx.sp&&gx.rid&&gx.rid!==a.rid){a.rid=gx.rid;wheelStart(a.rw,gx.ri,gx.re+.2);a.rwT=gx.rt;a.rwF=a.f;const r=floors[a.f]&&floors[a.f].roulettes[gx.rt];if(r)r.spin=true;}
+}
 function stepMirrors(dt){
+  MP.avatars.forEach(a=>{if(!a.rw)return;const busy=!!a.rw.anim,res=wheelStep(a.rw,dt,false);
+    if(busy&&res!==null){const r=floors[a.rwF]&&floors[a.rwF].roulettes[a.rwT];if(r)r.spin=false;}});
+  if(watchBest&&watchBest.rw&&watchBest.gx&&watchBest.gx.g==='roulette'){const c=$('#wcWheel');if(c&&!c.hidden)drawWheelCanvas(c.getContext('2d'),c.width,watchBest.rw);}
   allMachines().forEach(m=>{if(!m.remote)return;if(m.reels.some(r=>r.spin)){updReels(m,dt);}if(m.state==='rstop'&&!m.reels.some(r=>r.spin))m.state='idle_r';});
 }
 function mpApplyActivity(a,pr){
   const gx=cleanGx(pr.gx);a.gx=gx;
   if(gx&&gx.g==='slot'&&a.f===floorIdx)mirrorSlot(a,gx,typeof pr.k==='number'?pr.k:0);
   else if(a.mirror)releaseMirror(a);
+  if(gx&&gx.g==='roulette')remoteRoulette(a,gx);
 }
 // Karte oben: Spiel des nächsten Mitspielers, neben dem du stehst
-let watchT=0;
+let watchT=0,watchBest=null;
 function updWatchCard(dt){
   watchT-=dt;if(watchT>0)return;watchT=.25;
   const el=$('#watchCard');if(!el)return;
-  let best=null,bd=3.6;
-  if(!focus&&!openId)MP.avatars.forEach(a=>{if(!a.gx||a.f!==floorIdx)return;const d=Math.hypot(a.m.g.position.x-P.x,a.m.g.position.z-P.z);if(d<bd){bd=d;best=a;}});
+  let best=null,bd=5.5;
+  if(!focus&&!openId)MP.avatars.forEach(a=>{if(!a.gx||a.f!==floorIdx)return;const d=Math.hypot(a.m.g.position.x-P.x,a.m.g.position.z-P.z)-(a.gx.g==='roulette'?0:1.9);if(d<bd){bd=d;best=a;}});
+  watchBest=best;const wc=$('#wcWheel');if(wc)wc.hidden=!(best&&best.gx.g==='roulette');
   if(!best){el.hidden=true;return;}
   const g=best.gx;let html='<div class="wc-h">'+esc(best.name)+' · '+GNAME[g.g]+'</div>';
   if(g.g==='poker'){
@@ -75,5 +85,5 @@ function updWatchCard(dt){
     html+='<div class="wc-m">EINSATZ '+fmt(g.b)+(g.sp?' · KUGEL ROLLT':'')+'</div>';
   }
   if(g.msg)html+='<div class="wc-s">'+esc(g.msg)+'</div>';
-  if(el.innerHTML!==html)el.innerHTML=html;el.hidden=false;
+  const body=$('#wcBody');if(body.innerHTML!==html)body.innerHTML=html;el.hidden=false;
 }
