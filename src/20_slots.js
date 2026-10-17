@@ -106,14 +106,14 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   box(.9,.02,.02,trim,0,.02,.17,deck);
   box(.9,.78,.5,body,0,1.48,-.1,g);
   const scrTex=canvasTex(320,240,null);
-  mesh(new THREE.PlaneGeometry(.72,.54),bas({map:scrTex}),0,1.47,.153,g);
+  const scrMesh=mesh(new THREE.PlaneGeometry(.72,.54),bas({map:scrTex}),0,1.47,.153,g);
   [[0,1.76,.8,.04],[0,1.18,.8,.04]].forEach(([bx,by,w,h])=>box(w,h,.04,trim,bx,by,.15,g));
   box(.04,.62,.04,trim,-.38,1.47,.15,g);box(.04,.62,.04,trim,.38,1.47,.15,g);
   box(.9,.52,.44,body,0,2.13,-.13,g);
   const topTex=canvasTex(256,128,null);
   mesh(new THREE.PlaneGeometry(.74,.37),bas({map:topTex}),0,2.13,.093,g);
   const crown=bas({color:accent});box(.94,.09,.48,crown,0,2.44,-.13,g);
-  const brand=labelTex(160,20,(c,w,h)=>{c.fillStyle='#0a0610';c.fillRect(0,0,w,h);px(c,9);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';c.fillText('KELLERLINE',w/2,h/2+1);});
+  const brand=labelTex(160,20,(c,w,h)=>{c.fillStyle='#0a0610';c.fillRect(0,0,w,h);px(c,9);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';c.fillStyle='#ff2e88';c.fillText('SPIELOMAT '+SPIELOMAT.ver,w/2,h/2+1);});
   mesh(new THREE.PlaneGeometry(.5,.065),bas({map:brand}),0,1.82,.155,g);
   const ledMat=bas({color:accent});
   box(.03,2.2,.03,ledMat,-.465,1.3,.1,g);box(.03,2.2,.03,ledMat,.465,1.3,.1,g);
@@ -121,7 +121,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const stool=new THREE.Group();g.add(stool);stool.position.set(0,0,.98);
   mesh(new THREE.CylinderGeometry(.04,.14,.65,6),lam({color:0x2a2a30}),0,.32,0,stool);
   mesh(new THREE.CylinderGeometry(.23,.23,.09,8),lam({color:0x6a1020}),0,.69,0,stool);
-  const m={F,G,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
+  const m={F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
     reels:[0,1,2,3,4].map(i=>({pos:Math.random()*G.strips[i].length,spin:false,stopAt:0,target:0,bounce:0,teased:false})),
     stops:[0,0,0,0,0],grid:null,ev:null,present:null,fs:null,gamble:null,auto:false,info:false,npc:null,demoNext:now+3+Math.random()*6,demo:false,
     msg:'',dirty:true,topDirty:true,stateT:0,timer:0,expand:null,history:[]};
@@ -156,17 +156,19 @@ function setBtn(m,key,label,color,lit,blink){
     c.fillStyle=fg;px(c,label.length>6?7:label.length>4?8:10);c.textAlign='center';c.textBaseline='middle';c.fillText(label,32,21);b.tex.needsUpdate=true;}
   b.lit=lit;b.blink=blink;
 }
-const SVKEYS=['INFO','LINIEN','EINSATZ','AUTO','KARTE','LEITER','START'];
+const SVKEYS=['MENU','INFO','LINIEN','EINSATZ','AUTO','KARTE','LEITER','START'];
 function btnModel(m){
   const s=m.state,G=m.G,idle=s==='idle',show=s==='show',o={};
   const B=(k,label,color,lit,blink)=>{o[k]={label,color,lit:!!lit,blink:!!blink};};
+  if(s==='boot'||s==='menu'){smButtons(m,B);return o;}
   if((s==='gamble'||s==='gambleNext')&&m.gamble){
     const live=s==='gamble'&&!m.gamble.busy;
     B('INFO','INFO','white',false);B('LINIEN','LINIEN','amber',false);B('EINSATZ','EINSATZ','amber',false);B('AUTO','AUTO','blue',false);
     if(m.gamble.kind==='rb'){B('KARTE','ROT','red',live,live);B('LEITER','SCHWARZ','black',live,live);}
     else{B('KARTE','KARTE','red',false);B('LEITER','LEITER ▲','yellow',live,live);}
-    B('START','NEHMEN','green',live);return o;
+    B('START','NEHMEN','green',live);B('MENU','MENÜ','white',false);return o;
   }
+  B('MENU','MENÜ','white',idle&&!m.fs);
   B('INFO','INFO','white',idle||show);
   B('LINIEN','LINIEN','amber',idle&&G.lineOpts.length>1);
   B('EINSATZ','EINSATZ','amber',idle);
@@ -189,6 +191,8 @@ function pressButton(m,key){
   if(m.btns[key])m.btns[key].press=1;SFX.btn();
   const b=(m.btnModel||btnModel(m))[key];if(!b||!b.lit)return;
   const s=m.state;
+  if(s==='menu'||s==='boot'){smPress(m,key);updateButtons(m);return;}
+  if(key==='MENU'){smOpen(m);return;}
   if(s==='gamble'){
     const gm=m.gamble;
     if(gm.kind==='rb'){if(key==='KARTE')gambleRB(m,true);else if(key==='LEITER')gambleRB(m,false);else if(key==='START')collect(m,true);}
@@ -277,7 +281,7 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble')m.dirty=true;
+  if(m.state==='gamble'||m.state==='menu'||m.state==='boot')m.dirty=true;
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
   if(hot){const h=(now*.6)%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
@@ -516,6 +520,7 @@ function drawGamble(m,g){
 }
 function drawScreen(m){
   const g=m.scr.userData.ctx;
+  if(m.state==='boot'||m.state==='menu'){smDraw(m,g);m.scr.needsUpdate=true;m.dirty=false;return;}
   bgFor(m,g);drawHeader(m,g);
   if(m.state==='fsIntro')drawFsIntro(m,g);
   else if(m.state==='gamble'||(m.state==='gambleNext'&&m.gamble))drawGamble(m,g);

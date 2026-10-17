@@ -8,7 +8,7 @@ function allMachines(){return floors.flatMap(f=>f.machines);}
 function mpActivity(){
   if(!focus){if(openId==='pRoulette'){const t=$('#rRes').textContent;let sum=0;for(const k in R.bets)sum+=R.bets[k];return {g:'roulette',msg:cleanText(t,40),b:sum,sp:R.spinning?1:0};}return null;}
   if(focus.type==='slot'){const m=focus.m;
-    return {g:'slot',mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
+    return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
       fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):''};}
   if(focus.type==='poker'){const h=PK.human;return {g:'poker',c:h.hole.slice(0,2),bd:PK.board.slice(0,5),pot:potTotal(),msg:cleanText(PK.info||PK.msg||'',40),f:h.folded?1:0};}
   if(focus.type==='hilo'){return {g:'hilo',o:HL.open===null?-1:HL.open,p:HL.pick>=0&&HL.state!=='pick'?HL.hidden[HL.pick]:-1,pe:HL.pending,msg:cleanText(HL.msg||'',40)};}
@@ -19,7 +19,7 @@ function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
-  return {g:gx.g,mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
+  return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
     l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),
     c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9)};
 }
@@ -29,6 +29,7 @@ function mirrorSlot(a,gx,credit){
   if(a.mirror&&a.mirror!==m)releaseMirror(a);
   if(!m||m.npc||(focus&&focus.m===m))return;
   a.mirror=m;m.remote={name:a.name,credit};m.demo=true;
+  if(gx.gid&&m.G.id!==gx.gid)setMachineGame(m,gx.gid);
   m.lines=m.G.lineOpts.includes(gx.l)?gx.l:m.lines;m.betIdx=Math.min(gx.bi,m.G.betOpts.length-1);
   m.msg=gx.msg;m.disp=gx.w;m.win=gx.w;
   if(gx.fs&&!m.fs)m.fs={n:gx.fs[0],total:gx.fs[1],left:0,special:SYMC&&gx.sx&&m.G.syms.includes(gx.sx)?gx.sx:m.G.syms[0]};
@@ -42,7 +43,7 @@ function mirrorSlot(a,gx,credit){
   }
   m.dirty=true;
 }
-function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;m.remote=null;m.demo=false;m.fs=null;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
+function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.demo=false;m.fs=null;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
 function stepMirrors(dt){
   allMachines().forEach(m=>{if(!m.remote)return;if(m.reels.some(r=>r.spin)){updReels(m,dt);}if(m.state==='rstop'&&!m.reels.some(r=>r.spin))m.state='idle_r';});
 }
