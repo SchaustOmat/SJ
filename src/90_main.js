@@ -537,7 +537,7 @@ fontWait.then(()=>{
   const ni=$('#nameIn');ni.value=MP.name;
   ni.addEventListener('click',e=>e.stopPropagation());ni.addEventListener('pointerdown',e=>e.stopPropagation());
   ni.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')$('#start').click();});
-  mpInit();
+  mpInit();cloudSaveInit();
   $('#start').addEventListener('click',()=>{
     MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.started=true;MP.dirty=true;mpTag();
     initAudio();$('#start').hidden=true;$('#hudTop').hidden=false;joyBase.hidden=false;joyHint.hidden=false;locked=false;started=true;

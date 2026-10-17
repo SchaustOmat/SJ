@@ -16,6 +16,7 @@ function setChips(v,flash){
   chips=Math.max(0,Math.round(v));
   $('#chips').textContent=fmt(chips);
   try{localStorage.setItem('nk_chips',String(chips));}catch(e){}
+  if(typeof saveChanged==='function')saveChanged();
   if(flash){const t=$('#chipsTag');t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');}
 }
 function store(k,v){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,String(v));}catch(e){}}
