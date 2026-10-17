@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792249718";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792249910";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1347,7 +1347,8 @@ function btnModel(m){
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
   B('KARTE','RISIKO KARTE','red',canRisk,canRisk);
   const canLadder=canRisk; // Leiter geht bei jedem Gewinn
-  B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
+  if(m.auto&&!canLadder)B('LEITER',m.autoRisk?'AUTO-RISIKO AN':'AUTO-RISIKO','yellow',true,m.autoRisk); // Risiko-Automatik bis zur Ausspielung
+  else B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
   B('START',s==='spin'?'STOP':show?'NEHMEN':'START','green',idle||show||(s==='spin'&&!m.fs));
   return o;
 }
@@ -1386,9 +1387,10 @@ function pressButton(m,key){
   switch(key){
     case 'INFO':m.info=!m.info;m.dirty=true;break;
     case 'LINIEN':{const o=m.G.lineOpts;m.lines=o[(o.indexOf(m.lines)+1)%o.length];m.info=false;m.msg='LINIEN: '+m.lines;m.dirty=true;break;}
-    case 'EINSATZ':{m.betIdx=(m.betIdx+1)%m.G.betOpts.length;m.info=false;m.msg='EINSATZ: '+totalBet(m)+' ('+m.lines+'×'+betLine(m)+')';m.dirty=true;break;}
+    case 'EINSATZ':{m.betIdx=(m.betIdx+1)%m.G.betOpts.length;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));m.dirty=true;break;}
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
+      if(key==='LEITER'&&m.auto&&!(s==='show'||s==='count')){m.autoRisk=!m.autoRisk;m.msg=m.autoRisk?'AUTO-RISIKO AN · BIS '+fmt(ladOf(m)[AUS_I]):'AUTO-RISIKO AUS';SFX.click();break;}
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
       if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
     case 'START':
@@ -1563,6 +1565,8 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
+  if(m.auto&&m.autoRisk&&m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&!m.gamble.busy&&m.stateT>.4){
+    if(m.win<=0||m.gamble.idx>=AUS_I){collect(m);if(m.auto)startSpin(m);}else ladderPress(m);}
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.09);if(t!==m.gamble.rb&&m.stateT>.45){m.gamble.rb=t;SFX.ausTick(clamp(m.stateT/2.3,0,1));}}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
@@ -1597,7 +1601,7 @@ function timerDone(m){
       m.state='show';m.disp=m.win;updateButtons(m);
       if(m.auto){m.timer=.7;}
       break;
-    case 'show':if(m.auto){collect(m);startSpin(m);}break;
+    case 'show':if(m.auto&&m.autoRisk&&m.win>0&&m.G.id){startGamble(m,'ladder');break;}if(m.auto){collect(m);startSpin(m);}break;
     case 'idle':if(m.auto)startSpin(m);break;
     case 'myst':m.myst.open=true;onResult(m);break;
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
@@ -1617,7 +1621,7 @@ function timerDone(m){
       updateButtons(m);if(m.auto)m.timer=1.5;break;
     case 'gambleNext':if(m.gamble&&m.gamble.run){m.gamble.reveal();break;}m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
-      if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
+      if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);if(m.auto)m.timer=.6;}
       else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
       else{m.state='gamble';m.msg=m.gamble.kind==='ladder'?'LEITER DRÜCKEN ODER NEHMEN':'ROT ODER SCHWARZ?';}}
       m.dirty=true;m.topDirty=true;updateButtons(m);
@@ -1732,7 +1736,7 @@ function drawPower(m,g){
 
 /* ---------- gamble ---------- */
 function startGamble(m,kind){
-  m.present=null;m.auto=false;
+  m.present=null;if(!(m.auto&&m.autoRisk&&kind==='ladder'))m.auto=false;
   if(kind==='ladder'){
     let idx=-1;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=m.win)idx=i;
     // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
