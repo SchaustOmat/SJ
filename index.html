@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246552";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246603";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1571,6 +1571,7 @@ function slotStep(m,dt){
   if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count')m.msg=describeWin(m,m.present.items[m.present.idx]);m.dirty=true;}}
   // win counter
   if(m.fx&&m.fx.big&&m.state==='count'){}
+  else if(m.gamble&&m.gamble.run){} // während der Ausspielung nichts verraten
   else if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
   else if(m.disp>m.win){m.disp=m.win;m.dirty=true;}
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
@@ -1752,16 +1753,20 @@ const LADC={};
 function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=tb/10;return LADC[tb]=LAD_REAL.map(x=>Math.round(x*f));}
 // unten: hoch 1 / sonst 2 runter; ab 4,00 € (über AUSSPIELUNG): hoch 1 / sonst alles weg. Fair mit 2 % Vorteil.
 const ladDown=i=>i>=AUS_I?-1:i>=2?i-2:-1;
-const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0;return (L[i]-D)/(L[i+1]-D)*.98;};
+// Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
+const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05];
+const ausEV=L=>L.slice(AUS_I).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
+function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_I+k;}return AUS_I;}
+const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[i+1];return (L[i]-D)/(nx-D)*.98;};
 // AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
 function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.state='gambleNext';m.stateT=0;m.timer=2.3;m.msg='AUSSPIELUNG!';
   gm.reveal=()=>{gm.run=false;SFX.ausFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
-    m.msg='AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=.9;if(then)then();};
+    m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=.9;if(then)then();};
   m.dirty=true;updateButtons(m);}
 function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;const L=ladOf(m);gm.last=gm.idx;
   const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}
-  gm.target=up?gm.idx+1:ladDown(gm.idx);gm.up=up;
+  gm.target=up?(gm.idx===AUS_I-1?ausLand():gm.idx+1):ladDown(gm.idx);gm.up=up;
   ladderResult(m);
 }
 function ladderResult(m){
@@ -1771,7 +1776,7 @@ function ladderResult(m){
   else if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
   else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
   m.state='gambleNext';m.timer=t<0?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
-  if(t>from&&t>=AUS_I&&from<AUS_I)ausShow(m);
+  if(t>from&&t>=AUS_I&&from<AUS_I){m.disp=L[AUS_I];ausShow(m);}
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
@@ -1826,7 +1831,7 @@ function drawLadder(m,g,gm){
   px(g,12);g.fillStyle='#ff3a3a';g.strokeText('+',122,RY+14+dy);g.fillText('+',122,RY+14+dy);
   px(g,7);g.fillStyle='#e8e0cc';g.fillText('ERFOLG',26,RY+56);
   g.fillStyle='#000';g.fillRect(24,RY+64,150,28);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+64,150,28);
-  {const t=fmt(m.win);px(g,Math.min(14,Math.floor(140/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,168,RY+79);}
+  {const t=fmt(m.disp);px(g,Math.min(14,Math.floor(140/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,168,RY+79);}
   g.textAlign='left';px(g,6);g.fillStyle='#9b8fb3';
   g.fillText(run?'AUSSPIELUNG LÄUFT ...':result?(cur<0?'LEIDER VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):gm.preview?'LEITER = RISIKO':'LEITER = HOCH ODER RUNTER',26,RY+106);
   if(gm.preview)g.fillText('START = NEHMEN',26,RY+118);
