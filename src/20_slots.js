@@ -198,6 +198,7 @@ function pressButton(m,key){
   if(key==='RISIKO')key='KARTE';
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START')){m.timer=0;timerDone(m);if(m.state!=='gamble')return;}
   if(m.btns[key])m.btns[key].press=1;SFX.btn();
+  if(m.state==='count'&&key==='START'&&!m.pendingFs){skipCount(m);return;}
   const b=(m.btnModel||btnModel(m))[key];if(!b||!b.lit)return;
   const s=m.state;
   if(s==='menu'||s==='boot'){smPress(m,key);updateButtons(m);return;}
@@ -232,6 +233,83 @@ function pressButton(m,key){
   }
   updateButtons(m);
 }
+/* ---------- EFFEKTE: Funken, Münzen, Blitz, Wackeln, große Gewinne ---------- */
+let camShake=0;
+const easeBack=t=>{const c=1.25,u=t-1;return 1+(c+1)*u*u*u+c*u*u;};
+const BIGT=[{x:10,t:'BIG WIN',c:['#fff8c0','#ffc020','#a04a00']},{x:25,t:'MEGA WIN',c:['#ffe0ff','#ff4ad0','#6a0060']},
+  {x:50,t:'SUPER WIN',c:['#e0ffff','#2ae0ff','#00406a']},{x:100,t:'MONSTER WIN',c:['#ffffff','#ff3030','#5a0000']}];
+const SPARK=['#fff','#ffd23a','#ff9a20','#fff4a0'];
+function fxOf(m){return m.fx||(m.fx={parts:[],flash:0,fcol:'255,255,255',shake:0,big:null});}
+function fxBurst(m,x,y,n,o){const F=fxOf(m);o=o||{};
+  for(let i=0;i<n&&F.parts.length<320;i++){const a=Math.random()*TAU,sp=(o.spd||90)*(.35+Math.random()*.9);
+    F.parts.push({x:x+(Math.random()-.5)*(o.w||0),y:y+(Math.random()-.5)*(o.h||0),vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-(o.up===undefined?40:o.up),g:o.g===undefined?220:o.g,
+      life:0,max:(o.life||.8)*(.6+Math.random()*.7),col:(o.cols||SPARK)[Math.random()*(o.cols||SPARK).length|0],sz:o.sz||2,coin:!!o.coin,ph:Math.random()*TAU});}}
+function fxFlash(m,a,col){const F=fxOf(m);F.flash=Math.max(F.flash,a);F.fcol=col||'255,255,255';m.dirty=true;}
+function fxShake(m,a,cam){const F=fxOf(m);F.shake=Math.max(F.shake,a);if(cam&&typeof focus!=='undefined'&&focus&&focus.m===m)camShake=Math.max(camShake,a);}
+function cellXY(r,c){return [RX+c*CW+CW/2,RY+r*CH+CH/2];}
+function bigTier(x){let t=-1;BIGT.forEach((b,i)=>{if(x>=b.x)t=i;});return t;}
+function startBig(m,amount){const x=amount/totalBet(m),F=fxOf(m);
+  const dur=x>=100?8:x>=50?6.5:x>=25?5:3.6;
+  F.big={t:0,dur,amount,tier:-1,acc:0,out:0,tick:0,popT:now};m.disp=0;m.state='count';m.timer=dur+1.2;
+  SFX.boom();fxFlash(m,1);fxShake(m,.7,true);fxBurst(m,160,100,50,{coin:true,spd:160,up:90,sz:5,life:1.6});}
+function skipCount(m){const B=m.fx&&m.fx.big;m.disp=m.win;if(B&&!B.out){B.t=B.dur;}m.timer=Math.min(m.timer,B?.9:.25);m.dirty=true;}
+function fxStep(m,dt){
+  const F=m.fx;if(!F)return;
+  if(F.parts.length){for(const p of F.parts){p.life+=dt;p.vx*=1-dt*1.1;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+    F.parts=F.parts.filter(p=>p.life<p.max&&p.y<260);m.dirty=true;}
+  if(F.flash>0){F.flash=Math.max(0,F.flash-dt*2.6);m.dirty=true;}
+  if(F.shake>0){F.shake=Math.max(0,F.shake-dt*2.4);m.dirty=true;}
+  const B=F.big;if(!B)return;m.dirty=true;
+  if(m.state!=='count'){B.out+=dt;if(B.out>.45)F.big=null;return;}
+  B.t=Math.min(B.dur,B.t+dt);const k=B.t/B.dur,e=k<1?1-Math.pow(1-k,2.2):1;
+  m.disp=Math.min(m.win,Math.floor(m.win*e));if(k>=1)m.disp=m.win;
+  const tier=bigTier(m.disp/totalBet(m));
+  if(tier>B.tier){B.tier=tier;B.popT=now;if(tier>=0){SFX.tierUp(tier);fxFlash(m,.8);fxShake(m,.55+tier*.15,true);fxBurst(m,160,80,40+tier*15,{coin:true,spd:170,up:100,sz:5,life:1.6});}}
+  B.tick+=dt;if(k<1&&B.tick>.055){B.tick=0;SFX.riseTick(k);}
+  B.acc+=dt*(30+Math.max(0,B.tier)*15);
+  while(B.acc>1){B.acc--;F.parts.push({x:Math.random()*320,y:-6,vx:(Math.random()-.5)*30,vy:40+Math.random()*80,g:150,life:0,max:2.2,col:'#ffd23a',sz:4+Math.random()*2,coin:true,ph:Math.random()*TAU});}
+}
+function fxDraw(m,g){
+  const F=m.fx;if(!F)return;
+  if(F.big)drawBig(m,g);
+  for(const p of F.parts){const a=1-p.life/p.max;
+    if(p.coin){const w=Math.max(.6,Math.abs(Math.cos(p.ph+p.life*11)))*p.sz;g.globalAlpha=Math.min(1,a*2);
+      g.fillStyle='#7a4a00';g.fillRect(p.x-w/2-1,p.y-p.sz/2-1,w+2,p.sz+2);g.fillStyle='#ffd23a';g.fillRect(p.x-w/2,p.y-p.sz/2,w,p.sz);
+      g.fillStyle='#fff6c0';g.fillRect(p.x-w/2,p.y-p.sz/2,Math.max(1,w/3),Math.max(1,p.sz/3));}
+    else{g.globalCompositeOperation='lighter';g.globalAlpha=a;g.fillStyle=p.col;const z=p.sz*(.6+a*.6);g.fillRect(p.x-z/2,p.y-z/2,z,z);g.globalCompositeOperation='source-over';}}
+  g.globalAlpha=1;
+  if(F.flash>0){g.fillStyle='rgba('+F.fcol+','+(F.flash*.55).toFixed(3)+')';g.fillRect(0,0,320,240);}
+}
+function drawBig(m,g){
+  const B=m.fx.big,a=B.out?Math.max(0,1-B.out/.45):Math.min(1,B.t/.2);if(a<=0)return;
+  g.save();g.globalAlpha=a;
+  g.fillStyle='rgba(0,0,0,.74)';g.fillRect(0,0,320,240);
+  g.save();g.translate(160,92);g.rotate(now*.5);
+  for(let i=0;i<18;i++){g.rotate(TAU/18);g.fillStyle=i%2?'rgba(255,200,40,.2)':'rgba(255,80,20,.12)';g.beginPath();g.moveTo(0,0);g.lineTo(-24,-280);g.lineTo(24,-280);g.closePath();g.fill();}
+  g.restore();
+  const T=BIGT[Math.max(0,B.tier)],pop=Math.max(0,1-(now-B.popT)/.35),sc=(1+pop*.3)*(1+Math.sin(now*7)*.035);
+  const sz=Math.min(28,Math.floor(270/(T.t.length*1.35)));
+  g.save();g.translate(160,76);g.rotate(Math.sin(now*3.2)*.045);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,sz);
+  g.lineWidth=Math.max(5,sz*.35);g.strokeStyle='#1a0400';g.strokeText(T.t,0,3);g.strokeText(T.t,0,0);
+  const tg=g.createLinearGradient(0,-sz/2,0,sz/2);tg.addColorStop(0,T.c[0]);tg.addColorStop(.55,T.c[1]);tg.addColorStop(1,T.c[2]);g.fillStyle=tg;g.fillText(T.t,0,0);
+  const sx=((now*.9)%1.6-.3)*sz*T.t.length;g.globalCompositeOperation='lighter';g.globalAlpha=a*.5;g.fillStyle='#fff';
+  g.save();g.beginPath();g.rect(sx-sz*.6,-sz,sz*1.2,sz*2);g.clip();g.fillText(T.t,0,0);g.restore();
+  g.restore();
+  g.globalAlpha=a;g.globalCompositeOperation='source-over';
+  const bw=210,bx=160-bw/2,by=112;g.fillStyle='#000';g.fillRect(bx-3,by-3,bw+6,42);
+  const bg=g.createLinearGradient(0,by,0,by+36);bg.addColorStop(0,'#fff0a0');bg.addColorStop(.5,'#c88a10');bg.addColorStop(1,'#6a3a00');g.fillStyle=bg;g.fillRect(bx,by,bw,36);
+  g.fillStyle='#120a02';g.fillRect(bx+3,by+3,bw-6,30);
+  const txt=fmt(m.disp),tz=Math.min(20,Math.floor((bw-16)/txt.length));px(g,tz);g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle=B.t>=B.dur&&Math.floor(now*4)%2?'#fff':'#ffd23a';g.fillText(txt,160,by+19);
+  if(B.t<B.dur){px(g,6);g.fillStyle='#e8e0cc';g.fillText('START = SOFORT',160,by+50);}
+  g.restore();
+}
+function winFx(m,ev){
+  const x=ev.total/totalBet(m);
+  const cells=[];(m.present?m.present.items:[]).forEach(it=>it.cells.forEach(c=>cells.push(c)));
+  cells.forEach(([r,c])=>{const [cx,cy]=cellXY(r,c);fxBurst(m,cx,cy,x>=3?9:5,{spd:80,up:30,life:.7});});
+  fxFlash(m,x>=3?.5:.3,'255,230,140');if(x>=3)fxShake(m,.3);if(x>=5)SFX.sparkle();
+}
 /* ---------- spin flow ---------- */
 function startSpin(m,demo){
   m.info=false;m.demo=!!demo;
@@ -242,7 +320,7 @@ function startSpin(m,demo){
   m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);
   m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,betLine(m),m.fs?m.fs.special:null,m.useFs);
   const fast=m.auto?.75:1;
-  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=26;});
+  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=28;r.t0=now+i*.045;r.land=null;r.vel=0;});
   m.state='spin';m.present=null;m.expand=null;m.msg=m.fs?('FREISPIEL '+(m.fs.n+1)+' VON '+m.fs.total):m.demo?'':'VIEL GLÜCK!';
   if(!demo)SFX.reelStart();
   m.dirty=true;updateButtons(m);
@@ -254,12 +332,20 @@ function updReels(m,dt){
   m.reels.forEach((r,i)=>{
     if(r.bounce>0)r.bounce=Math.max(0,r.bounce-dt*6);
     if(!r.spin)return;any=true;
-    r.pos-=r.speed*dt;
-    if(now>=r.stopAt){r.spin=false;r.pos=r.target;r.bounce=1;
-      if(!m.demo)SFX.clunk();
+    if(!r.land){const t=now-(r.t0||0);r.vel=t<0?0:t<.08?-6:r.speed*Math.min(1,(t-.08)/.14)*(r.teased?1.4:1);r.pos-=r.vel*dt;
+      if(r.teased&&Math.random()<dt*25)fxBurst(m,RX+i*CW+CW/2,RY+CH*3,2,{spd:30,up:90,g:-20,life:.6,w:CW-8});
+      if(now>=r.stopAt){const v=Math.max(8,r.vel),d=2+(((r.pos-r.target-2)%1)+1)%1;r.land={t0:now,d,dur:clamp(4.25*d/v,.24,.5)};r.pos=r.target+d;
+        // Spannung schon beim Abbremsen entscheiden, damit die nächsten Walzen noch laufen
+        if(!m.demo&&m.G.free&&i<4){let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
+          if(sc>=2){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=.9;SFX.tease(sc);m.msg='SPANNUNG...';}}}}
+      return;}
+    {const L=r.land,t=(now-L.t0)/L.dur;if(t<1){r.pos=r.target+L.d*(1-easeBack(t));r.vel=0;return;}}
+    {r.spin=false;r.land=null;r.pos=r.target;r.vel=0;
+      if(!m.demo){SFX.reelStop(i);
+        if(m.grid&&m.G.wild&&m.state==='spin'&&!(m.myst&&m.myst.reels.includes(i))){let wc=0;for(let k=0;k<3;k++)if(m.grid[k][i]===m.G.wild){wc++;const [cx,cy]=cellXY(k,i);fxBurst(m,cx,cy,10,{spd:70,up:20,life:.6});}
+          if(wc){SFX.wildLand();fxFlash(m,.18,'255,220,120');}}}
       let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
       if(scatterOnReel(m,i)&&!m.demo)SFX.scatter(sc);
-      if(m.G.free&&sc>=2&&i<4&&!m.demo){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;const ext=.9;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=ext;SFX.tease(sc);m.msg='SPANNUNG...';}}
     }
   });
   if(!any&&m.state==='spin'){
@@ -274,12 +360,12 @@ function onResult(m){
   const lineWin=ev.total-(ev.expand?ev.expand.amount:0);
   if(m.fs){
     m.fs.n++;m.win+=lineWin;
-    m.state='fsShow';m.timer=lineWin>0?1.3:.5;if(lineWin>0)SFX.win();
+    m.state='fsShow';m.timer=lineWin>0?1.3:.5;if(lineWin>0){SFX.win();winFx(m,ev);}
     m.msg=lineWin>0?('GEWINN '+fmt(lineWin)):('FREISPIEL '+m.fs.n+' VON '+m.fs.total);
   } else {
     if(ev.total>0){m.win=ev.total;m.state='count';m.timer=Math.min(2.6,.6+ev.total/totalBet(m)*.12);
       const big=ev.total>=totalBet(m)*10;big?SFX.big():SFX.win();if(big&&!m.demo)mpWin('gewinnt '+fmt(ev.total)+' an '+m.G.title+'!');
-      m.msg=describeWin(m,m.present.items[0]);}
+      m.msg=describeWin(m,m.present.items[0]);winFx(m,ev);if(big&&!ev.trigger)startBig(m,ev.total);}
     else {m.state='idle';m.msg=m.auto?'AUTOSTART':'';if(!m.auto)slotIdleMsg(m);m.timer=m.auto?.5:0;}
     if(ev.trigger){m.pendingFs=true;}
   }
@@ -288,16 +374,19 @@ function onResult(m){
 function describeWin(m,it){if(!it)return '';if(it.scatter)return it.count+'× '+SYMNAME[m.G.scatter]+' = '+fmt(it.amount);return 'LINIE '+(it.line+1)+': '+it.count+'× '+SYMNAME[it.sym]+' = '+fmt(it.amount);}
 function collect(m){
   store('nk_slotpend',null);m.savedWin=0;
-  if(m.win>0){setChips(chips+m.win,true);if(!m.auto)SFX.chip();}
+  if(m.win>0){setChips(chips+m.win,true);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
   m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);
 }
 function slotStep(m,dt){
-  m.stateT+=dt;
+  m.stateT+=dt;fxStep(m,dt);
+  if(m.state==='myst'&&m.myst&&!m.myst.fx&&m.stateT>=1){m.myst.fx=1;SFX.whoosh();SFX.sparkle();fxFlash(m,.6,'255,230,140');fxShake(m,.45,true);
+    m.myst.reels.forEach(c=>{for(let k=0;k<3;k++){const [cx,cy]=cellXY(k,c);fxBurst(m,cx,cy,10,{spd:100,life:.7});}});}
   if(m.power)powerStep(m,dt);
   if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
   if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count')m.msg=describeWin(m,m.present.items[m.present.idx]);m.dirty=true;}}
   // win counter
-  if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
+  if(m.fx&&m.fx.big&&m.state==='count'){}
+  else if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
   else if(m.disp>m.win){m.disp=m.win;m.dirty=true;}
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
@@ -306,7 +395,8 @@ function slotStep(m,dt){
   if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
-  if(hot){const h=(now*.6)%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
+  if(m.fx&&m.fx.big&&!m.fx.big.out)m.ledMat.color.setHex(Math.floor(now*14)%2?0xffffff:0xffc020);
+  else if(hot){const h=(now*(m.state==='count'?2:.6))%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
   // button blink & press
   for(const k in m.btns){const b=m.btns[k];const on=b.lit&&(!b.blink||Math.floor(now*3)%2===0);b.mat.color.setHex(on?0xffffff:b.lit?0xaaaaaa:0x3a3a3a);
     if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.035-b.press*.012;}
@@ -330,11 +420,13 @@ function timerDone(m){
       const ev=m.ev;
       if(ev.expand){m.state='expand';m.expand={reels:ev.expand.reels,sym:ev.expand.sym,p:0,amount:ev.expand.amount};SFX.expand();m.timer=2.2;m.msg='SONDERSYMBOL WÄCHST!';break;}
       afterFsSpin(m);break;}
-    case 'expand':m.win+=m.expand.amount;SFX.big();m.msg='SONDERGEWINN '+fmt(m.expand.amount);m.state='expandShow';m.timer=1.6;break;
+    case 'expand':m.win+=m.expand.amount;SFX.big();fxFlash(m,.7,'255,230,140');fxShake(m,.5,true);m.expand.reels.forEach(c=>fxBurst(m,RX+c*CW+CW/2,RY+CH*1.5,18,{h:CH*3,spd:90}));m.msg='SONDERGEWINN '+fmt(m.expand.amount);m.state='expandShow';m.timer=1.6;break;
     case 'expandShow':afterFsSpin(m);break;
     case 'fsRetrig':m.state='fsWait';m.timer=.4;break;
     case 'fsEnd':
-      mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;updateButtons(m);if(m.auto)m.timer=1.5;break;
+      mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;
+      if(m.win>=totalBet(m)*10){m.auto=false;startBig(m,m.win);}
+      updateButtons(m);if(m.auto)m.timer=1.5;break;
     case 'gambleNext':m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);}
@@ -353,7 +445,7 @@ function afterFsSpin(m){
 function startFsIntro(m){const FC=m.G.free.count;mpWin('hat '+FC+' Freispiele an '+m.G.title+'!');
   const cand=m.G.syms.filter(s=>s!==m.G.wild);
   m.fs={left:FC,total:FC,n:0,special:m.G.free.expanding?cand[Math.random()*cand.length|0]:null};
-  m.state='fsIntro';m.timer=m.fs.special?4.2:3;m.stateT=0;m.msg=FC+' FREISPIELE!';SFX.fsIntro();m.auto=false;m.topDirty=true;updateButtons(m);
+  m.state='fsIntro';m.timer=m.fs.special?4.2:3;m.stateT=0;m.msg=FC+' FREISPIELE!';SFX.fsIntro();SFX.boom();fxFlash(m,1);fxShake(m,.8,true);fxBurst(m,160,100,60,{coin:true,spd:170,up:100,sz:5,life:1.6});m.auto=false;m.topDirty=true;updateButtons(m);
 }
 
 /* ---------- POWER SPINS: 4 Walzensätze gleichzeitig, bezahlt aus dem Gewinn ---------- */
@@ -382,6 +474,8 @@ function powerStep(m,dt){
   P.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;r.pos-=24*dt;if(now>=r.stopAt){r.spin=false;r.pos=r.target;SFX.clunk();}}));
   m.dirty=true;
   if(!any){P.spinning=false;const w=P.sets.reduce((a,S)=>a+S.ev.total,0);P.last=w;P.sum+=w;m.win+=w;
+    P.sets.forEach((S,si)=>{if(S.ev.total>0)fxBurst(m,RX-3+(si%2)*143+70,RY-3+(si/2|0)*82+38,S.ev.total>=P.cost?18:8,{spd:90,w:100,h:50});});
+    if(w>=P.cost*5){fxFlash(m,.6,'255,230,140');fxShake(m,.5,true);}else if(w>0)fxFlash(m,.25,'255,230,140');
     if(w>0){w>=P.cost*5?SFX.big():SFX.win();m.msg='POWER GEWINN '+fmt(w);if(w>=P.cost*10)mpWin('gewinnt '+fmt(w)+' in den POWER SPINS!');}
     else m.msg=P.left>0?P.left+' POWER SPINS ÜBRIG':'POWER SPINS BEENDET';
     m.timer=P.left>0?(w>0?1.5:.8):1.6;m.topDirty=true;updateButtons(m);}
@@ -401,7 +495,7 @@ function drawOffer(m,g){
   const tg=g.createLinearGradient(0,y+8,0,y+20);tg.addColorStop(0,'#fff2a0');tg.addColorStop(1,'#e08a10');g.fillStyle=tg;g.fillText('HERZLICHEN GLÜCKWUNSCH',160,y+14);
   const box=(bx,by,bw,bh,txt,col,sz)=>{g.fillStyle='#bfc4cc';g.fillRect(bx-2,by-2,bw+4,bh+4);g.fillStyle='#000';g.fillRect(bx,by,bw,bh);px(g,sz);g.fillStyle=col;g.fillText(txt,bx+bw/2,by+bh/2+1);};
   box(x+16,y+28,108,26,fmt(m.win),'#ff3030',13);
-  box(x+w-124,y+28,108,26,o.n+' POWER SPINS','#3adf5a',o.n>9?8:9);
+  {const pl=o.n+' POWER SPIN'+(o.n===1?'':'S');box(x+w-124,y+28,108,26,pl,'#3adf5a',Math.min(9,Math.floor(100/pl.length)));}
   const blink=Math.floor(now*3)%2;
   const btn=(bx,by,bw,bh,txt,c1,c2,lit)=>{g.fillStyle='#000';g.fillRect(bx-2,by-2,bw+4,bh+4);const bgr=g.createLinearGradient(0,by,0,by+bh);bgr.addColorStop(0,c1);bgr.addColorStop(1,c2);g.fillStyle=bgr;g.fillRect(bx,by,bw,bh);
     if(lit){g.strokeStyle='#fff';g.lineWidth=1.5;g.strokeRect(bx+1,by+1,bw-2,bh-2);}px(g,8);g.fillStyle='#fff';g.fillText(txt,bx+bw/2,by+bh/2+1);};
@@ -469,9 +563,10 @@ function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;
   gm.up=Math.random()<ladderUp(gm.idx);gm.last=gm.idx;
   if(gm.up&&gm.idx>=LADDER.length-1){gm.busy=false;collect(m);return;}
-  if(gm.up){gm.idx++;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();}
-  else if(gm.idx>0){gm.idx--;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();}
-  else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();}
+  if(gm.up){gm.idx++;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();
+    fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
+  else if(gm.idx>0){gm.idx--;m.win=LADDER[gm.idx];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
+  else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
   m.state='gambleNext';m.timer=gm.idx<0?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
@@ -479,13 +574,13 @@ function ladderSplit(m){
   const gm=m.gamble;if(!gm||gm.busy||gm.idx<1)return;
   const half=m.win/2;let j=0;for(let i=0;i<LADDER.length;i++)if(LADDER[i]<=half)j=i;
   const pay=m.win-LADDER[j];setChips(chips+pay,true);gm.idx=j;m.win=LADDER[j];m.disp=m.win;
-  m.msg='GETEILT · '+fmt(pay)+' GUTGESCHRIEBEN';SFX.chip();m.dirty=true;updateButtons(m);
+  m.msg='GETEILT · '+fmt(pay)+' GUTGESCHRIEBEN';SFX.chip();fxBurst(m,100,RY+78,20,{coin:true,sz:4,spd:120,up:90,life:1.2});m.dirty=true;updateButtons(m);
 }
 function gambleRB(m,red){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;
   const c=Math.random()*52|0,isRed=((c/13|0)===1||(c/13|0)===2);gm.card=c;m.history.unshift(c);if(m.history.length>6)m.history.pop();
   SFX.card();
-  if(isRed===red){m.win*=2;gm.n++;m.msg='RICHTIG! '+fmt(m.win);SFX.win();}
+  if(isRed===red){m.win*=2;gm.n++;m.msg='RICHTIG! '+fmt(m.win);SFX.win();fxBurst(m,160,RY+108,26,{spd:120,w:60,h:80});fxFlash(m,.35,'255,230,140');}
   else{m.msg='VERLOREN';m.win=0;m.disp=0;SFX.lose();}
   m.state='gambleNext';m.timer=isRed===red?1.3:2.2;m.dirty=true;updateButtons(m);
 }
@@ -582,18 +677,27 @@ function drawReelArea(m,g){
     for(let k=0;k<4;k++){
       const idx=((fl+k-1)%L+L)%L,y=RY+(k-off)*CH+bo;
       const sym=S[idx];
-      let alpha=1;
+      let alpha=1,hl=false;
       if(m.present&&m.present.items.length&&!r.spin&&(m.state==='show'||m.state==='count'||m.state==='fsShow')){const it=m.present.items[m.present.idx];const row=k;
-        alpha=it.cells.some(([cr,cc])=>cr===row&&cc===i)?1:.45;}
+        hl=it.cells.some(([cr,cc])=>cr===row&&cc===i);alpha=hl?1:.4;}
       g.globalAlpha=alpha;
       if(k<3&&!r.spin&&m.myst&&m.myst.reels.includes(i)){drawMystCell(m,g,x+1,y,CW-2,CH);g.globalAlpha=1;continue;}
-      if(r.spin){g.globalAlpha=.85;g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2-6,46,58);}
-      else g.drawImage(symCanvas(sym),x+(CW-46)/2,y+(CH-46)/2,46,46);
+      const im=symCanvas(sym);
+      if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.28;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-18,46,70);g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2+4,46,70);
+        g.globalAlpha=.8;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-8,46,62);}
+      else if(hl){const pl=Math.abs(Math.sin(now*7)),z=46*(1+pl*.12);
+        g.globalCompositeOperation='lighter';g.globalAlpha=.25+pl*.3;g.drawImage(im,x+(CW-z*1.18)/2,y+(CH-z*1.18)/2,z*1.18,z*1.18);
+        g.globalCompositeOperation='source-over';g.globalAlpha=1;g.drawImage(im,x+(CW-z)/2,y+(CH-z)/2,z,z);}
+      else g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2,46,46);
       g.globalAlpha=1;
     }
     g.restore();
     g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x,RY,1,CH*3);
   }
+  // Spannung: Walzen, die noch auf das letzte Symbol warten
+  if(m.state==='spin')m.reels.forEach((r,i)=>{if(!r.spin||!r.teased||m.remote)return;const x=RX+i*CW;
+    g.fillStyle='rgba(255,190,40,'+(.1+.08*Math.sin(now*20)).toFixed(3)+')';g.fillRect(x+1,RY,CW-2,CH*3);
+    g.strokeStyle=Math.floor(now*10)%2?'#fff':'#ffb020';g.lineWidth=3;g.strokeRect(x+2.5,RY+1.5,CW-5,CH*3-3);});
   // expanding
   if(m.useFs&&m.ev&&m.ev.wildReels&&!m.reels.some(r=>r.spin)){ // Joker füllt die Walze
     m.ev.wildReels.forEach(c=>{const x=RX+c*CW;const eg=g.createLinearGradient(0,RY,0,RY+CH*3);eg.addColorStop(0,'#ffe080');eg.addColorStop(1,'#ff6a10');
@@ -616,9 +720,11 @@ function drawReelArea(m,g){
   // highlighted win
   if(m.present&&m.present.items.length&&(m.state==='show'||m.state==='count'||m.state==='fsShow')){
     const it=m.present.items[m.present.idx];
-    if(!it.scatter){const p=G.lines[it.line];g.strokeStyle=LINECOL[it.line];g.lineWidth=3;g.beginPath();
-      g.moveTo(18,RY+p[0]*CH+CH/2);for(let c=0;c<5;c++)g.lineTo(RX+c*CW+CW/2,RY+p[c]*CH+CH/2);g.lineTo(302,RY+p[4]*CH+CH/2);g.stroke();}
-    g.strokeStyle=it.scatter?'#fff':LINECOL[it.line||0];g.lineWidth=2;
+    if(!it.scatter){const p=G.lines[it.line];g.lineJoin='round';g.lineCap='round';g.beginPath();
+      g.moveTo(18,RY+p[0]*CH+CH/2);for(let c=0;c<5;c++)g.lineTo(RX+c*CW+CW/2,RY+p[c]*CH+CH/2);g.lineTo(302,RY+p[4]*CH+CH/2);
+      g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=7;g.stroke();g.strokeStyle=LINECOL[it.line];g.lineWidth=3.5;g.stroke();
+      g.setLineDash([5,9]);g.lineDashOffset=-now*70;g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=1.5;g.stroke();g.setLineDash([]);g.lineCap='butt';g.lineJoin='miter';}
+    const pl=Math.abs(Math.sin(now*7));g.strokeStyle=it.scatter?'#fff':LINECOL[it.line||0];g.lineWidth=2+pl*1.5;
     it.cells.forEach(([r,c])=>g.strokeRect(RX+c*CW+2,RY+r*CH+2,CW-4,CH-4));
   }
 }
@@ -700,6 +806,8 @@ function drawScreen(m){
   const g=m.scr.userData.ctx;
   if(m.state==='boot'||m.state==='menu'){smDraw(m,g);m.scr.needsUpdate=true;m.dirty=false;return;}
   if(m.state==='splash'){drawSplash(m,g);m.scr.needsUpdate=true;m.dirty=false;return;}
+  const sh=m.fx&&m.fx.shake>0?m.fx.shake:0;
+  g.save();if(sh){g.fillStyle='#000';g.fillRect(0,0,320,240);g.translate((Math.random()-.5)*sh*12,(Math.random()-.5)*sh*9);}
   bgFor(m,g);drawHeader(m,g);
   if(m.state==='power'&&m.power)drawPower(m,g);
   else if(m.state==='poffer'){drawReelArea(m,g);drawOffer(m,g);}
@@ -711,7 +819,7 @@ function drawScreen(m){
       const lp=m.ladPrev&&m.ladPrev.at===m.stateAt?m.ladPrev:(m.ladPrev={at:m.stateAt,t0:now,ph:0,preview:true});lp.idx=idx;drawLadder(m,g,lp);}
     if(m.state==='fsRetrig'||m.state==='fsEnd'){g.fillStyle='rgba(0,0,0,.7)';g.fillRect(RX+20,RY+40,CW*5-40,70);g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';
       g.fillText(m.state==='fsEnd'?'GEWONNEN':'+'+m.G.free.count+' FREISPIELE',160,RY+64);px(g,10);g.fillStyle='#fff';g.fillText(m.state==='fsEnd'?fmt(m.win):'NOCHMAL!',160,RY+90);}}
-  drawBar(m,g);
+  drawBar(m,g);fxDraw(m,g);g.restore();
   m.scr.needsUpdate=true;m.dirty=false;
 }
 function drawTop(m){

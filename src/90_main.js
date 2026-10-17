@@ -511,6 +511,7 @@ function frame(){
       if(camAnim.t>=camAnim.dur)camAnim=null;}
     else{camera.position.copy(tp);camera.rotation.set(tpi,ty,0);camera.fov=tf;}
     if(EL.phase==='moving'){camera.position.y+=Math.sin(now*37)*.006+(Math.random()-.5)*.006;camera.rotation.z=Math.sin(now*23)*.004;}
+    if(camShake>0){const k=camShake*camShake;camera.position.x+=(Math.random()-.5)*.045*k;camera.position.y+=(Math.random()-.5)*.045*k;camera.rotation.z+=(Math.random()-.5)*.03*k;camShake=Math.max(0,camShake-dt*2.2);}
     camera.updateProjectionMatrix();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));

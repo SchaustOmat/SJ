@@ -69,7 +69,14 @@ const SFX={
   doors(){noise(1,.05,400);},
   fsIntro(){[392,523,659,784,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.11,i*.13));},
   expand(){[262,330,392,523,659,784].forEach((f,i)=>tone(f,.12,'square',.08,i*.05));},
-  gambleTick(on){tone(on?740:620,.06,'square',.05);}
+  gambleTick(on){tone(on?740:620,.06,'square',.05);},
+  reelStop(i){noise(.05,.16,700+i*90);tone(120+i*14,.07,'square',.07);},
+  boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
+  whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
+  sparkle(){[2093,2637,3136,4186].forEach((f,i)=>tone(f,.07,'square',.025,i*.035));},
+  tierUp(i){[523,659,784,1046,1318].forEach((f,k)=>tone(f*(1+i*.2),.15,'square',.09,k*.055));noise(.35,.14,500);tone(70,.4,'sine',.25,0,40);},
+  riseTick(p){tone(500+p*1600,.03,'square',.035);},
+  wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };
 let beatTimer=null,beatN=0;
 function setBeat(on){
