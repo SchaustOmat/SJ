@@ -50,7 +50,10 @@ var SlotEngine=(function(){
       // Gewinnplan wie der echte Merkur-Spielplan (bei Level 40: Diamant 2/10/100 €, Rubin 1,40/4/8 € …), hier pro Linie bei Einsatz 1 je Linie
       pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,10,25,100],'A':[0,0,0,10,25,100],
            'SMARAGD':[0,0,0,25,50,150],'SAPHIR':[0,0,0,25,50,150],'RUBIN':[0,0,0,35,100,200],'BRILLANT':[0,0,0,50,250,2500]},
-      scatterPay:[0,0,0,0,0,0],free:null,counts:null}
+      scatterPay:[0,0,0,0,0,0],free:null,counts:null},
+    // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
+    spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
+      wild:null,scatter:null,pay:{},scatterPay:[0,0,0,0,0,0],free:null,counts:null}
   };
   function setup(id,counts,seed,fsCounts,payScale){var G=GAMES[id];
     if(payScale&&!G.scaled){G.scaled=1;Object.keys(G.pay).forEach(function(k){G.pay[k]=G.pay[k].map(function(v){return Math.round(v*payScale);});});}SCAT_TMP=G.scatter;G.counts=counts;G.strips=buildStrips(counts,seed);G.syms=Object.keys(counts[0]);
