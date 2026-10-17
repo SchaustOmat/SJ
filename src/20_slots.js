@@ -600,9 +600,9 @@ function ladderPress(m){
   if(gm.idx===AUS_I-1){gm.target=ausDraw(L);gm.aus=true;}
   else{const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}gm.target=up?gm.idx+1:gm.idx>=2?gm.idx-2:-1;gm.aus=false;}
   gm.up=gm.target>gm.idx;
-  if(gm.idx>=AUS_I-1){ // Ausspielung und obere Stufen: Licht rast erst über die Leiter (didididi)
-    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.aus?'AUSSPIELUNG ...':'LICHT LÄUFT ...';
-    m.state='gambleNext';m.timer=gm.aus?2.6:1.6;m.dirty=true;updateButtons(m);return;}
+  if(gm.aus){ // nur beim Start der Ausspielung (von 2,40 €): Licht rast über die oberen Stufen (didididi)
+    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg='AUSSPIELUNG ...';
+    m.state='gambleNext';m.timer=2.6;m.dirty=true;updateButtons(m);return;}
   ladderResult(m);
 }
 function ladderResult(m){

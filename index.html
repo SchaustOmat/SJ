@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246064";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246259";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1758,9 +1758,9 @@ function ladderPress(m){
   if(gm.idx===AUS_I-1){gm.target=ausDraw(L);gm.aus=true;}
   else{const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}gm.target=up?gm.idx+1:gm.idx>=2?gm.idx-2:-1;gm.aus=false;}
   gm.up=gm.target>gm.idx;
-  if(gm.idx>=AUS_I-1){ // Ausspielung und obere Stufen: Licht rast erst über die Leiter (didididi)
-    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg=gm.aus?'AUSSPIELUNG ...':'LICHT LÄUFT ...';
-    m.state='gambleNext';m.timer=gm.aus?2.6:1.6;m.dirty=true;updateButtons(m);return;}
+  if(gm.aus){ // nur beim Start der Ausspielung (von 2,40 €): Licht rast über die oberen Stufen (didididi)
+    gm.run=true;gm.rb=-1;gm.reveal=()=>ladderResult(m);m.msg='AUSSPIELUNG ...';
+    m.state='gambleNext';m.timer=2.6;m.dirty=true;updateButtons(m);return;}
   ladderResult(m);
 }
 function ladderResult(m){
