@@ -131,13 +131,12 @@ var SlotEngine=(function(){
     for(c=0;c<5;c++)for(r=0;r<3;r++)if(g[r][c]===G.wild&&!out.some(function(w){return w.c===c;}))out.push({c:c,r:r,h:h||1,fresh:true});
     out.forEach(function(w){var hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(i=0;i<hh;i++)g[r0+i][w.c]=G.wild;});
     return out;}
-  // Tizona: Schild-Stufe in den Freispielen (je 4 Schilde eine Stufe: 1 Feld, 2 Felder, ganze Walze, goldene Schwerter)
+  // Tizona: Schild-Stufe in den Freispielen (je 4 Schilde eine Stufe: 1 Feld, 2 Felder, ganze Walze, goldene Schwerter über die ganze Walze)
   function tizLevel(sh){return Math.min(3,Math.floor((sh||0)/4));}
   function tizHeight(sh){return [1,2,3,3][tizLevel(sh)];}
   // Gratis-Spin, solange nach dem Weiterwandern noch ein Schwert auf den Walzen steht
   function wwPending(ww){return !!(ww&&ww.some(function(w){return w.c>=1;}));}
-  // goldene Schwerter verdoppeln jeden Gewinn, an dem ein Schwert beteiligt ist
-  function tizEval(G,g,lines,betLine,sh,fs){return evaluate(tizLevel(sh)>=3?Object.assign({},G,{wildDouble:true}):G,g,lines,betLine,null,fs);}
+  function tizEval(G,g,lines,betLine,sh,fs){return evaluate(G,g,lines,betLine,null,fs);}
   // Zentaurus Superspin: Gewinnpositionen bleiben, der Rest wird neu ausgespielt, solange der Gewinn steigt
   function superspin(G,g,lines,betLine,rnd,fs){var S=stripsOf(G,fs),ev=evaluate(G,g,lines,betLine,null,fs),best=ev.total,steps=0,gg=g;
     if(best<=0)return {grid:g,total:0,steps:0,ev:ev};
