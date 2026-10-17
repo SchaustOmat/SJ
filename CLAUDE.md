@@ -28,7 +28,7 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 ## Regeln vom Nutzer
 - Geld intern in Cent (fmt zeigt 20000 als 200,00 €). Start 200 €, Barkeeper gibt 200 € unter 20 € (nicht wenn mind. 20 € auf dem Konto).
 - Geld darf nie verloren gehen/zurückgesetzt werden.
-- Leiter: Werte wie echtes Merkur-Gerät (bei Level 40: 15,30,60,120,240,400,800,1200,1600,2000,3200,5400,14000), auf Einsatz umgerechnet, unterste Stufe = Einsatz; hoch eine Stufe / sonst zwei runter, fair (2 % Vorteil); ab 10× Einsatz AUSSPIELUNG mit didididi. Spammbar, nicht automatisch nach Gewinn öffnen.
+- Leiter wie Merkur Risiko+: feste Stufen 0,15 0,30 0,60 1,20 2,40 | AUSSPIELUNG | 4 8 12 20 32 52 84 140 € (über Level 2 € hochskaliert). Von 2,40 € startet die Ausspielung (Lichtlauf, landet gewichtet oben oder 2 Stufen runter), sonst hoch 1 / runter 2, fair mit 2 % Vorteil. Spammbar, nicht automatisch nach Gewinn öffnen.
 - Automaten: beim Hinsetzen Portemonnaie/Karte stecken (ENTSPERRT), Karte hält den Automaten (Aufstehen in jedem Zustand).
 - Gewinne nur glatte Beträge (Pharao = echter Merkur-Spielplan), Einsatzstufen wie Merkur-Level (10, 20, 40, 60, 80, 100, 200 …). Quoten ~96–98 % über die Walzenbelegung, nicht über krumme Gewinne, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' <scale> 2000000`, andere Spiele mit tools/slot_sim.js).
 - Text darf nie aus dem Bild laufen, Hoch- und Querformat müssen gehen.
