@@ -30,9 +30,9 @@ const SYMC={};
 let SYMSET=''; // 'LP' = Lucky-Pharaoh-Symbole (nur am Pharao-Automaten)
 function symCanvas(id){
   if(SYMSET==='LP'&&typeof LP_SYM!=='undefined'&&LP_SYM[id]){const k='LP_'+id;if(SYMC[k])return SYMC[k];
-    const c=document.createElement('canvas');c.width=c.height=96;LP_SYM[id](c.getContext('2d'));return SYMC[k]=c;}
+    const c=document.createElement('canvas');c.width=c.height=144;const lg=c.getContext('2d');lg.scale(1.5,1.5);LP_SYM[id](lg);return SYMC[k]=c;}
   if(SYMC[id])return SYMC[id];
-  const c=document.createElement('canvas');c.width=c.height=48;const g=c.getContext('2d');
+  const c=document.createElement('canvas');c.width=c.height=144;const g=c.getContext('2d');g.scale(3,3); // dreifach scharf für den HD-Bildschirm
   const gold=(y0,y1)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,'#fff2a0');gr.addColorStop(.45,'#e8b020');gr.addColorStop(1,'#8a5a08');return gr;};
   const letter=(t,c1,c2,size)=>{px(g,size||26);g.textAlign='center';g.textBaseline='middle';
     const gr=g.createLinearGradient(0,8,0,40);gr.addColorStop(0,c1);gr.addColorStop(1,c2);
@@ -956,6 +956,15 @@ function resvRestore(){let k='';try{k=localStorage.getItem('nk_resv')||'';}catch
   const [i,g,b]=k.split('|'),m=allMachines()[+i];if(!m||m.npc||!SlotEngine.GAMES[g])return;
   setMachineGame(m,g);m.betIdx=clamp(+b||0,0,m.G.betOpts.length-1);m.booted=true;m.state='idle';slotIdleMsg(m);RESV=m;resvSaved=k;m.dirty=true;m.topDirty=true;updateButtons(m);}
 function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=RESV!==SV.m;b.textContent='KARTE ZIEHEN';b.classList.add('on');}
+/* ---------- HD-Bildschirm: beim Spielen werden Bildschirm und Kopf-Display dreifach scharf ---------- */
+const HDS=3;
+function setHD(m,on){
+  [['scr',320,240],['top',256,128]].forEach(([k,w,h])=>{const t=m[k],U=t.userData;
+    if(on){if(!U.hd){const c=document.createElement('canvas');c.width=w*HDS;c.height=h*HDS;U.hd={canvas:c,ctx:c.getContext('2d')};U.lo={canvas:U.canvas,ctx:U.ctx};}
+      t.image=U.hd.canvas;U.canvas=U.hd.canvas;U.ctx=U.hd.ctx;U.ctx.setTransform(HDS,0,0,HDS,0,0);U.ctx.imageSmoothingEnabled=true;U.ctx.imageSmoothingQuality='high';t.magFilter=t.minFilter=THREE.LinearFilter;}
+    else if(U.lo){t.image=U.lo.canvas;U.canvas=U.lo.canvas;U.ctx=U.lo.ctx;t.magFilter=t.minFilter=THREE.NearestFilter;}
+    t.needsUpdate=true;});
+  m.hdOn=on;m.dirty=true;m.topDirty=true;}
 /* ---------- per frame ---------- */
 function updMachines(dt,F,focusM){
   F.machines.forEach(m=>{
