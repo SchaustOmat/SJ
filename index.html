@@ -267,7 +267,20 @@ body.pc #joyBase,body.pc #joyHint{display:none}
 .svb.blink.lit{animation:btnBlink .6s steps(1) infinite}
 @keyframes btnBlink{50%{filter:brightness(.6)}}
 .svb.down,.tbb.down{transform:translateY(3px);box-shadow:inset 0 -3px 0 rgba(0,0,0,.35),inset 0 3px 0 rgba(255,255,255,.3),0 1px 0 #000}
-.c-white{background:#f4f0e8}.c-red{background:#ff3a3a}.c-amber{background:#ffb020}.c-blue{background:#4a9aff}.c-green{background:#3adf5a}.c-yellow{background:#ffe040}.c-black{background:#2a2a2a;color:#f4f0e8!important}
+.c-white{background:#f4f0e8;--gl:#fff}.c-red{background:#ff3a3a;--gl:#ff3a3a}.c-amber{background:#ffb020;--gl:#ffb020}.c-blue{background:#4a9aff;--gl:#4a9aff}.c-green{background:#3adf5a;--gl:#3adf5a}.c-yellow{background:#ffe040;--gl:#ffe040}.c-black{background:#2a2a2a;color:#f4f0e8!important;--gl:#888}
+.svb{background-image:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,0) 45%,rgba(0,0,0,.18))}
+.svb.lit{box-shadow:inset 0 -6px 0 rgba(0,0,0,.35),inset 0 4px 0 rgba(255,255,255,.35),0 4px 0 #000,0 0 14px var(--gl,transparent)}
+/* PC / Querformat: farbiger, in Gruppen angeordnet */
+body.pc .svb:not(.lit),#slotView.land .svb:not(.lit){filter:brightness(.62) saturate(.8)}
+body.pc .svb.lit:hover{filter:brightness(1.12)}
+body.pc .svb{cursor:pointer}
+#slotView.land .sv-deck{display:grid;grid-template-columns:repeat(5,1fr) 14px 1.25fr 1.25fr 14px 2fr;gap:8px;padding:8px 10px;align-items:stretch}
+#slotView.land .sv-row{display:contents}
+#slotView.land #sv-KARTE{grid-column:7}#slotView.land #sv-LEITER{grid-column:8}#slotView.land #sv-START{grid-column:10}
+#slotView.land .svb{min-height:52px;font-size:10px}
+#slotView.land .svb.big{min-height:52px;font-size:15px}
+.svb .key{display:none}
+body.pc .svb .key{display:block;font-family:var(--f-body);font-size:15px;letter-spacing:0;opacity:.7;margin-top:2px}
 #svStand{position:absolute;left:max(10px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 8px);z-index:2;background:rgba(7,5,12,.85);border:2px solid var(--cyan);color:var(--cyan);font-family:var(--f-title);font-size:10px;padding:10px 10px;box-shadow:0 0 0 2px #000}
 #slotView:not(.land) .sv-screens{margin-top:44px}
 #slotView.land .sv-screens{margin-top:2px}
@@ -472,7 +485,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244479";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244542";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -3170,7 +3183,7 @@ function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.t
 function svButtons(m){
   if(m!==SV.m||!m.btnModel)return;
   SVKEYS.forEach(k=>{const b=SV.btn[k],d=m.btnModel[k];if(!d)return;
-    if(b.textContent!==d.label)b.textContent=d.label;
+    if(b.dataset.l!==d.label){b.dataset.l=d.label;b.textContent=d.label;const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
     b.className='svb c-'+d.color+(d.lit?' lit':'')+(d.blink?' blink':'')+(k==='START'?' big':'');
     b.disabled=false;b.setAttribute('aria-disabled',String(!d.lit));});
 }
@@ -4286,7 +4299,10 @@ cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endP
 addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(e.code==='Escape'&&focus)leaveFocus();
-  if(e.code==='Space'&&focus&&focus.type==='slot'){e.preventDefault();pressButton(focus.m,'START');}});
+  if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
+// Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
+const SVKEY_CODES={Space:'START',Enter:'START',KeyA:'AUTO',KeyK:'KARTE',KeyL:'LEITER',KeyE:'EINSATZ',KeyN:'LINIEN',KeyI:'INFO',KeyM:'MENU'};
+const SVHOT={START:'LEERTASTE',AUTO:'A',KARTE:'K',LEITER:'L',EINSATZ:'E',LINIEN:'N',INFO:'I',MENU:'M'};
 addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();

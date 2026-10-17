@@ -26,7 +26,7 @@ function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.t
 function svButtons(m){
   if(m!==SV.m||!m.btnModel)return;
   SVKEYS.forEach(k=>{const b=SV.btn[k],d=m.btnModel[k];if(!d)return;
-    if(b.textContent!==d.label)b.textContent=d.label;
+    if(b.dataset.l!==d.label){b.dataset.l=d.label;b.textContent=d.label;const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
     b.className='svb c-'+d.color+(d.lit?' lit':'')+(d.blink?' blink':'')+(k==='START'?' big':'');
     b.disabled=false;b.setAttribute('aria-disabled',String(!d.lit));});
 }

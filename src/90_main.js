@@ -309,7 +309,10 @@ cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endP
 addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(e.code==='Escape'&&focus)leaveFocus();
-  if(e.code==='Space'&&focus&&focus.type==='slot'){e.preventDefault();pressButton(focus.m,'START');}});
+  if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
+// Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
+const SVKEY_CODES={Space:'START',Enter:'START',KeyA:'AUTO',KeyK:'KARTE',KeyL:'LEITER',KeyE:'EINSATZ',KeyN:'LINIEN',KeyI:'INFO',KeyM:'MENU'};
+const SVHOT={START:'LEERTASTE',AUTO:'A',KARTE:'K',LEITER:'L',EINSATZ:'E',LINIEN:'N',INFO:'I',MENU:'M'};
 addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
