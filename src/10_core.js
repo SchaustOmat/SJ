@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s);
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const fmt=n=>Math.round(n).toLocaleString('de-DE');
+const fmt=n=>Math.round(n).toLocaleString('de-DE')+' €';
 const app=$('#app');
 
 /* ---------- chips ---------- */

@@ -372,7 +372,7 @@ function interact(act){
 function talk(n){
   SFX.click();
   if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
-  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 20.000 aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 beim Barkeeper.');return;}
+  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 20.000 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 20.000 € beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -386,7 +386,7 @@ function openPanel(id){freeMouse();if(openId)closePanel();openId=id;$('#'+id).hi
 function closePanel(){if(!openId)return;
   if(openId==='pAtm')atmClosed();
   if(openId==='pMulti'&&typeof lobbyClose==='function')lobbyClose();
-  if(openId==='pRoulette'&&!R.spinning){let s=0;for(const k in R.bets)s+=R.bets[k];if(s>0){setChips(chips+s);toast(fmt(s)+' Chips Einsatz zurück.');}R.bets={};}$('#'+openId).hidden=true;$('#veil').hidden=true;openId=null;locked=false;curAct=null;}
+  if(openId==='pRoulette'&&!R.spinning){let s=0;for(const k in R.bets)s+=R.bets[k];if(s>0){setChips(chips+s);toast(fmt(s)+' Einsatz zurück.');}R.bets={};}$('#'+openId).hidden=true;$('#veil').hidden=true;openId=null;locked=false;curAct=null;}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)closePanel();}));
 $('#veil').addEventListener('click',()=>{if(!busy)closePanel();});
 function setBusy(v){busy=v;document.querySelectorAll('[data-close]').forEach(b=>b.disabled=v);}
@@ -409,11 +409,11 @@ OUTS.forEach(([k,l,c])=>mkBet($('#rOuts'),k,l,c));
 function renderBets(){let sum=0;for(const k in betBtns){const v=R.bets[k]||0;sum+=v;const a=betBtns[k].a;a.hidden=!v;a.textContent=v>=1000?(v/1000).toFixed(1).replace('.0','')+'k':v;}
   $('#rSum').textContent=fmt(sum);$('#rAgain').disabled=R.spinning||!Object.keys(R.last).length;$('#rSpin').disabled=R.spinning;$('#rClear').disabled=R.spinning||!sum;}
 function rMsg(t,cls){const e=$('#rRes');e.textContent=t;e.className='res'+(cls?' '+cls:'');}
-function placeBet(k){if(R.spinning)return;const v=rChip();if(chips<v){rMsg('NICHT GENUG CHIPS','lose');SFX.lose();return;}
+function placeBet(k){if(R.spinning)return;const v=rChip();if(chips<v){rMsg('NICHT GENUG GELD','lose');SFX.lose();return;}
   setChips(chips-v);R.bets[k]=(R.bets[k]||0)+v;SFX.chip();renderBets();
   const bb=betBtns[k];if(bb){const [x,y]=UFX.elXY(bb.b);UFX.burst(x,y,7,{spd:150,up:60,life:.5,sz:4});bb.a.classList.remove('pop');void bb.a.offsetWidth;bb.a.classList.add('pop');}}
 $('#rClear').addEventListener('click',()=>{let s=0;for(const k in R.bets)s+=R.bets[k];setChips(chips+s);R.bets={};renderBets();rMsg('SETZ DEINE CHIPS');SFX.click();});
-$('#rAgain').addEventListener('click',()=>{let need=0;for(const k in R.last)need+=R.last[k];if(chips<need){rMsg('NICHT GENUG CHIPS','lose');return;}
+$('#rAgain').addEventListener('click',()=>{let need=0;for(const k in R.last)need+=R.last[k];if(chips<need){rMsg('NICHT GENUG GELD','lose');return;}
   setChips(chips-need);for(const k in R.last)R.bets[k]=(R.bets[k]||0)+R.last[k];renderBets();SFX.chip();});
 $('#rSpin').addEventListener('click',()=>{
   let sum=0;for(const k in R.bets)sum+=R.bets[k];if(!sum){rMsg('ERST CHIPS SETZEN','lose');return;}

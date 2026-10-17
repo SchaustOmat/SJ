@@ -62,7 +62,7 @@ function drawSeatLabel(s){
   const act=PK.stage!=='off'&&PK.toAct>=0&&PK.seats[PK.toAct]===s;
   c.fillStyle=act?'rgba(255,207,58,.92)':'rgba(10,6,16,.82)';c.fillRect(0,0,192,56);c.strokeStyle=s.folded&&PK.stage!=='off'?'#3a2c52':'#ffcf3a';c.lineWidth=2;c.strokeRect(1,1,190,54);
   c.textAlign='center';c.textBaseline='middle';px(c,10);c.fillStyle=act?'#140e18':'#f4f0e8';c.fillText(s.name,96,13);
-  px(c,10);c.fillStyle=act?'#140e18':'#ffcf3a';c.fillText(fmt(s.stack),96,31);
+  px(c,Math.min(10,Math.floor(184/fmt(s.stack).length)));c.fillStyle=act?'#140e18':'#ffcf3a';c.fillText(fmt(s.stack),96,31);
   px(c,8);c.fillStyle=act?'#3a1a00':'#9b8fb3';c.fillText(s.last||'',96,47);t.needsUpdate=true;
 }
 function potTotal(){return PK.seats.reduce((a,s)=>a+s.total,0);}
@@ -138,13 +138,13 @@ function pressPBtn(key){
 function later(sec,fn){PK.wait=sec;PK.next=fn;}
 function pokerSit(){
   if(PK.sitting)return true;
-  const buy=chips;if(buy<500){toast('Du brauchst mindestens 500 Chips für den Tisch.');return false;}
+  const buy=chips;if(buy<500){toast('Du brauchst mindestens 500 € für den Tisch.');return false;}
   setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;PK.sitting=true;store('nk_pstack',PK.human.stack);
   PK.info='BUY-IN '+fmt(buy)+' · GLEICH GEHT\'S LOS';PK.msg='NEUE RUNDE';drawPot();updConsole();
   say(PK.dealerNpc,'Willkommen am Tisch. Blinds 50 und 100.',3);
   later(1.6,newHand);return true;
 }
-function rebuyHuman(){const buy=chips;if(buy<500){PK.info='ZU WENIG CHIPS';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
+function rebuyHuman(){const buy=chips;if(buy<500){PK.info='ZU WENIG GELD';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
 function pokerLeave(){
   const h=PK.human;
   if(PK.stage!=='off'&&!h.folded){h.folded=true;h.last='FOLD';}
@@ -160,7 +160,7 @@ function nextIdx(i,pred){for(let k=1;k<=PK.seats.length;k++){const j=(i+k)%PK.se
 function newHand(){
   PK.next=null;
   PK.seats.forEach(s=>{if(!s.human&&s.stack<=0){s.stack=20000;s.last='NACHGEKAUFT';say(s.npc,'Nachgekauft. Jetzt erst recht.',2.5);}});
-  const h=PK.human;if(h.stack<=0){h.out=true;PK.stage='off';PK.info='KEINE CHIPS MEHR · NACHKAUFEN ODER AUFSTEHEN';PK.msg='';drawPot();updConsole();return;}
+  const h=PK.human;if(h.stack<=0){h.out=true;PK.stage='off';PK.info='KEIN GELD MEHR · NACHKAUFEN ODER AUFSTEHEN';PK.msg='';drawPot();updConsole();return;}
   clearTable();
   PK.handNo++;PK.board=[];
   PK.deck=[...Array(52).keys()];for(let i=51;i>0;i--){const j=Math.random()*(i+1)|0;[PK.deck[i],PK.deck[j]]=[PK.deck[j],PK.deck[i]];}

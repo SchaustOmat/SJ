@@ -252,9 +252,9 @@ function mtAnnounce(T,V){
 }
 function mtTimer(V){const e=$('#mtTime');if(!e)return;const s=Math.max(0,Math.ceil((V.dl-Date.now())/1000));const txt=s+'s';if(e.textContent!==txt)e.textContent=txt;}
 function mtRequestSeat(T){
-  const need=T.bb*5;if(chips<need){toast('Du brauchst mindestens '+fmt(need)+' Chips. Der Barkeeper im EG hilft.');return;}
+  const need=T.bb*5;if(chips<need){toast('Du brauchst mindestens '+fmt(need)+'. Der Barkeeper im EG hilft.');return;}
   MT.buy=chips;MT.tok=Math.random().toString(36).slice(2,10);MT.deducted='';MT.table=T.id;MT.feed=[];
-  MP.me.ts={t:T.id,s:-1,b:MT.buy,tok:MT.tok};MP.dirty=true;MP.lastSent=0;toast('Du setzt dich mit allen '+fmt(MT.buy)+' Chips.');
+  MP.me.ts={t:T.id,s:-1,b:MT.buy,tok:MT.tok};MP.dirty=true;MP.lastSent=0;toast('Du setzt dich mit allen '+fmt(MT.buy)+'.');
 }
 function mtLeaveSeat(){
   const T=TABLES[MT.table],my=mtMySeat(T);
