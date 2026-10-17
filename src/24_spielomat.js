@@ -53,7 +53,7 @@ function smDraw(m,g){
     return;
   }
   px(g,11);g.fillStyle='#ff2e88';g.textAlign='left';g.fillText('SPIELOMAT',12,16);px(g,7);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,128,17);
-  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText('GUTHABEN '+fmt(chips),308,16);
+  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(m===RESV?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
   g.textAlign='center';px(g,8);g.fillStyle='#f4f0e8';g.fillText('WÄHLE DEIN SPIEL',160,33);
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{

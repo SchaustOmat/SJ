@@ -485,7 +485,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244542";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792244703";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1914,7 +1914,8 @@ function drawBar(m,g){
   const y=RY+CH*3+5;
   g.fillStyle='rgba(0,0,0,.75)';g.fillRect(0,y,320,240-y);
   const F=m.remote?null:m.fly,wv=m.disp>0?m.disp:(F?F.unl:0),pop=F?Math.max(0,1-(now-F.lastHit)/.22):0;
-  const fields=[[m.remote?cleanText(m.remote.name,10):'GUTHABEN',fmt(m.remote?m.remote.credit:chips-(F?F.pending:0))],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
+  const own=m===RESV; // dein Guthaben steht nur auf dem Automaten, in dem deine Karte steckt
+  const fields=[[m.remote?cleanText(m.remote.name,10):own?'GUTHABEN':'KARTE',m.remote?fmt(m.remote.credit):own?fmt(chips-(F?F.pending:0)):'STECKEN'],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
   fields.forEach(([l,v],i)=>{const x=4+i*105,hot=(i===2&&wv>0)||(i===0&&F);g.fillStyle=i===0&&pop>0?'rgba(255,210,58,'+(.12+pop*.3).toFixed(2)+')':'#1a1424';g.fillRect(x,y+3,101,30);
     g.strokeStyle=hot?'#ffd23a':'#3a2c52';g.strokeRect(x+.5,y+3.5,100,29);
     g.fillStyle='#9b8fb3';px(g,7);g.textAlign='left';g.textBaseline='top';g.fillText(l,x+4,y+5);
@@ -2644,7 +2645,7 @@ function smDraw(m,g){
     return;
   }
   px(g,11);g.fillStyle='#ff2e88';g.textAlign='left';g.fillText('SPIELOMAT',12,16);px(g,7);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,128,17);
-  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText('GUTHABEN '+fmt(chips),308,16);
+  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(m===RESV?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
   g.textAlign='center';px(g,8);g.fillStyle='#f4f0e8';g.fillText('WÄHLE DEIN SPIEL',160,33);
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{
@@ -3189,7 +3190,7 @@ function svButtons(m){
 }
 function svDraw(m){
   if(m!==SV.m)return;
-  const cr=fmt(chips-(m.fly?m.fly.pending:0)),bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
+  const cr=m===RESV?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
   if(SV.last.cr!==cr){$('#svCredit').textContent=cr;SV.last.cr=cr;}
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}
