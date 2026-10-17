@@ -556,7 +556,7 @@ function frame(){
 const fontWait=Promise.race([Promise.all([document.fonts.load('16px "Press Start 2P"'),document.fonts.load('20px VT323')]),new Promise(r=>setTimeout(r,2500))]).catch(()=>{});
 fontWait.then(()=>{
   setChips(chips);mtBarInit();
-  buildWorld();setFloor(0);P.x=0;P.z=9;P.yaw=0;
+  buildWorld();setFloor(0);P.x=0;P.z=9;P.yaw=0;resvRestore();
   camera.position.set(P.x,1.6,P.z);camera.rotation.set(P.pitch,P.yaw,0);
   applyRot();
   frame();
