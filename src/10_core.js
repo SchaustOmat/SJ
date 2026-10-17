@@ -78,7 +78,7 @@ const SFX={
   doors(){noise(1,.05,400);},
   fsIntro(){[392,523,659,784,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.11,i*.13));},
   expand(){[262,330,392,523,659,784].forEach((f,i)=>tone(f,.12,'square',.08,i*.05));},
-  gambleTick(on){tone(on?740:620,.06,'square',.05);},
+  gambleTick(on){tone(on?1047:880,.045,'square',.05);}, // Leiter-Blinken: C6/A5 im Wechsel
   reelStop(i){noise(.05,.16,700+i*90);tone(120+i*14,.07,'square',.07);},
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
@@ -87,8 +87,8 @@ const SFX={
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
-  ausTick(i){tone(1100+(i%8)*110,.035,'square',.05);},
-  ausFan(){for(let i=0;i<20;i++)tone(660*Math.pow(1.0595,i),.05,'square',.07,i*.05);tone(1320,.5,'square',.06,1.0);tone(1760,.5,'square',.05,1.05);},
+  ausTick(i){tone(i%2?880:1047,.04,'square',.055);}, // didididi: C6/A5 schnell im Wechsel
+  ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };

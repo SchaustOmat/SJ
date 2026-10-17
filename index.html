@@ -506,7 +506,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246413";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792246536";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -768,7 +768,7 @@ const SFX={
   doors(){noise(1,.05,400);},
   fsIntro(){[392,523,659,784,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.11,i*.13));},
   expand(){[262,330,392,523,659,784].forEach((f,i)=>tone(f,.12,'square',.08,i*.05));},
-  gambleTick(on){tone(on?740:620,.06,'square',.05);},
+  gambleTick(on){tone(on?1047:880,.045,'square',.05);}, // Leiter-Blinken: C6/A5 im Wechsel
   reelStop(i){noise(.05,.16,700+i*90);tone(120+i*14,.07,'square',.07);},
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
@@ -777,8 +777,8 @@ const SFX={
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
-  ausTick(i){tone(1100+(i%8)*110,.035,'square',.05);},
-  ausFan(){for(let i=0;i<20;i++)tone(660*Math.pow(1.0595,i),.05,'square',.07,i*.05);tone(1320,.5,'square',.06,1.0);tone(1760,.5,'square',.05,1.05);},
+  ausTick(i){tone(i%2?880:1047,.04,'square',.055);}, // didididi: C6/A5 schnell im Wechsel
+  ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
 };
@@ -1561,7 +1561,7 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
-  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.07);if(t!==m.gamble.rb){m.gamble.rb=t;SFX.ausTick(t);}}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.05);if(t!==m.gamble.rb){m.gamble.rb=t;SFX.ausTick(t);}}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
       M.fxn++;SFX.coinUp(M.fxn*2);fxBurst(m,cx,cy,14,{spd:110,life:.7});fxFlash(m,.15,'255,230,140');
