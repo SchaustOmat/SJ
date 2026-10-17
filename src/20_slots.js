@@ -128,8 +128,9 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const stool=new THREE.Group();g.add(stool);stool.position.set(0,0,.98);
   mesh(new THREE.CylinderGeometry(.04,.14,.65,6),lam({color:0x2a2a30}),0,.32,0,stool);
   mesh(new THREE.CylinderGeometry(.23,.23,.09,8),lam({color:0x6a1020}),0,.69,0,stool);
-  const slotFr=box(.2,.04,.03,chrome,.2,1.81,.165,g);box(.15,.01,.034,dark,.2,1.81,.167,g);
-  const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.035,.035,.036,cardLed,.35,1.81,.166,g);
+  // Kartenschlitz unter dem Bildschirm rechts: Chromrahmen, dunkler Schlitz, LED daneben
+  const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);box(.17,.014,.044,dark,.2,1.125,.172,g);
+  const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.045,.045,.046,cardLed,.36,1.125,.171,g);
   const m={cardSlot:slotFr,cardLed,F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
     reels:[0,1,2,3,4].map(i=>({pos:Math.random()*G.strips[i].length,spin:false,stopAt:0,target:0,bounce:0,teased:false})),
     stops:[0,0,0,0,0],grid:null,ev:null,present:null,fs:null,gamble:null,auto:false,info:false,npc:null,demoNext:now+3+Math.random()*6,demo:false,

@@ -165,7 +165,7 @@ function buildWorld(){
   B.ambient=0x56283a;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.66); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
+  ambient=new THREE.AmbientLight(0x4a3a66,.95);scene.add(new THREE.HemisphereLight(0x9a8ac8,0x2a1a30,.55)); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 

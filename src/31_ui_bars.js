@@ -24,9 +24,9 @@ function svGate(m){
       card.style.setProperty('--fx',(tx-(cr.left+cr.width/2))+'px');card.style.setProperty('--fy',(ty-(cr.top+cr.height/2))+'px');
       const sl=el.querySelector('.gate-slot');if(sl){sl.style.left=tx+'px';sl.style.top=ty+'px';}
       el.dataset.st='ins';SFX.card();hint.textContent='';
-      setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},420);
+      setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},700);
       setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);noise(.12,.15,1800);el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);
-        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},700);}});
+        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},950);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}

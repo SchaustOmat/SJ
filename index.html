@@ -358,13 +358,14 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .gw{position:relative;width:240px;height:150px;margin-top:64px;cursor:pointer;transform-style:preserve-3d;transform:perspective(700px) rotateX(18deg);transition:transform .5s cubic-bezier(.3,1.35,.5,1),opacity .35s}
 .gwrap{perspective:700px}
 .gwrap[data-st="enter"] .gw{transform:perspective(700px) translateY(180px) rotateX(55deg) rotate(-8deg);opacity:0}
-.gwrap[data-st="ins"] .gw{transform:perspective(700px) translateY(260px) rotateX(60deg) rotate(5deg);opacity:0;transition:transform .5s ease-in .12s,opacity .4s .2s}
+.gwrap[data-st="ins"] .gw{transform:perspective(700px) translateY(260px) rotateX(60deg) rotate(5deg);opacity:0;transition:transform .5s ease-in .35s,opacity .4s .45s}
 .gw-back{position:absolute;inset:0;background:linear-gradient(160deg,#6a4018,#3a200a);border:3px solid #1a0a00;border-radius:12px;box-shadow:6px 6px 0 rgba(0,0,0,.5)}
 .gw-card{position:absolute;left:30px;top:12px;width:176px;height:110px;border-radius:9px;border:2px solid #000;z-index:1;font-family:var(--f-title);color:#fff;
   background:linear-gradient(135deg,#1a3a9a 0%,#5a1a8a 55%,#ff2e88 100%);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,3px 3px 0 rgba(0,0,0,.45);transition:transform .45s cubic-bezier(.4,1.5,.5,1),opacity .3s,box-shadow .3s}
 .gwrap[data-st="open"] .gw-card{transform:translateY(-70px);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,0 0 22px rgba(255,210,80,.75);animation:gwpulse .9s ease-in-out .45s infinite alternate}
 @keyframes gwpulse{to{transform:translateY(-76px) scale(1.03)}}
-.gwrap[data-st="ins"] .gw-card{animation:none;transform:translate(var(--fx,0px),var(--fy,-560px)) rotateX(80deg) scale(.42,.5);opacity:.85;transition:transform .55s cubic-bezier(.55,0,.85,.55),opacity .55s;box-shadow:0 0 30px #3adf5a}
+.gwrap[data-st="ins"] .gw-card{animation:gwfly .85s cubic-bezier(.45,0,.6,1) forwards;box-shadow:0 0 30px #3adf5a}
+@keyframes gwfly{0%{transform:translateY(-70px)}35%{transform:translate(calc(var(--fx,0px)*.5),calc(var(--fy,-500px)*.5 - 40px)) rotate(-8deg) scale(.8)}80%{transform:translate(var(--fx,0px),calc(var(--fy,-500px) + 14px)) rotateX(55deg) scale(.5);opacity:1}100%{transform:translate(var(--fx,0px),calc(var(--fy,-500px) + 4px)) rotateX(70deg) scale(.5,.05);opacity:0}}
 .gw-pocket{position:absolute;left:0;right:0;bottom:0;height:64%;z-index:2;border:3px solid #1a0a00;border-radius:0 0 12px 12px;background:linear-gradient(#8a5a2a,#4a2a10);box-shadow:inset 0 0 0 5px rgba(0,0,0,.12)}
 .gw-pocket::after{content:'';position:absolute;inset:7px;border:2px dashed rgba(255,220,160,.35);border-radius:6px}
 .gw-flap{position:absolute;left:0;right:0;top:0;height:100%;z-index:3;border:3px solid #1a0a00;border-radius:12px;background:linear-gradient(160deg,#9a6a32,#5a3414);display:grid;place-items:center;
@@ -534,7 +535,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792251034";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792251348";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -823,7 +824,7 @@ const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:false,powerPreferenc
 renderer.setPixelRatio(1);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07050c);
-scene.fog=new THREE.Fog(0x06040a,3,19);
+scene.fog=new THREE.Fog(0x0a0712,4,24);
 const camera=new THREE.PerspectiveCamera(70,1,.03,60);
 camera.rotation.order='YXZ';
 const snapRes={value:new THREE.Vector2(160,120)};
@@ -1314,8 +1315,9 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const stool=new THREE.Group();g.add(stool);stool.position.set(0,0,.98);
   mesh(new THREE.CylinderGeometry(.04,.14,.65,6),lam({color:0x2a2a30}),0,.32,0,stool);
   mesh(new THREE.CylinderGeometry(.23,.23,.09,8),lam({color:0x6a1020}),0,.69,0,stool);
-  const slotFr=box(.2,.04,.03,chrome,.2,1.81,.165,g);box(.15,.01,.034,dark,.2,1.81,.167,g);
-  const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.035,.035,.036,cardLed,.35,1.81,.166,g);
+  // Kartenschlitz unter dem Bildschirm rechts: Chromrahmen, dunkler Schlitz, LED daneben
+  const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);box(.17,.014,.044,dark,.2,1.125,.172,g);
+  const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.045,.045,.046,cardLed,.36,1.125,.171,g);
   const m={cardSlot:slotFr,cardLed,F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
     reels:[0,1,2,3,4].map(i=>({pos:Math.random()*G.strips[i].length,spin:false,stopAt:0,target:0,bounce:0,teased:false})),
     stops:[0,0,0,0,0],grid:null,ev:null,present:null,fs:null,gamble:null,auto:false,info:false,npc:null,demoNext:now+3+Math.random()*6,demo:false,
@@ -3312,9 +3314,9 @@ function svGate(m){
       card.style.setProperty('--fx',(tx-(cr.left+cr.width/2))+'px');card.style.setProperty('--fy',(ty-(cr.top+cr.height/2))+'px');
       const sl=el.querySelector('.gate-slot');if(sl){sl.style.left=tx+'px';sl.style.top=ty+'px';}
       el.dataset.st='ins';SFX.card();hint.textContent='';
-      setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},420);
+      setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},700);
       setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);noise(.12,.15,1800);el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);
-        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},700);}});
+        setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},950);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
@@ -4364,7 +4366,7 @@ function buildWorld(){
   B.ambient=0x56283a;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.66); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
+  ambient=new THREE.AmbientLight(0x4a3a66,.95);scene.add(new THREE.HemisphereLight(0x9a8ac8,0x2a1a30,.55)); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 
