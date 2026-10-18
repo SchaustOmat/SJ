@@ -654,8 +654,8 @@ const ausIdx=m=>AUS_I;
 const LADC={};
 // Leiter wächst mit dem Einsatz: Werte gelten für 0,10 €, bei 0,20 € doppelt, bei 1 € zehnfach usw.
 function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=tb/10;return LADC[tb]=LAD_REAL.map(x=>Math.round(x*f));}
-// unten: hoch 1 / sonst 2 runter; ab 4,00 € (über AUSSPIELUNG): hoch 1 / sonst alles weg. Fair mit 2 % Vorteil.
-const ladDown=i=>i>=AUS_I?-1:i>=2?i-2:-1;
+// wie die echte Leiter: hoch 1 / sonst 2 Stufen runter (auch oben und in RISIKO+), erst ganz unten auf 0. Fair mit 2 % Vorteil.
+const ladDown=i=>i>=2?i-2:-1;
 // Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
 const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05];
 const ausEV=L=>L.slice(AUS_I,AUS_I+AUS_LAND.length).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
@@ -732,7 +732,7 @@ function drawLadder(m,g,gm){
   // RISIKO+-Spalte (links neben der Leiter): 100 · 140 · 180 · 220 · 260 · 300 €
   {const PV=[L[PLUS_I-3]===undefined?0:Math.round(10000*totalBet(m)/10),L[PLUS_I-1]].concat(L.slice(PLUS_I)),bh=19,bx=118,bw=70;
     PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,col='y';
-      if(k>=PLUS_I||k===PLUS_I-1){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===cur&&k===PLUS_I-1)lit=lit||false;}}
+      if(k>=PLUS_I||k===PLUS_I-1){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
       g.fillStyle='#000';g.fillRect(bx-2,y-2,bw+4,bh+4);g.fillStyle=lit?(col==='green'?'#3adf5a':'#ffd23a'):'#2a0608';g.fillRect(bx,y,bw,bh);
       g.strokeStyle=k===cur&&!run?'#fff':'#c01020';g.lineWidth=k===cur&&!run?2:1.5;g.strokeRect(bx+1,y+1,bw-2,bh-2);
       const t=fmt(v).replace(' €','');px(g,Math.min(9,Math.floor((bw-8)/t.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2,y+bh/2+1);});}
