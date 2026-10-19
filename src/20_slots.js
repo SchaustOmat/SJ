@@ -647,20 +647,23 @@ function startGamble(m,kind){
 // p = (L[i]-L[i-2]) / (L[i+1]-L[i-2]) * 0.98  ->  meist 50-60 % hoch, Drücken bleibt fair (2 % Hausvorteil)
 // Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
 // Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
-const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,14000,18000,22000,26000,30000]; // in Cent bei Level 0,10 €; ab 140 € RISIKO+ (linke Spalte bis 300 €)
-const PLUS_I=13; // erste Stufe der Risiko+-Spalte (180 €)
+// Feste Euro-Beträge wie am echten Gerät (unabhängig vom Einsatz). 100 € ist nur der Rückfall-Boden in RISIKO+.
+const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000];
+const F_I=12;   // 100 € – Mindestrückfall in RISIKO+
+const TOP_I=13; // 140 € – Spitze der normalen Leiter, ab hier RISIKO+
+const PLUS_I=14; // erste Stufe der Risiko+-Spalte (180 €)
 const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
-const LADC={};
-// Leiter wächst mit dem Einsatz: Werte gelten für 0,10 €, bei 0,20 € doppelt, bei 1 € zehnfach usw.
-function ladOf(m){const tb=totalBet(m);if(LADC[tb])return LADC[tb];const f=tb/10;return LADC[tb]=LAD_REAL.map(x=>Math.round(x*f));}
-// wie die echte Leiter: hoch 1 / sonst 2 Stufen runter (auch oben und in RISIKO+), erst ganz unten auf 0. Fair mit 2 % Vorteil.
-const ladDown=i=>i>=2?i-2:-1;
+function ladOf(m){return LAD_REAL;}
+// Echte Leiter (merkur.com): normal fällt man Stufe für Stufe „irgendwann zurück auf Null“ (hier: 2 Stufen runter),
+// in RISIKO+ (ab 140 €) nur auf mindestens 100 €. Von 100 € geht es hoch auf 140 € oder runter auf 52 €. Fair mit 2 % Vorteil.
+const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i>=2?i-2:-1;
+const ladNext=i=>i===TOP_I-2?TOP_I:i+1; // 84 € → 140 € (100 € liegt nur in der RISIKO+-Spalte)
 // Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
-const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05];
-const ausEV=L=>L.slice(AUS_I,AUS_I+AUS_LAND.length).reduce((a,v,k)=>a+v*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
-function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_I+k;}return AUS_I;}
-const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[i+1];return (L[i]-D)/(nx-D)*.98;};
+const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05],AUS_IDX=[5,6,7,8,9,10,11,TOP_I]; // 4 8 12 20 32 52 84 140 €
+const ausEV=L=>AUS_IDX.reduce((a,i,k)=>a+L[i]*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
+function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_IDX[k];}return AUS_I;}
+const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[ladNext(i)];return (L[i]-D)/(nx-D)*.98;};
 // AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
 function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.state='gambleNext';m.stateT=0;m.timer=2.6;m.msg='AUSSPIELUNG!';SFX.ausFan();
   gm.reveal=()=>{gm.run=false;SFX.ausFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
@@ -670,7 +673,7 @@ function ladderPress(m){
   const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;const L=ladOf(m);gm.last=gm.idx;
   if(gm.idx<0){const up=Math.random()<m.win/L[0]*.98;gm.target=up?0:-2;gm.up=up;ladderResult(m);return;}
   const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}
-  gm.target=up?(gm.idx===AUS_I-1?ausLand():gm.idx+1):ladDown(gm.idx);gm.up=up;
+  gm.target=up?(gm.idx===AUS_I-1?ausLand():ladNext(gm.idx)):ladDown(gm.idx);gm.up=up;
   ladderResult(m);
 }
 function ladderResult(m){
@@ -714,12 +717,12 @@ function drawLadder(m,g,gm){
   const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
   if(!result&&!run&&ph!==gm.ph){gm.ph=ph;if(!gm.preview&&!m.remote)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
-  const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k+1,yOf=p=>yb-rh*(p+2);
+  const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k<F_I?k+1:k,yOf=p=>yb-rh*(p+2);
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
   // laufendes Licht: über die oberen Stufen hin und her
-  const nu=PLUS_I-AUS_I,st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_I+((st*7919+st*st*31+13)%nu);
-  const upT=cur+1,dnT=ladDown(cur);
-  for(let k=0;k<PLUS_I;k++){const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
+  const st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_IDX[(st*7919+st*st*31+13)%AUS_IDX.length];
+  const upT=ladNext(cur),dnT=ladDown(cur);
+  for(let k=0;k<PLUS_I;k++){if(k===F_I)continue;const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
     let lit=false,col='y';
     if(run){lit=k===rk;col='red';}
     else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
@@ -730,9 +733,9 @@ function drawLadder(m,g,gm){
   const zl=!run&&((result&&cur<0)||(!result&&dnT<0&&!ph));
   goldRung(g,x+18,yb-rh,W-36,rh-1.4,zl,'0',zl&&result?'red':'y');
   // RISIKO+-Spalte (links neben der Leiter): 100 · 140 · 180 · 220 · 260 · 300 €
-  {const PV=[L[PLUS_I-3]===undefined?0:Math.round(10000*totalBet(m)/10),L[PLUS_I-1]].concat(L.slice(PLUS_I)),bh=19,bx=118,bw=70;
+  {const PV=L.slice(F_I),bh=19,bx=118,bw=70;
     PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,col='y';
-      if(k>=PLUS_I||k===PLUS_I-1){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
+      if(k>=F_I){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
       g.fillStyle='#000';g.fillRect(bx-2,y-2,bw+4,bh+4);g.fillStyle=lit?(col==='green'?'#3adf5a':'#ffd23a'):'#2a0608';g.fillRect(bx,y,bw,bh);
       g.strokeStyle=k===cur&&!run?'#fff':'#c01020';g.lineWidth=k===cur&&!run?2:1.5;g.strokeRect(bx+1,y+1,bw-2,bh-2);
       const t=fmt(v).replace(' €','');px(g,Math.min(9,Math.floor((bw-8)/t.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2,y+bh/2+1);});}
@@ -744,7 +747,7 @@ function drawLadder(m,g,gm){
   g.fillStyle='#000';g.fillRect(24,RY+56,88,26);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+56,88,26);
   {const t=fmt(m.disp);px(g,Math.min(12,Math.floor(82/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,108,RY+70);}
   g.fillStyle='#9b8fb3';
-  fitL(g,run?'AUSSPIELUNG ...':result?(cur<0?'VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):cur>=PLUS_I-1?'RISIKO+ BIS 300':'LEITER = HOCH',26,RY+96,86,6);
+  fitL(g,run?'AUSSPIELUNG ...':result?(cur<0?'VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):cur>=F_I?'RISIKO+ · MIND. 100':'LEITER = HOCH',26,RY+96,86,6);
   if(!result&&!run&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';fitL(g,'TEILEN = HÄLFTE',26,RY+110,86,6);}
   g.fillStyle='#9b8fb3';fitL(g,'START = NEHMEN',26,RY+124,86,6);
   g.restore();
