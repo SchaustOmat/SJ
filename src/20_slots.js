@@ -33,10 +33,11 @@ const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07
 
 /* ---------- symbol art (procedural, 48px) ---------- */
 const SYMC={};
-let SYMSET=''; // 'LP' = Lucky-Pharaoh-Symbole (nur am Pharao-Automaten)
+let SYMSET=''; // Spiel-ID: eigene Symbolsätze für pharao/tizona/zent/doppel
 function symCanvas(id){
-  if(SYMSET==='LP'&&typeof LP_SYM!=='undefined'&&LP_SYM[id]){const k='LP_'+id;if(SYMC[k])return SYMC[k];
-    const c=document.createElement('canvas');c.width=c.height=144;const lg=c.getContext('2d');lg.scale(1.5,1.5);LP_SYM[id](lg);return SYMC[k]=c;}
+  const SS=SYMSET==='pharao'?LP_SYM:(typeof SYM_SETS!=='undefined'?SYM_SETS[SYMSET]:null);
+  if(SS&&SS[id]){const k=SYMSET+'_'+id;if(SYMC[k])return SYMC[k]; // eigene 96er-Symbole je Merkur-Spiel
+    const c=document.createElement('canvas');c.width=c.height=144;const lg=c.getContext('2d');lg.scale(1.5,1.5);SS[id](lg);return SYMC[k]=c;}
   if(SYMC[id])return SYMC[id];
   const c=document.createElement('canvas');c.width=c.height=144;const g=c.getContext('2d');g.scale(3,3); // dreifach scharf für den HD-Bildschirm
   const gold=(y0,y1)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,'#fff2a0');gr.addColorStop(.45,'#e8b020');gr.addColorStop(1,'#8a5a08');return gr;};
@@ -782,6 +783,7 @@ function drawMystCell(m,g,x,y,w,h,r,c){
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
 function bgFor(m,g){
+  if(typeof MK_BG!=='undefined'&&MK_BG[m.G.id]){g.drawImage(MK_BG[m.G.id](),0,0);return;}
   const BGC={viking:['#0a1a30','#04101e'],mine:['#1a1410','#0a0806'],reef:['#03304a','#011a2a'],temple:['#3a1004','#1a0602'],pharao:['#4a0808','#140202'],spitze:['#0a1030','#02040e'],zent:['#0a2a4a','#04101e'],tizona:['#2a1a0a','#0a0604'],doppel:['#3a2208','#120802']}[m.G.id];
   if(BGC){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,BGC[0]);gr.addColorStop(1,BGC[1]);g.fillStyle=gr;g.fillRect(0,0,320,240);return;}
   if(m.G.id==='book'){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,'#3a2208');gr.addColorStop(.5,'#1a0e04');gr.addColorStop(1,'#2a1606');g.fillStyle=gr;g.fillRect(0,0,320,240);
@@ -796,7 +798,7 @@ function drawReelArea(m,g){
     const x=RX+i*CW,r=m.reels[i],S=stripsFor(m)[i],L=S.length;
     g.save();g.beginPath();g.rect(x+1,RY,CW-2,CH*3);g.clip();
     const rg=g.createLinearGradient(0,RY,0,RY+CH*3);
-    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#2a3a5a','#e8eef8'],tizona:['#3a2a1a','#e8dcc8'],doppel:['#5a4020','#e8d8b0']}[G.id];
+    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#5a6a8a','#eef2f8'],doppel:['#5a4020','#e8d8b0']}[G.id];
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
     if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;
@@ -989,7 +991,7 @@ function drawGamble(m,g){
   }
 }
 function drawScreen(m){
-  const g=m.scr.userData.ctx;SYMSET=m.G.id==='pharao'?'LP':'';
+  const g=m.scr.userData.ctx;SYMSET=m.G.id;
   if(m.state==='boot'||m.state==='menu'){smDraw(m,g);m.dirty=false;fxDraw(m,g);m.scr.needsUpdate=true;return;}
   if(m.state==='splash'){drawSplash(m,g);m.dirty=false;fxDraw(m,g);m.scr.needsUpdate=true;return;}
   const sh=m.fx&&m.fx.shake>0?m.fx.shake:0;
@@ -1010,7 +1012,7 @@ function drawScreen(m){
   m.scr.needsUpdate=true;
 }
 function drawTop(m){
-  const g=m.top.userData.ctx,G=m.G;SYMSET=G.id==='pharao'?'LP':'';
+  const g=m.top.userData.ctx,G=m.G;SYMSET=G.id;
   const gr=g.createLinearGradient(0,0,0,128);
   const TOPC={book:['#1a0a30','#3a1a04'],fruit:['#3a0000','#a03a00'],viking:['#06142a','#2a4a6a'],mine:['#101018','#3a2a10'],reef:['#002a3a','#0a6a8a'],temple:['#2a0a00','#8a2a00'],pharao:['#2a0000','#8a1010'],spitze:['#0a1a40','#1a4a1a'],zent:['#0a2a5a','#3a6a2a'],tizona:['#2a1a0a','#6a3a10'],doppel:['#1a0a30','#3a1a04']}[G.id];
   gr.addColorStop(0,TOPC[0]);gr.addColorStop(1,TOPC[1]);
