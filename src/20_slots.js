@@ -379,13 +379,13 @@ function startSpin(m,demo){
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
   m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);
   if(m.myst){const n=m.myst.cells.length,o=[...Array(n).keys()].sort(()=>Math.random()-.5);m.myst.at=[];o.forEach((ci,k)=>m.myst.at[ci]=MY_T0+k*MY_DT);m.myst.fxn=0;}
-  m.ovr=null;
+  m.ovr=null;m.ss=null;m.ssHeld=null;
   if(m.G.walkWild&&!demo){let sc=0;for(let r=0;r<3;r++)for(let c=0;c<5;c++)if(m.grid[r][c]===m.G.scatter)sc++;m.shN=sc; // vor dem Schwert zählen
     if(m.fs&&m.G.free.shields){const l0=SlotEngine.tizLevel(m.fs.sh);m.fs.sh=(m.fs.sh||0)+sc;m.fs.lvUp=SlotEngine.tizLevel(m.fs.sh)>l0;}
     const h=m.fs?SlotEngine.tizHeight(m.fs.sh):1;m.ww=SlotEngine.walk(m.G,m.grid,m.ww,h);m.wwc=wwCells(m.ww);m.wwT=now;
     if(m.fs){const fr=m.ww.filter(w=>w.fresh).length;if(fr){m.fs.left+=fr;m.fs.total+=fr;m.topDirty=true;}}} // Merkur: jedes neue Schwert = +1 Freispiel
   else if(!m.G.walkWild){m.ww=null;m.wwc=null;}
-  if(m.fs&&m.G.free&&m.G.free.superspin&&!demo){const ss=SlotEngine.superspin(m.G,m.grid,m.lines,payLine(m),Math.random,true);if(ss.grid!==m.grid){m.ovr=ss.grid;m.grid=ss.grid;m.ssSteps=ss.steps;}m.ev=ss.ev;}
+  if(m.fs&&m.G.free&&m.G.free.superspin&&!demo){const ss=SlotEngine.superspin(m.G,m.grid,m.lines,payLine(m),Math.random,true);m.ev=ss.ev0;if(ss.seq.length)m.ss={seq:ss.seq,i:0,paid:ss.ev0.total};} // Superspins laufen nach dem Dreh sichtbar ab
   else if(m.G.walkWild&&m.fs&&!demo)m.ev=SlotEngine.tizEval(m.G,m.grid,m.lines,payLine(m),m.fs.sh,true);
   else m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m),m.fs?m.fs.special:null,m.useFs);
   if(m.G.walkWild&&!demo)m.ev.trigger=m.shN>=3;
@@ -465,6 +465,7 @@ function slotStep(m,dt){
   if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
   if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count')m.msg=describeWin(m,m.present.items[m.present.idx]);m.dirty=true;}}
   // win counter
+  if(m.state==='ssSpin')m.dirty=true; // Superspin: freie Felder drehen sichtbar
   if(m.fx&&m.fx.big&&m.state==='count'){}
   else if(m.gamble&&m.gamble.run){} // während der Ausspielung nichts verraten
   else if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
@@ -499,14 +500,21 @@ function timerDone(m){
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
     case 'fsWait':startSpin(m);break;
     case 'fsShow':{
+      if(m.ss&&m.ss.i<m.ss.seq.length){// Superspin: Gewinnfelder bleiben rot stehen, der Rest dreht neu
+        const st=m.ss.seq[m.ss.i];m.ssHeld=st.held;m.state='ssSpin';m.timer=.95;m.present=null;m.msg='SUPERSPIN!';SFX.reelStart();m.dirty=true;break;}
       const ev=m.ev;
       if(ev.expand){m.state='expand';m.expand={reels:ev.expand.reels,sym:ev.expand.sym,list:ev.expand.list,p:0,amount:ev.expand.amount};SFX.expand();m.timer=2.2;m.msg='SONDERSYMBOL WÄCHST!';break;}
       afterFsSpin(m);break;}
     case 'expand':m.win+=m.expand.amount;SFX.big();fxFlash(m,.7,'255,230,140');fxShake(m,.5,true);m.expand.reels.forEach(c=>fxBurst(m,RX+c*CW+CW/2,RY+CH*1.5,18,{h:CH*3,spd:90}));m.msg='SONDERGEWINN '+fmt(m.expand.amount);m.state='expandShow';m.timer=1.6;break;
     case 'expandShow':afterFsSpin(m);break;
     case 'fsRetrig':m.state='fsWait';m.timer=.4;break;
+    case 'ssSpin':{const st=m.ss.seq[m.ss.i++];m.ovr=st.grid;m.grid=st.grid;m.ev=st.ev;
+      const inc=Math.max(0,st.ev.total-m.ss.paid);m.ss.paid+=inc;m.win+=inc;SFX.reelStop(2);
+      m.present={items:[...st.ev.wins],idx:0,t:0};
+      if(inc>0){SFX.win();winFx(m,st.ev);m.msg='SUPERSPIN +'+fmt(inc);m.timer=1.3;}else{m.msg='KEIN NEUER ERFOLG';m.timer=.7;m.ss.i=m.ss.seq.length;}
+      m.state='fsShow';m.dirty=true;m.topDirty=true;updateButtons(m);break;}
     case 'fsEnd':
-      mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.ww=[];m.wwc=null;m.ovr=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;
+      mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.ww=[];m.wwc=null;m.ovr=null;m.ss=null;m.ssHeld=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;
       if(m.win>=totalBet(m)*10){m.auto=false;startBig(m,m.win);}
       updateButtons(m);if(m.auto)m.timer=1.5;break;
     case 'gambleNext':if(m.gamble&&m.gamble.run){m.gamble.reveal();break;}m.gamble.busy=false;
@@ -809,7 +817,11 @@ function drawReelArea(m,g){
         hl=it.cells.some(([cr,cc])=>cr===row&&cc===i);alpha=hl?1:.4;}
       g.globalAlpha=alpha;
       if(k<3&&!r.spin&&m.wwc&&m.wwc[k+','+i]){g.globalAlpha=1;continue;} // Schwert kommt in drawWalkers drüber
-      if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){if(G.id==='zent')g.drawImage(ztRed(),x+1,y,CW-2,CH);else{g.fillStyle='rgba(60,200,255,.22)';g.fillRect(x+1,y,CW-2,CH);}g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
+      if(k<3&&!r.spin&&m.ssHeld){const held=m.ssHeld[k+','+i],cur=m.ovr?m.ovr[k][i]:sym;
+        if(held){g.globalAlpha=1;g.drawImage(G.id==='zent'?ztRed():ztRed(),x+1,y,CW-2,CH);g.globalAlpha=alpha;g.drawImage(symCanvas(cur),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
+        if(m.state==='ssSpin'){const Sx=stripsFor(m)[i],q=Sx[(Math.floor(now*16)+k*5+i*3)%Sx.length];g.globalAlpha=.35;g.drawImage(symCanvas(q),x+(CW-46)/2,y+(CH-46)/2-10,46,62);g.globalAlpha=.8;g.drawImage(symCanvas(q),x+(CW-46)/2,y+(CH-46)/2-3,46,54);g.globalAlpha=1;continue;}
+        if(m.ovr&&cur!==sym){g.drawImage(symCanvas(cur),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}}
+      if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
       if(k<3&&!r.spin&&mystHas(m.myst,k,i)){drawMystCell(m,g,x+1,y,CW-2,CH,k,i);g.globalAlpha=1;continue;}
       const im=symCanvas(sym);
       if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.28;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-18,46,70);g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2+4,46,70);

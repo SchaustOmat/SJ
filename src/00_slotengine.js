@@ -146,13 +146,14 @@ var SlotEngine=(function(){
   function wwPending(ww){return !!(ww&&ww.some(function(w){return w.c>=1;}));}
   function tizEval(G,g,lines,betLine,sh,fs){return evaluate(G,g,lines,betLine,null,fs);}
   // Zentaurus Superspin: Gewinnpositionen bleiben, der Rest wird neu ausgespielt, solange der Gewinn steigt
-  function superspin(G,g,lines,betLine,rnd,fs){var S=stripsOf(G,fs),ev=evaluate(G,g,lines,betLine,null,fs),best=ev.total,steps=0,gg=g;
-    if(best<=0)return {grid:g,total:0,steps:0,ev:ev};
+  // seq: jeder Respin zum Anzeigen ({grid, ev, held}); held = gehaltene Gewinnfelder; der letzte Respin bringt keinen neuen Erfolg
+  function superspin(G,g,lines,betLine,rnd,fs){var S=stripsOf(G,fs),ev=evaluate(G,g,lines,betLine,null,fs),best=ev.total,steps=0,gg=g,seq=[],ev0=ev;
+    if(best<=0)return {grid:g,total:0,steps:0,ev:ev,ev0:ev0,seq:seq};
     for(var n=0;n<12;n++){var held={};ev.wins.forEach(function(w){w.cells.forEach(function(q){held[q[0]+','+q[1]]=1;});});
       var ng=[gg[0].slice(),gg[1].slice(),gg[2].slice()];
       for(var c=0;c<5;c++)for(var r=0;r<3;r++)if(!held[r+','+c]){var st=S[c];ng[r][c]=st[Math.floor(rnd()*st.length)];}
-      var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
-    return {grid:gg,total:best,steps:steps,ev:ev};}
+      var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;seq.push({grid:ng,ev:e2,held:held});if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
+    return {grid:gg,total:best,steps:steps,ev:ev,ev0:ev0,seq:seq};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
   return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
 })();
