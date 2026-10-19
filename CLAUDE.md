@@ -4,7 +4,7 @@
 Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 
 ## Live
-- GitHub-Repo: https://github.com/SchaustOmat/SK (Branch main), GitHub Pages: https://schaustomat.github.io/SK/
+- GitHub-Repo: https://github.com/SchaustOmat/SJ (Branch main, früher SK), GitHub Pages: https://schaustomat.github.io/SJ/
 - Pages-Link lädt neue Versionen automatisch (pollt `version.txt`, Reload mit `?v=`).
 - Es gibt zusätzlich eine Claude-Artifact-Version (Build mit `--artifact`), die nutzt window.claude (room/db/user) statt MQTT.
 

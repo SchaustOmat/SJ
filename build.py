@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Baut Sinan's Keller aus src/ zusammen.
+"""Baut die SJ Spielbank aus src/ zusammen.
 
   python3 build.py                -> index.html + version.txt (GitHub-Pages-Version mit Raum-Multiplayer)
   python3 build.py --artifact X   -> zusätzlich die Claude-Artifact-Version nach X

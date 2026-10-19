@@ -1,6 +1,6 @@
-# Sinan's Keller
+# SJ Spielbank
 
-PS1-Casino im Browser. **Spielen: https://schaustomat.github.io/SK/**
+3D-Casino im PS1-Look im Browser, für mich und meine Kollegen. **Spielen: https://schaustomat.github.io/SJ/**
 
 Nur Spielgeld.
 
