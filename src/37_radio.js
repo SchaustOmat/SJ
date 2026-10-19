@@ -44,13 +44,35 @@ function radioUi(){
   const st=RADIO.st,b=$('#radioBtn');if(b)b.classList.toggle('on',!!(st&&st.v&&st.p<0));
   const el=$('#rdNow');if(!el)return;
   let title='';try{title=RADIO.player&&RADIO.player.getVideoData?RADIO.player.getVideoData().title||'':'';}catch(e){}
-  el.textContent=st&&st.v?(st.p<0?'▶ ':'❚❚ ')+(title||st.v)+(st.by?' · von '+st.by:''):'Noch nichts. Link einfügen und abspielen.';
+  el.textContent=st&&st.v?(st.p<0?'▶ ':'❚❚ ')+(title||st.v)+(st.by?' · von '+st.by:''):'Noch nichts. Song suchen und antippen.';
   $('#rdVol').textContent=(st?st.vol:60)+' %';$('#rdPlay').textContent=st&&st.p<0?'PAUSE':'PLAY';
 }
 $('#radioBtn').addEventListener('click',()=>{SFX.click();radioLoadApi();openPanel('pRadio');radioUi();if(RADIO.st)radioApply(true);});
-$('#rdGo').addEventListener('click',()=>{const v=ytId($('#rdUrl').value);if(!v){toast('Das ist kein YouTube-Link.');return;}SFX.click();radioSet({v,t0:Date.now(),p:-1});$('#rdUrl').value='';});
+// Eingebaute YouTube-Suche über öffentliche Piped-Server (ohne Schlüssel); der erste, der antwortet, gewinnt
+const RD_API=['https://api.piped.private.coffee','https://pipedapi.ducks.party','https://pipedapi.kavin.rocks','https://pipedapi.adminforge.de','https://pipedapi.reallyaweso.me'];
+let rdGood=0,rdSeq=0;
+function rdFetch(url,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).then(r=>{clearTimeout(t);if(!r.ok)throw new Error(r.status);return r.json();});}
+async function radioSearch(q){
+  const box=$('#rdRes'),seq=++rdSeq;box.innerHTML='<p class="rd-msg">Suche „'+escHtml(q)+'“ …</p>';
+  for(let k=0;k<RD_API.length;k++){const i=(rdGood+k)%RD_API.length;
+    try{const d=await rdFetch(RD_API[i]+'/search?q='+encodeURIComponent(q)+'&filter=videos',7000);if(seq!==rdSeq)return;
+      const items=(d.items||[]).filter(x=>x.type==='stream'&&ytId(x.url)&&!(x.duration<0)).slice(0,15);rdGood=i;radioList(items);return;}catch(e){if(seq!==rdSeq)return;}}
+  box.innerHTML='<p class="rd-msg">Suche gerade nicht erreichbar. Du kannst aber einen YouTube-Link einfügen.</p>';}
+function rdDur(s){s=Math.max(0,s|0);return s>=3600?(s/3600|0)+':'+String((s/60|0)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0'):(s/60|0)+':'+String(s%60).padStart(2,'0');}
+function radioList(items){const box=$('#rdRes');box.innerHTML='';
+  if(!items.length){box.innerHTML='<p class="rd-msg">Nichts gefunden.</p>';return;}
+  items.forEach(x=>{const v=ytId(x.url),b=document.createElement('button');b.className='rd-it';b.type='button';
+    const im=document.createElement('img');im.loading='lazy';im.alt='';im.src='https://i.ytimg.com/vi/'+v+'/mqdefault.jpg';
+    const sp=document.createElement('span'),t=document.createElement('b'),s=document.createElement('small');
+    t.textContent=x.title||v;s.textContent=(x.uploaderName||'')+(x.duration>0?' · '+rdDur(x.duration):'');sp.append(t,s);b.append(im,sp);
+    b.addEventListener('click',()=>{SFX.click();radioSet({v,t0:Date.now(),p:-1});toast('▶ '+(x.title||'Song').slice(0,60));});
+    box.appendChild(b);});}
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+$('#rdGo').addEventListener('click',()=>{const q=$('#rdUrl').value.trim();if(!q)return;SFX.click();const v=ytId(q);
+  if(v&&/youtu|^[A-Za-z0-9_-]{11}$/.test(q)){radioSet({v,t0:Date.now(),p:-1});$('#rdUrl').value='';return;}
+  radioSearch(q);});
 $('#rdUrl').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')$('#rdGo').click();});
-$('#rdPlay').addEventListener('click',()=>{const st=RADIO.st;if(!st||!st.v){toast('Erst einen Link einfügen.');return;}SFX.click();
+$('#rdPlay').addEventListener('click',()=>{const st=RADIO.st;if(!st||!st.v){toast('Erst einen Song suchen.');return;}SFX.click();
   if(st.p<0)radioSet({p:radioPos(st)});else radioSet({t0:Date.now()-st.p*1000,p:-1});});
 $('#rdDown').addEventListener('click',()=>{SFX.click();radioSet({vol:Math.max(0,(RADIO.st?RADIO.st.vol:60)-10)});});
 $('#rdUp').addEventListener('click',()=>{SFX.click();radioSet({vol:Math.min(100,(RADIO.st?RADIO.st.vol:60)+10)});});
