@@ -39,6 +39,8 @@ function buildRoom(F,th){
   const nb=bas({color:th.strip});
   box(24,.06,.04,nb,0,.12,11.97,g);box(.04,.06,24,nb,-11.97,.12,0,g);box(.04,.06,24,nb,11.97,.12,0,g);
   box(L+12-.5,.06,.04,nb,(-12+L-.5)/2,.12,-11.97,g);box(12-R-.6,.06,.04,nb,(R+.6+12)/2,.12,-11.97,g);
+  if(th.lux){// goldene Deckenleiste statt Rohren
+    const gm=lam({color:0xc8962a,emissive:0x2a1800});box(24,.1,.08,gm,0,3.95,11.95,g);box(.08,.1,24,gm,-11.95,3.95,0,g);box(.08,.1,24,gm,11.95,3.95,0,g);box(24,.1,.08,gm,0,3.95,-11.95,g);return;}
   const pm=lam({map:T.metal,color:0x8a8a9a});
   [-8,-1,7].forEach(z=>{const p=mesh(new THREE.CylinderGeometry(.08,.08,24,6),pm,0,3.78,z,g);p.rotation.z=Math.PI/2;});
   [-9,9].forEach(x=>{const p=mesh(new THREE.CylinderGeometry(.11,.11,24,6),pm,x,3.74,0,g);p.rotation.x=Math.PI/2;});
@@ -98,7 +100,7 @@ const LINES={
   slot:["Gleich kommt das Buch...","Drei Bücher. Nur drei.","Risiko? Immer Risiko.","Psst. Ich bin im Flow.","Der hier ist heiß, ich spür's."],
   busy:["Besetzt! Such dir 'nen eigenen.","Finger weg, der ist meiner.","Der gibt gleich. Geh weiter."],
   bouncer:["Aufzug geht in den 2. Stock. Benimm dich da oben.","Oben spielen die Großen.","Keine Fotos.","Ausgang? Welcher Ausgang?"],
-  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
+  bartender:["Champagner geht aufs Haus. Zum Wohl.","Willkommen in der SJ Spielbank.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
   dealer:["Faites vos jeux.","Einsätze bitte.","Rien ne va plus.","Setz oder geh weiter."],
   vip:["Hier oben wird's ernst.","Gestern hab ich den Laden fast leergeräumt.","Setz dich, wenn du dich traust.","Die Musik ist zu laut. Perfekt."],
   poker:["All-in. Spaß.","Ich hab nix. Oder doch?","Zeig mal deine Karten.","Du blinzelst. Bluff.","Der Flop gehört mir.","River, sei nett."]

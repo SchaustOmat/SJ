@@ -1,5 +1,5 @@
 /* =========================================================
-   SPIELOMAT V0.1 – das Automaten-System von Sinan's Keller
+   SPIELOMAT V0.1 – das Automaten-System der SJ Spielbank
    Startbildschirm, Spielauswahl mit allen Spielen, MENÜ-Taste im Spiel.
    ========================================================= */
 const SPIELOMAT={ver:'V0.1',games:[['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
@@ -50,7 +50,7 @@ function smDraw(m,g){
     px(g,10);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,160,120);
     g.fillStyle='#2a1a40';g.fillRect(60,150,200,10);g.fillStyle='#ffcf3a';g.fillRect(60,150,200*k,10);
     px(g,7);g.fillStyle='#9b8fb3';g.fillText(k<1?'LADE SPIELE… '+Math.round(k*SPIELOMAT.games.length)+'/'+SPIELOMAT.games.length:'BEREIT',160,174);
-    g.fillText('© KELLERSOFT · SINAN\'S KELLER',160,222);
+    g.fillText('© SJ SPIELBANK',160,222);
     if(t>1.9){m.state='menu';updateButtons(m);}
     return;
   }

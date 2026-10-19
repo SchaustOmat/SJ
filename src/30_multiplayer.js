@@ -48,7 +48,7 @@ function mpSync(peers){
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
     if(!a){const m=makeAvatar(name,color);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
-      if(MP.started)toast(name+' ist jetzt im Keller.');}
+      if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
     a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);
@@ -59,7 +59,7 @@ function mpSync(peers){
       if(txt){say(a.n,txt,5);if(a.f!==floorIdx)toast(name+' ('+(a.f?'2. Stock':'EG')+'): '+txt);SFX.click();}}
     if(pr.wt&&pr.wt!==MP.seenWin[p.peer]){MP.seenWin[p.peer]=pr.wt;const w=cleanText(pr.w,60);if(w){toast(name+' '+w);SFX.chip();}}
   });
-  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat den Keller verlassen.');}});
+  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
   MP.online=others;mpTag();
 }
 function mpLocalState(){

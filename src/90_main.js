@@ -89,9 +89,11 @@ function buildWorld(){
   T.wood=canvasTex(16,16,woodT,1,1);T.metal=canvasTex(16,16,metalT,1,1);
   // ----- EG -----
   const A=makeFloor('EG · HALLE');
-  buildRoom(A,{floor:canvasTex(32,32,carpet('#1a0f2e','#3b1a5a','#b0206a','#127a7a'),12),wall:canvasTex(32,32,concrete,1,1),ceil:canvasTex(32,32,ceilingT,12),strip:0xff2e88});
-  const conc=lam({map:canvasTex(32,32,concrete,1,4)});
-  pillar(A,-5,-7,conc,0x29f0ff);pillar(A,5,-6.5,conc,0xff2e88);pillar(A,-5,4.5,conc,0xff2e88);pillar(A,5,4.5,conc,0x29f0ff);
+  buildRoom(A,{floor:canvasTex(32,32,luxCarpet('#6a0a12','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#5a0c18','#3a1a0a'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
+  const marb=lam({map:canvasTex(32,32,luxMarble('#e8e0d4','#9a8a7a'),1,3)});
+  luxPillar(A,-5,-7,marb);luxPillar(A,5,-6.5,marb);luxPillar(A,-5,4.5,marb);luxPillar(A,5,4.5,marb);
+  chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
+  luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
   const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
@@ -100,17 +102,12 @@ function buildWorld(){
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
-  sign(A,"SINAN'S KELLER",'#ff2e88',-3.5,2.9,-11.9,0,.75);
+  sign(A,'SJ SPIELBANK','#ffcf3a',-3.5,2.9,-11.9,0,.75);
   sign(A,'ROULETTE','#ffcf3a',0,3.5,-2,0,.45);
   sign(A,'SPIELHALLE','#29f0ff',-11.9,3.15,-2.75,Math.PI/2,.5);
   sign(A,'BAR','#29f0ff',11.55,3.25,-1,-Math.PI/2,.6);
   sign(A,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
-  sign(A,'KEIN AUSGANG','#ff3a3a',0,2.6,11.9,Math.PI,.4);
-  decal(A,canvasTex(64,32,graffiti('SINAN','#ff5ab0')),2.4,1.2,-6,1.4,11.95,Math.PI);
-  decal(A,canvasTex(64,32,graffiti('GLÜCK?','#ffd23a')),2,1,4,1.2,11.95,Math.PI);
-  decal(A,canvasTex(64,32,graffiti('UNTEN','#4af0ff')),2.2,1.1,11.95,1.3,7,-Math.PI/2);
-  decal(A,canvasTex(64,32,graffiti('RAUS','#7aff5a')),1.8,.9,-11.95,1.1,8,Math.PI/2);
-  decal(A,canvasTex(64,32,graffiti('♠ ♥','#ff3a3a')),1.6,.8,2,1.8,-11.95,0);
+  sign(A,'WILLKOMMEN','#ffcf3a',0,3.35,11.9,Math.PI,.4);
   npc(A,{x:-1.3,z:-3.4,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e,hair:0x111111});
   const r1=npc(A,{x:.9,z:-3.45,rot:0,anim:'watch',lines:LINES.roulette,name:'STAMMGAST'});
   const r2=npc(A,{x:2.45,z:-2.2,rot:-Math.PI/2,anim:'watch',lines:LINES.roulette,name:'SPIELERIN',hair:0xb02a5a,color:0x6a1a24});
@@ -121,18 +118,18 @@ function buildWorld(){
   npc(A,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:LINES.bouncer,name:'TÜRSTEHER',glasses:true,color:0x0c0c10,hair:0x111111});
   npc(A,{x:-9.4,z:9.7,rot:Math.PI,sit:true,anim:'idle',lines:LINES.generic,name:'GAST',noCol:true});
   A.rouletteFans=[r1,r2];
-  pointLight(A,0xffc070,0,3.2,-2,1.7,8.5);
-  pointLight(A,0xff2e88,-9.3,3,-2.7,1.5,9);
-  pointLight(A,0x29f0ff,9.2,3,-1,1.3,9);
+  pointLight(A,0xffc070,-9.3,3,-2.7,1.3,9);
+  pointLight(A,0xffb060,9.2,3,-1,1.2,9);
   pointLight(A,0x6dff8a,DOOR_X,3,-10,1.0,7);
-  pointLight(A,0x8a5cff,-5,3,7.5,1.2,11,true);
-  A.ambient=0x44366a;
+  A.ambient=0x6a5040;
   // ----- 2. STOCK -----
   seed=4242;
   const B=makeFloor('2. STOCK · VIP');
-  buildRoom(B,{floor:canvasTex(32,32,carpet('#2a0a0e','#6a4a12','#b01a28','#d6a02a'),12),wall:canvasTex(32,32,brick,1,1),ceil:canvasTex(32,32,ceilingT,12),strip:0xffcf3a});
-  const gold=lam({map:T.metal,color:0xd6a02a});
-  pillar(B,0,-8.5,gold,0xff2e88);pillar(B,0,3,gold,0xff2e88);
+  buildRoom(B,{floor:canvasTex(32,32,luxCarpet('#0a3a24','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#0e2a1e','#2a1408'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
+  const marbB=lam({map:canvasTex(32,32,luxMarble('#2a2a2e','#c8a050'),1,3)});
+  luxPillar(B,0,-8.5,marbB);luxPillar(B,0,3,marbB);
+  chandelier(B,4.5,-4.5,.9);chandelier(B,-6,-4,1);chandelier(B,-5,7,.85);chandelier(B,7,6,.8);
+  luxPainting(B,6,2.2,11.94,Math.PI,1.4,.9,4);luxPainting(B,-11.94,2.2,-8,Math.PI/2,1.2,.8,5);
   buildPoker(B);
   buildRoulette(B,4.5,-4.5,'ROULETTE · VIP');
   npc(B,{x:3.3,z:-5.9,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e});
@@ -155,17 +152,16 @@ function buildWorld(){
   sign(B,'HÖHER/TIEFER','#ffcf3a',HL.cx,3.0,11.9,Math.PI,.45);
   sign(B,'SPIELHALLE','#ffcf3a',11.9,3.15,4,-Math.PI/2,.5);
   sign(B,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
-  decal(B,canvasTex(64,32,graffiti('BOSS','#ffd23a')),2.2,1.1,-11.95,1.5,1.5,Math.PI/2);
-  decal(B,canvasTex(64,32,graffiti('ALL IN','#ff5ab0')),2.6,1.3,-1,1.4,11.95,Math.PI);
   pointLight(B,0xffb060,PK.cx,3.2,PK.cz,1.8,9);
   pointLight(B,0xff3040,4.5,3,-4.5,1.5,8.5);
   pointLight(B,0xffcf3a,9.3,3,4,1.3,9);
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
-  B.ambient=0x56283a;
+  B.ambient=0x5a4838;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.95);scene.add(new THREE.HemisphereLight(0x9a8ac8,0x2a1a30,.55)); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
+  // warmes Grundlicht wie in einer Spielbank, Kronleuchter machen die Lichtinseln
+  ambient=new THREE.AmbientLight(0x6a5040,.9);scene.add(ambient);scene.add(new THREE.HemisphereLight(0xffe0b0,0x3a1a10,.5));
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 

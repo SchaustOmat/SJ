@@ -1,4 +1,4 @@
-# Sinan's Keller – Projektinfos für Claude Code
+# SJ Spielbank (früher Sinan's Keller) – Projektinfos für Claude Code
 
 3D-Casino-Spiel im PS1/PS2-Look fürs Handy (three.js r128 von cdnjs). Privat, für Justin und Kollegen.
 Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.

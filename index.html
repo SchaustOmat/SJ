@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>html,body{margin:0;height:100%;font-family:system-ui,sans-serif}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>Sinan's Keller</title>
+<title>SJ Spielbank</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
 <style>
@@ -536,16 +536,16 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 </div>
 
 <div id="start">
-  <h1>SINAN'S<br><span>KELLER</span></h1>
-  <div class="sub">Untergrund-Casino. Zwei Stockwerke, kein Ausgang, nur Spielgeld.</div>
+  <h1>SJ<br><span>SPIELBANK</span></h1>
+  <div class="sub">Die Spielbank für dich und deine Kollegen. Zwei Etagen, nur Spielgeld.</div>
   <label class="namel" for="nameIn">DEIN NAME<input id="nameIn" maxlength="14" autocomplete="off" placeholder="GAST"></label>
   <div class="go" id="startGo" data-loading="true">LÄDT …</div>
-  <div class="lic">© 1999 KELLERSOFT · NTSC-U/C · MEMORY CARD: SLOT 1</div>
+  <div class="lic">© SJ SPIELBANK · NUR SPIELGELD · MEMORY CARD: SLOT 1</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792394359";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792394496";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1035,6 +1035,8 @@ function buildRoom(F,th){
   const nb=bas({color:th.strip});
   box(24,.06,.04,nb,0,.12,11.97,g);box(.04,.06,24,nb,-11.97,.12,0,g);box(.04,.06,24,nb,11.97,.12,0,g);
   box(L+12-.5,.06,.04,nb,(-12+L-.5)/2,.12,-11.97,g);box(12-R-.6,.06,.04,nb,(R+.6+12)/2,.12,-11.97,g);
+  if(th.lux){// goldene Deckenleiste statt Rohren
+    const gm=lam({color:0xc8962a,emissive:0x2a1800});box(24,.1,.08,gm,0,3.95,11.95,g);box(.08,.1,24,gm,-11.95,3.95,0,g);box(.08,.1,24,gm,11.95,3.95,0,g);box(24,.1,.08,gm,0,3.95,-11.95,g);return;}
   const pm=lam({map:T.metal,color:0x8a8a9a});
   [-8,-1,7].forEach(z=>{const p=mesh(new THREE.CylinderGeometry(.08,.08,24,6),pm,0,3.78,z,g);p.rotation.z=Math.PI/2;});
   [-9,9].forEach(x=>{const p=mesh(new THREE.CylinderGeometry(.11,.11,24,6),pm,x,3.74,0,g);p.rotation.x=Math.PI/2;});
@@ -1094,7 +1096,7 @@ const LINES={
   slot:["Gleich kommt das Buch...","Drei Bücher. Nur drei.","Risiko? Immer Risiko.","Psst. Ich bin im Flow.","Der hier ist heiß, ich spür's."],
   busy:["Besetzt! Such dir 'nen eigenen.","Finger weg, der ist meiner.","Der gibt gleich. Geh weiter."],
   bouncer:["Aufzug geht in den 2. Stock. Benimm dich da oben.","Oben spielen die Großen.","Keine Fotos.","Ausgang? Welcher Ausgang?"],
-  bartender:["Nur Wasser heute. Zum Wohl.","Der Keller hat schon Schlimmeres gesehen.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
+  bartender:["Champagner geht aufs Haus. Zum Wohl.","Willkommen in der SJ Spielbank.","Pleite? Dann komm zu mir. Ich hab 200 € für dich."],
   dealer:["Faites vos jeux.","Einsätze bitte.","Rien ne va plus.","Setz oder geh weiter."],
   vip:["Hier oben wird's ernst.","Gestern hab ich den Laden fast leergeräumt.","Setz dich, wenn du dich traust.","Die Musik ist zu laut. Perfekt."],
   poker:["All-in. Spaß.","Ich hab nix. Oder doch?","Zeig mal deine Karten.","Du blinzelst. Bluff.","Der Flop gehört mir.","River, sei nett."]
@@ -1247,6 +1249,77 @@ const UFX=(function(){
 })();
 
 
+/* ---- 13_lux.js ---- */
+/* =========================================================
+   SJ SPIELBANK – edle Ausstattung: Teppich mit Goldmuster, Holzvertäfelung mit Seidentapete,
+   Kassettendecke, Marmorsäulen, Kronleuchter, Gemälde und Gaming-Stühle vor den Automaten.
+   ========================================================= */
+// Spielbank-Teppich: tiefes Rot (oder Grün) mit goldenem Rautenmuster und Blüten
+function luxCarpet(base,gold,accent){return (g,w,h)=>{noisy(g,w,h,base,8);
+  g.fillStyle=gold;for(let i=0;i<w;i++){g.fillRect(i,(i+w/2)%h,1,1);g.fillRect(i,(w/2*3-i)%h,1,1);g.fillRect(i,i%h,1,1);g.fillRect(i,(h-1-i+h)%h,1,1);}
+  const flower=(cx,cy,c,r)=>{g.fillStyle=c;for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++){const d=Math.abs(x)+Math.abs(y);if(d<=r&&(d===r||d===0))g.fillRect((cx+x+w)%w,(cy+y+h)%h,1,1);}};
+  flower(0,0,gold,4);flower(w/2,h/2,gold,4);flower(w/2,0,accent,3);flower(0,h/2,accent,3);
+  flower(w/4,h/4,accent,1);flower(w*3/4,h/4,accent,1);flower(w/4,h*3/4,accent,1);flower(w*3/4,h*3/4,accent,1);};}
+// Wand: unten dunkle Holzvertäfelung mit Goldleiste, oben Seidentapete mit Damastmuster
+function luxWall(silk,wood){return (g,w,h)=>{
+  noisy(g,w,h,silk,10);g.fillStyle='rgba(255,215,120,.22)';
+  for(let y=4;y<h/2;y+=12)for(let x=(y/12|0)%2?8:0;x<w;x+=16){g.fillRect(x+3,y,2,1);g.fillRect(x+2,y+1,4,1);g.fillRect(x+1,y+2,6,2);g.fillRect(x+2,y+4,4,1);g.fillRect(x+3,y+5,2,2);}
+  for(let y=h/2;y<h;y++)for(let x=0;x<w;x++){g.fillStyle=shade(wood,Math.round(Math.sin(x*.7+y*.05)*5+(rnd()-.5)*8));g.fillRect(x,y,1,1);}
+  g.fillStyle='rgba(0,0,0,.35)';[2,w/2+2].forEach(x=>{g.fillRect(x,h/2+5,w/2-4,1);g.fillRect(x,h-4,w/2-4,1);g.fillRect(x,h/2+5,1,h/2-9);g.fillRect(x+w/2-5,h/2+5,1,h/2-9);});
+  g.fillStyle='rgba(255,220,150,.18)';[2,w/2+2].forEach(x=>{g.fillRect(x+1,h/2+6,w/2-6,1);g.fillRect(x+1,h/2+6,1,h/2-11);});
+  g.fillStyle='#d6a02a';g.fillRect(0,h/2,w,2);g.fillStyle='#fff0a0';g.fillRect(0,h/2,w,1);g.fillStyle='#d6a02a';g.fillRect(0,0,w,1);};}
+// Kassettendecke: dunkles Holz mit Goldrahmen
+function luxCeil(g,w,h){noisy(g,w,h,'#2a1608',8);g.fillStyle='#120a04';g.fillRect(3,3,w-6,h-6);
+  for(let y=4;y<h-4;y++)for(let x=4;x<w-4;x++){g.fillStyle=shade('#3a2010',Math.round((rnd()-.5)*8));g.fillRect(x,y,1,1);}
+  g.fillStyle='#b8862a';g.fillRect(2,2,w-4,1);g.fillRect(2,2,1,h-4);g.fillRect(2,h-3,w-4,1);g.fillRect(w-3,2,1,h-4);
+  g.fillStyle='#ffd870';g.fillRect(w/2-1,h/2-1,2,2);}
+// Marmor (hell mit Adern) für Säulen und Bartresen
+function luxMarble(base,vein){return (g,w,h)=>{noisy(g,w,h,base,10);g.fillStyle=vein;
+  for(let k=0;k<3;k++){let x=rnd()*w,y=0;while(y<h){g.fillRect(x|0,y|0,1,1);x+=(rnd()-.5)*2.4;y+=.7;if(x<0)x+=w;if(x>=w)x-=w;}}};}
+function luxPillar(F,x,z,mat){const g=F.group;const goldM=lam({color:0xd6a02a,emissive:0x2a1800});
+  const p=mesh(new THREE.CylinderGeometry(.34,.34,3.6,12),mat,x,2,z,g);blocker(F,p);col(F,x,z,.75,.75);
+  mesh(new THREE.CylinderGeometry(.44,.44,.2,12),goldM,x,.1,z,g);mesh(new THREE.CylinderGeometry(.4,.36,.14,12),goldM,x,.27,z,g);
+  mesh(new THREE.CylinderGeometry(.36,.44,.16,12),goldM,x,3.74,z,g);mesh(new THREE.CylinderGeometry(.48,.48,.1,12),goldM,x,3.86,z,g);
+  mesh(new THREE.CylinderGeometry(.345,.345,.05,12),goldM,x,2.6,z,g);}
+// Kronleuchter: Goldringe, Kerzen, Kristalle, warmes Licht
+function chandelier(F,x,z,s){s=s||1;const g=new THREE.Group();g.position.set(x,4,z);F.group.add(g);
+  const goldM=lam({color:0xe8b840,emissive:0x3a2400}),cry=new THREE.MeshBasicMaterial({color:0xf4f8ff,transparent:true,opacity:.85}),flame=new THREE.MeshBasicMaterial({color:0xffe6a0});
+  mesh(new THREE.CylinderGeometry(.02,.02,.5,4),goldM,0,-.25,0,g);
+  [[.55,-.62,8],[.34,-.86,6]].forEach(([r,y,n])=>{const ring=mesh(new THREE.TorusGeometry(r*s,.025,4,16),goldM,0,y,0,g);ring.rotation.x=Math.PI/2;
+    for(let i=0;i<n;i++){const a=i/n*TAU,cx=Math.cos(a)*r*s,cz=Math.sin(a)*r*s;
+      mesh(new THREE.CylinderGeometry(.018,.018,.12,4),new THREE.MeshBasicMaterial({color:0xfff6e0}),cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
+      mesh(new THREE.OctahedronGeometry(.035),cry,cx,y-.12,cz,g);mesh(new THREE.OctahedronGeometry(.022),cry,cx,y-.2,cz,g);}});
+  for(let i=0;i<10;i++){const a=i/10*TAU;mesh(new THREE.OctahedronGeometry(.03),cry,Math.cos(a)*.18*s,-1.02-(i%2)*.06,Math.sin(a)*.18*s,g);}
+  mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
+  pointLight(F,0xffd8a0,x,3.05,z,1.05,10);return g;}
+// Gemälde mit Goldrahmen (abstrakte Landschaft, selbst gemalt)
+function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=canvasTex(48,32,(g,W,H)=>{seed=seedN||77;
+    const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,['#3a5a8a','#8a4a3a','#2a3a2a'][seedN%3]);sky.addColorStop(1,'#e8c890');g.fillStyle=sky;g.fillRect(0,0,W,H);
+    for(let k=0;k<3;k++){g.fillStyle=['#4a3a20','#2a4a2a','#6a5a3a'][k];g.beginPath();g.moveTo(0,H);for(let x=0;x<=W;x+=4)g.lineTo(x,H*(.45+k*.15)+Math.sin(x*.2+k+seedN)*3+rnd()*2);g.lineTo(W,H);g.fill();}
+    g.fillStyle='rgba(255,240,200,.6)';g.beginPath();g.arc(W*.7,H*.25,3,0,TAU);g.fill();});
+  const grp=new THREE.Group();grp.position.set(x,y,z);grp.rotation.y=rotY;F.group.add(grp);
+  box(w+.16,h+.16,.05,lam({color:0xc8962a,emissive:0x2a1800}),0,0,0,grp);mesh(new THREE.PlaneGeometry(w,h),lam({map:tex}),0,0,.03,grp);}
+// Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe)
+function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
+  const blk=lam({color:0x16161a}),acc=lam({color:accent,emissive:new THREE.Color(accent).multiplyScalar(.12)}),chr=lam({color:0x9aa0aa});
+  // Fußkreuz mit Rollen
+  for(let i=0;i<5;i++){const a=i/5*TAU+.3,leg=box(.05,.04,.32,blk,Math.sin(a)*.16,.09,Math.cos(a)*.16,c);leg.rotation.y=a;
+    mesh(new THREE.SphereGeometry(.035,6,4),blk,Math.sin(a)*.31,.035,Math.cos(a)*.31,c);}
+  mesh(new THREE.CylinderGeometry(.03,.03,.36,6),chr,0,.28,0,c);mesh(new THREE.CylinderGeometry(.06,.07,.08,8),blk,0,.11,0,c);
+  // Sitz mit Seitenwangen
+  box(.5,.09,.5,blk,0,.5,0,c);box(.08,.07,.48,acc,-.23,.57,0,c);box(.08,.07,.48,acc,.23,.57,0,c);box(.24,.012,.4,acc,0,.548,0,c);
+  // Armlehnen
+  [-.29,.29].forEach(x=>{box(.04,.2,.04,blk,x,.62,.06,c);box(.07,.035,.24,blk,x,.73,.02,c);});
+  // Rückenlehne mit Flügeln, Streifen, Kopfkissen und Gurtschlitzen (leicht nach hinten geneigt)
+  const back=new THREE.Group();back.position.set(0,.55,.24);back.rotation.x=.14;c.add(back);
+  box(.5,.86,.09,blk,0,.45,0,back);box(.1,.5,.1,acc,-.22,.38,-.005,back);box(.1,.5,.1,acc,.22,.38,-.005,back);
+  box(.06,.7,.095,acc,-.12,.48,-.002,back);box(.06,.7,.095,acc,.12,.48,-.002,back);
+  box(.56,.12,.1,blk,0,.82,0,back);box(.12,.08,.1,acc,-.25,.84,0,back);box(.12,.08,.1,acc,.25,.84,0,back);
+  box(.05,.1,.1,new THREE.MeshBasicMaterial({color:0x050505}),-.1,.7,-.01,back);box(.05,.1,.1,new THREE.MeshBasicMaterial({color:0x050505}),.1,.7,-.01,back);
+  box(.24,.12,.06,acc,0,.72,-.07,back);box(.24,.12,.07,acc,0,.22,-.07,back);
+  return c;}
+
+
 /* ---- 20_slots.js ---- */
 /* =========================================================
    SPIELAUTOMATEN  (Grabkammer = Buch-Spiel, Glutofen = Früchte)
@@ -1382,9 +1455,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const ledMat=bas({color:accent});
   box(.03,2.2,.03,ledMat,-.465,1.3,.1,g);box(.03,2.2,.03,ledMat,.465,1.3,.1,g);
   // stool
-  const stool=new THREE.Group();g.add(stool);stool.position.set(0,0,.98);
-  mesh(new THREE.CylinderGeometry(.04,.14,.65,6),lam({color:0x2a2a30}),0,.32,0,stool);
-  mesh(new THREE.CylinderGeometry(.23,.23,.09,8),lam({color:0x6a1020}),0,.69,0,stool);
+  const stool=gamingChair(g,accent);stool.position.set(0,0,.98); // Gaming-Stuhl vor dem Automaten
   // Kartenschlitz unter dem Bildschirm rechts: Chromrahmen, dunkler Schlitz, LED daneben
   const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);box(.17,.014,.044,dark,.2,1.125,.172,g);
   const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.045,.045,.046,cardLed,.36,1.125,.171,g);
@@ -2864,7 +2935,7 @@ Object.assign(SYMNAME,{PHARAO:'PHARAO',BRILLANT:'BRILLANT',RUBIN:'RUBIN',SAPHIR:
 
 /* ---- 24_spielomat.js ---- */
 /* =========================================================
-   SPIELOMAT V0.1 – das Automaten-System von Sinan's Keller
+   SPIELOMAT V0.1 – das Automaten-System der SJ Spielbank
    Startbildschirm, Spielauswahl mit allen Spielen, MENÜ-Taste im Spiel.
    ========================================================= */
 const SPIELOMAT={ver:'V0.1',games:[['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
@@ -2915,7 +2986,7 @@ function smDraw(m,g){
     px(g,10);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,160,120);
     g.fillStyle='#2a1a40';g.fillRect(60,150,200,10);g.fillStyle='#ffcf3a';g.fillRect(60,150,200*k,10);
     px(g,7);g.fillStyle='#9b8fb3';g.fillText(k<1?'LADE SPIELE… '+Math.round(k*SPIELOMAT.games.length)+'/'+SPIELOMAT.games.length:'BEREIT',160,174);
-    g.fillText('© KELLERSOFT · SINAN\'S KELLER',160,222);
+    g.fillText('© SJ SPIELBANK',160,222);
     if(t>1.9){m.state='menu';updateButtons(m);}
     return;
   }
@@ -3694,7 +3765,7 @@ function mpSync(peers){
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
     if(!a){const m=makeAvatar(name,color);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
-      if(MP.started)toast(name+' ist jetzt im Keller.');}
+      if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
     a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);
@@ -3705,7 +3776,7 @@ function mpSync(peers){
       if(txt){say(a.n,txt,5);if(a.f!==floorIdx)toast(name+' ('+(a.f?'2. Stock':'EG')+'): '+txt);SFX.click();}}
     if(pr.wt&&pr.wt!==MP.seenWin[p.peer]){MP.seenWin[p.peer]=pr.wt;const w=cleanText(pr.w,60);if(w){toast(name+' '+w);SFX.chip();}}
   });
-  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat den Keller verlassen.');}});
+  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
   MP.online=others;mpTag();
 }
 function mpLocalState(){
@@ -4552,7 +4623,7 @@ async function cloudSaveInit(){
 
 /* ---- 36_bank.js ---- */
 /* =========================================================
-   KELLERBANK: Geldautomat im EG und im 2. Stock
+   SJ BANK: Geldautomat im EG und im 2. Stock
    - Portemonnaie antippen -> öffnet sich -> Karte antippen -> Karte geht in den Automaten -> Konto
    - Einzahlen (Chips -> Konto), Abheben (Konto -> Chips), Senden an Mitspieler im selben Raum
    - Überweisungen laufen über die Presence: Sender zeigt {tx}, Empfänger bucht einmal gut und bestätigt mit {ack}
@@ -4596,7 +4667,7 @@ addEventListener('storage',e=>{if(e.key==='nk_bank'&&e.newValue!==null){const v=
 /* ---------- 3D-Automat ---------- */
 function drawAtmScreen(tex,busy){
   const c=tex.userData.ctx;const gr=c.createLinearGradient(0,0,0,96);gr.addColorStop(0,'#0a2a5a');gr.addColorStop(1,'#020a1a');c.fillStyle=gr;c.fillRect(0,0,128,96);
-  c.textAlign='center';c.textBaseline='middle';px(c,10);c.fillStyle='#29f0ff';c.fillText('KELLER',64,24);c.fillStyle='#ffcf3a';c.fillText('BANK',64,40);
+  c.textAlign='center';c.textBaseline='middle';px(c,10);c.fillStyle='#29f0ff';c.fillText('SJ',64,24);c.fillStyle='#ffcf3a';c.fillText('BANK',64,40);
   px(c,6);c.fillStyle=busy?'#ff5ab0':'#f4f0e8';c.fillText(busy?'IN BENUTZUNG':'KARTE EINFÜHREN',64,68);
   c.fillStyle='#3adf5a';c.fillRect(44,80,40,3);tex.needsUpdate=true;
 }
@@ -4636,7 +4707,7 @@ function atmOpen(){
 function atmClosed(){if(!ATM.open)return;ATM.open=false;ATMS.forEach(a=>drawAtmScreen(a.scr,false));}
 function atmSay(t,cls){ATM.msg=t;ATM.msgCls=cls||'';}
 function cardHtml(){
-  return '<div class="bcard" id="atmCard"><div class="bc-bank">KELLERBANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
+  return '<div class="bcard" id="atmCard"><div class="bc-bank">SJ BANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
     '<div class="bc-name">'+esc((MP.name||'GAST').toUpperCase())+'</div><div class="bc-logo"><i></i><i></i></div></div>';
 }
 // Portemonnaie mit Karte (Automat und Geldautomat): Zustand über data-st am .gwrap (enter, '', open, ins)
@@ -4646,7 +4717,7 @@ function atmRender(){
   const scr=atmEl('atmScr'),stage=atmEl('atmStage');if(!scr||!stage)return;
   const s=ATM.step;
   if(s==='wallet'||s==='open'||s==='insert'){
-    scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
+    scr.innerHTML='<div class="as-logo">SJ <b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
     let gw=stage.querySelector('.gwrap');
     if(!gw){stage.innerHTML='<div class="gwrap" data-st="enter">'+walletHtml('atmWallet')+'</div><p class="atm-hint" id="atmHint"></p>';gw=stage.querySelector('.gwrap');
       requestAnimationFrame(()=>requestAnimationFrame(()=>{if(gw.dataset.st==='enter')gw.dataset.st=ATM.step==='wallet'?'':ATM.step==='open'?'open':'ins';}));}
@@ -4655,8 +4726,8 @@ function atmRender(){
     return;
   }
   stage.innerHTML='';
-  if(s==='load'){scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid">KARTE WIRD GELESEN</div><div class="as-bar"><i></i></div>';return;}
-  const head='<div class="as-top"><span>KELLER<b>BANK</b></span><span>KTO '+esc(BANK.konto)+'</span></div>';
+  if(s==='load'){scr.innerHTML='<div class="as-logo">SJ <b>BANK</b></div><div class="as-mid">KARTE WIRD GELESEN</div><div class="as-bar"><i></i></div>';return;}
+  const head='<div class="as-top"><span>SJ <b>BANK</b></span><span>KTO '+esc(BANK.konto)+'</span></div>';
   const msg=ATM.msg?'<div class="as-msg '+(ATM.msgCls||'')+'">'+esc(ATM.msg)+'</div>':'';
   if(s==='menu'){
     const pend=BANK.pend.length?'<div class="as-pend">'+BANK.pend.map((p,i)=>'<div>UNTERWEGS AN '+esc(p.n)+': <b>'+fmt(p.a)+'</b> <button class="as-link" data-undo="'+i+'">ZURÜCKHOLEN</button></div>').join('')+'</div>':'';
@@ -4896,9 +4967,11 @@ function buildWorld(){
   T.wood=canvasTex(16,16,woodT,1,1);T.metal=canvasTex(16,16,metalT,1,1);
   // ----- EG -----
   const A=makeFloor('EG · HALLE');
-  buildRoom(A,{floor:canvasTex(32,32,carpet('#1a0f2e','#3b1a5a','#b0206a','#127a7a'),12),wall:canvasTex(32,32,concrete,1,1),ceil:canvasTex(32,32,ceilingT,12),strip:0xff2e88});
-  const conc=lam({map:canvasTex(32,32,concrete,1,4)});
-  pillar(A,-5,-7,conc,0x29f0ff);pillar(A,5,-6.5,conc,0xff2e88);pillar(A,-5,4.5,conc,0xff2e88);pillar(A,5,4.5,conc,0x29f0ff);
+  buildRoom(A,{floor:canvasTex(32,32,luxCarpet('#6a0a12','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#5a0c18','#3a1a0a'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
+  const marb=lam({map:canvasTex(32,32,luxMarble('#e8e0d4','#9a8a7a'),1,3)});
+  luxPillar(A,-5,-7,marb);luxPillar(A,5,-6.5,marb);luxPillar(A,-5,4.5,marb);luxPillar(A,5,4.5,marb);
+  chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
+  luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
   const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
@@ -4907,17 +4980,12 @@ function buildWorld(){
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
-  sign(A,"SINAN'S KELLER",'#ff2e88',-3.5,2.9,-11.9,0,.75);
+  sign(A,'SJ SPIELBANK','#ffcf3a',-3.5,2.9,-11.9,0,.75);
   sign(A,'ROULETTE','#ffcf3a',0,3.5,-2,0,.45);
   sign(A,'SPIELHALLE','#29f0ff',-11.9,3.15,-2.75,Math.PI/2,.5);
   sign(A,'BAR','#29f0ff',11.55,3.25,-1,-Math.PI/2,.6);
   sign(A,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
-  sign(A,'KEIN AUSGANG','#ff3a3a',0,2.6,11.9,Math.PI,.4);
-  decal(A,canvasTex(64,32,graffiti('SINAN','#ff5ab0')),2.4,1.2,-6,1.4,11.95,Math.PI);
-  decal(A,canvasTex(64,32,graffiti('GLÜCK?','#ffd23a')),2,1,4,1.2,11.95,Math.PI);
-  decal(A,canvasTex(64,32,graffiti('UNTEN','#4af0ff')),2.2,1.1,11.95,1.3,7,-Math.PI/2);
-  decal(A,canvasTex(64,32,graffiti('RAUS','#7aff5a')),1.8,.9,-11.95,1.1,8,Math.PI/2);
-  decal(A,canvasTex(64,32,graffiti('♠ ♥','#ff3a3a')),1.6,.8,2,1.8,-11.95,0);
+  sign(A,'WILLKOMMEN','#ffcf3a',0,3.35,11.9,Math.PI,.4);
   npc(A,{x:-1.3,z:-3.4,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e,hair:0x111111});
   const r1=npc(A,{x:.9,z:-3.45,rot:0,anim:'watch',lines:LINES.roulette,name:'STAMMGAST'});
   const r2=npc(A,{x:2.45,z:-2.2,rot:-Math.PI/2,anim:'watch',lines:LINES.roulette,name:'SPIELERIN',hair:0xb02a5a,color:0x6a1a24});
@@ -4928,18 +4996,18 @@ function buildWorld(){
   npc(A,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:LINES.bouncer,name:'TÜRSTEHER',glasses:true,color:0x0c0c10,hair:0x111111});
   npc(A,{x:-9.4,z:9.7,rot:Math.PI,sit:true,anim:'idle',lines:LINES.generic,name:'GAST',noCol:true});
   A.rouletteFans=[r1,r2];
-  pointLight(A,0xffc070,0,3.2,-2,1.7,8.5);
-  pointLight(A,0xff2e88,-9.3,3,-2.7,1.5,9);
-  pointLight(A,0x29f0ff,9.2,3,-1,1.3,9);
+  pointLight(A,0xffc070,-9.3,3,-2.7,1.3,9);
+  pointLight(A,0xffb060,9.2,3,-1,1.2,9);
   pointLight(A,0x6dff8a,DOOR_X,3,-10,1.0,7);
-  pointLight(A,0x8a5cff,-5,3,7.5,1.2,11,true);
-  A.ambient=0x44366a;
+  A.ambient=0x6a5040;
   // ----- 2. STOCK -----
   seed=4242;
   const B=makeFloor('2. STOCK · VIP');
-  buildRoom(B,{floor:canvasTex(32,32,carpet('#2a0a0e','#6a4a12','#b01a28','#d6a02a'),12),wall:canvasTex(32,32,brick,1,1),ceil:canvasTex(32,32,ceilingT,12),strip:0xffcf3a});
-  const gold=lam({map:T.metal,color:0xd6a02a});
-  pillar(B,0,-8.5,gold,0xff2e88);pillar(B,0,3,gold,0xff2e88);
+  buildRoom(B,{floor:canvasTex(32,32,luxCarpet('#0a3a24','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#0e2a1e','#2a1408'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
+  const marbB=lam({map:canvasTex(32,32,luxMarble('#2a2a2e','#c8a050'),1,3)});
+  luxPillar(B,0,-8.5,marbB);luxPillar(B,0,3,marbB);
+  chandelier(B,4.5,-4.5,.9);chandelier(B,-6,-4,1);chandelier(B,-5,7,.85);chandelier(B,7,6,.8);
+  luxPainting(B,6,2.2,11.94,Math.PI,1.4,.9,4);luxPainting(B,-11.94,2.2,-8,Math.PI/2,1.2,.8,5);
   buildPoker(B);
   buildRoulette(B,4.5,-4.5,'ROULETTE · VIP');
   npc(B,{x:3.3,z:-5.9,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e});
@@ -4962,17 +5030,16 @@ function buildWorld(){
   sign(B,'HÖHER/TIEFER','#ffcf3a',HL.cx,3.0,11.9,Math.PI,.45);
   sign(B,'SPIELHALLE','#ffcf3a',11.9,3.15,4,-Math.PI/2,.5);
   sign(B,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
-  decal(B,canvasTex(64,32,graffiti('BOSS','#ffd23a')),2.2,1.1,-11.95,1.5,1.5,Math.PI/2);
-  decal(B,canvasTex(64,32,graffiti('ALL IN','#ff5ab0')),2.6,1.3,-1,1.4,11.95,Math.PI);
   pointLight(B,0xffb060,PK.cx,3.2,PK.cz,1.8,9);
   pointLight(B,0xff3040,4.5,3,-4.5,1.5,8.5);
   pointLight(B,0xffcf3a,9.3,3,4,1.3,9);
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
   pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
-  B.ambient=0x56283a;
+  B.ambient=0x5a4838;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
-  ambient=new THREE.AmbientLight(0x4a3a66,.95);scene.add(new THREE.HemisphereLight(0x9a8ac8,0x2a1a30,.55)); // dunkler Keller: wenig Grundlicht, Lampen machen Lichtinselnscene.add(ambient);
+  // warmes Grundlicht wie in einer Spielbank, Kronleuchter machen die Lichtinseln
+  ambient=new THREE.AmbientLight(0x6a5040,.9);scene.add(ambient);scene.add(new THREE.HemisphereLight(0xffe0b0,0x3a1a10,.5));
   marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 

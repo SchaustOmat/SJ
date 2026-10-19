@@ -1,5 +1,5 @@
 /* =========================================================
-   KELLERBANK: Geldautomat im EG und im 2. Stock
+   SJ BANK: Geldautomat im EG und im 2. Stock
    - Portemonnaie antippen -> öffnet sich -> Karte antippen -> Karte geht in den Automaten -> Konto
    - Einzahlen (Chips -> Konto), Abheben (Konto -> Chips), Senden an Mitspieler im selben Raum
    - Überweisungen laufen über die Presence: Sender zeigt {tx}, Empfänger bucht einmal gut und bestätigt mit {ack}
@@ -43,7 +43,7 @@ addEventListener('storage',e=>{if(e.key==='nk_bank'&&e.newValue!==null){const v=
 /* ---------- 3D-Automat ---------- */
 function drawAtmScreen(tex,busy){
   const c=tex.userData.ctx;const gr=c.createLinearGradient(0,0,0,96);gr.addColorStop(0,'#0a2a5a');gr.addColorStop(1,'#020a1a');c.fillStyle=gr;c.fillRect(0,0,128,96);
-  c.textAlign='center';c.textBaseline='middle';px(c,10);c.fillStyle='#29f0ff';c.fillText('KELLER',64,24);c.fillStyle='#ffcf3a';c.fillText('BANK',64,40);
+  c.textAlign='center';c.textBaseline='middle';px(c,10);c.fillStyle='#29f0ff';c.fillText('SJ',64,24);c.fillStyle='#ffcf3a';c.fillText('BANK',64,40);
   px(c,6);c.fillStyle=busy?'#ff5ab0':'#f4f0e8';c.fillText(busy?'IN BENUTZUNG':'KARTE EINFÜHREN',64,68);
   c.fillStyle='#3adf5a';c.fillRect(44,80,40,3);tex.needsUpdate=true;
 }
@@ -83,7 +83,7 @@ function atmOpen(){
 function atmClosed(){if(!ATM.open)return;ATM.open=false;ATMS.forEach(a=>drawAtmScreen(a.scr,false));}
 function atmSay(t,cls){ATM.msg=t;ATM.msgCls=cls||'';}
 function cardHtml(){
-  return '<div class="bcard" id="atmCard"><div class="bc-bank">KELLERBANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
+  return '<div class="bcard" id="atmCard"><div class="bc-bank">SJ BANK</div><div class="bc-chip"></div><div class="bc-num">'+esc(BANK.konto.replace(' ','  '))+'</div>'+
     '<div class="bc-name">'+esc((MP.name||'GAST').toUpperCase())+'</div><div class="bc-logo"><i></i><i></i></div></div>';
 }
 // Portemonnaie mit Karte (Automat und Geldautomat): Zustand über data-st am .gwrap (enter, '', open, ins)
@@ -93,7 +93,7 @@ function atmRender(){
   const scr=atmEl('atmScr'),stage=atmEl('atmStage');if(!scr||!stage)return;
   const s=ATM.step;
   if(s==='wallet'||s==='open'||s==='insert'){
-    scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
+    scr.innerHTML='<div class="as-logo">SJ <b>BANK</b></div><div class="as-mid blink">'+(s==='insert'?'KARTE WIRD EINGEZOGEN…':'BITTE KARTE EINFÜHREN')+'</div>';
     let gw=stage.querySelector('.gwrap');
     if(!gw){stage.innerHTML='<div class="gwrap" data-st="enter">'+walletHtml('atmWallet')+'</div><p class="atm-hint" id="atmHint"></p>';gw=stage.querySelector('.gwrap');
       requestAnimationFrame(()=>requestAnimationFrame(()=>{if(gw.dataset.st==='enter')gw.dataset.st=ATM.step==='wallet'?'':ATM.step==='open'?'open':'ins';}));}
@@ -102,8 +102,8 @@ function atmRender(){
     return;
   }
   stage.innerHTML='';
-  if(s==='load'){scr.innerHTML='<div class="as-logo">KELLER<b>BANK</b></div><div class="as-mid">KARTE WIRD GELESEN</div><div class="as-bar"><i></i></div>';return;}
-  const head='<div class="as-top"><span>KELLER<b>BANK</b></span><span>KTO '+esc(BANK.konto)+'</span></div>';
+  if(s==='load'){scr.innerHTML='<div class="as-logo">SJ <b>BANK</b></div><div class="as-mid">KARTE WIRD GELESEN</div><div class="as-bar"><i></i></div>';return;}
+  const head='<div class="as-top"><span>SJ <b>BANK</b></span><span>KTO '+esc(BANK.konto)+'</span></div>';
   const msg=ATM.msg?'<div class="as-msg '+(ATM.msgCls||'')+'">'+esc(ATM.msg)+'</div>':'';
   if(s==='menu'){
     const pend=BANK.pend.length?'<div class="as-pend">'+BANK.pend.map((p,i)=>'<div>UNTERWEGS AN '+esc(p.n)+': <b>'+fmt(p.a)+'</b> <button class="as-link" data-undo="'+i+'">ZURÜCKHOLEN</button></div>').join('')+'</div>':'';
