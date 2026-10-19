@@ -59,7 +59,7 @@ function remotePhase(m){
   m.gamble=null;
   if(ps==='poffer'){m.state='poffer';m.pmult=gx.pm;m.dirty=true;return;}
   if(m.reels.some(r=>r.spin))return;
-  if((ps==='show'||ps==='count'||ps==='myst')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,betLine(m));
+  if((ps==='show'||ps==='count'||ps==='myst')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m));
     if(ev.total>0){if(m.state!=='show'||!m.present)m.present={items:[...ev.wins],idx:0,t:0};if(ev.scatter&&!m.present.items.some(i=>i.scatter))m.present.items.push({scatter:true,...ev.scatter});m.state='show';m.dirty=true;return;}}
   if(m.state==='show'||m.state==='gamble'||m.state==='gambleNext'||m.state==='poffer'||m.state==='power'){m.state='idle_r';m.present=null;m.dirty=true;}
 }

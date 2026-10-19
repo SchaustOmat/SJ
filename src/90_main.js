@@ -93,9 +93,9 @@ function buildWorld(){
   const conc=lam({map:canvasTex(32,32,concrete,1,4)});
   pillar(A,-5,-7,conc,0x29f0ff);pillar(A,5,-6.5,conc,0xff2e88);pillar(A,-5,4.5,conc,0xff2e88);pillar(A,5,4.5,conc,0x29f0ff);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
-  const mA=[[-6.5,'book',0xd6a02a],[-4,'fruit',0xc42a3a],[-1.5,'book',0x2a6ad6],[1,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
+  const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
-  [[-10.3,'viking',0x4a9aff],[-8.9,'mine',0x29f0ff],[-7.5,'reef',0x2ad8c8],[-6.1,'temple',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
+  [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
   buildBar(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
@@ -139,7 +139,7 @@ function buildWorld(){
   const v1=npc(B,{x:6.2,z:-5.9,rot:0,anim:'watch',lines:LINES.roulette,name:'HIGHROLLER',glasses:true,color:0x8a6a1a});
   const v2=npc(B,{x:7.0,z:-4.5,rot:-Math.PI/2,anim:'watch',lines:LINES.vip,name:'GAST'});
   B.rouletteFans=[v1,v2];
-  const mB=[[1.5,'book',0xd6a02a],[4,'book',0xc42a3a],[6.5,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
+  const mB=[[1.5,'pharao',0xd6a02a],[4,'doppel',0xc42a3a],[6.5,'spitze',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
   mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
   sofa(B,-9.5,9.8,Math.PI,0x6a1020);sofa(B,-10.8,6.8,Math.PI/2,0x6a1020);

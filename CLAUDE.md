@@ -15,7 +15,7 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - Deploy: bauen, Syntax prüfen (`node --check` auf das Script aus index.html), committen, pushen. Pages baut automatisch.
 
 ## Dateien (src/)
-- 00_slotengine.js: Walzen-Engine (Strips, Linien, Wild/Scatter, Freispiele, bothWays, wildStack, wildMult, walk, superspin). Spiele: book, fruit, viking, mine, reef, temple, pharao, spitze, zent (Zentaurus), tizona, doppel (Doppel Buch).
+- 00_slotengine.js: Walzen-Engine (Strips, Linien, Wild/Scatter, Freispiele, bothWays, wildStack, wildMult, walk, superspin). Im Menü nur echte Merkur-Spiele: pharao (Lucky Pharaoh Wild), spitze (Alles Spitze), zent (Zentaurus, 20 Linien, lineDiv 2 = 0,10 €), tizona, doppel (Doppel Buch). book/fruit/viking/mine/reef/temple sind alt und nicht mehr im Menü. Gewinnpläne = echte Merkur-Tabellen (Pharao bei 0,20 €, Tizona/Zentaurus/Doppel Buch bei 0,10 €).
 - 28_spitze.js: Alles Spitze (eine Walze, 3 Leitern, Cashpot). 29_newgames.js: Symbole für Zentaurus/Tizona/Doppel Buch.
 - 20_slots.js: Automaten (3D-Gehäuse, Knöpfe, Ablauf, Risiko Karte/Leiter mit TEILEN, Pharao Power-Spin-Angebot + Power Spins, Bildschirm-Zeichnung).
 - 23_slot_symbols.js: gezeichnete Symbole. 24_spielomat.js: Automaten-OS „Spielomat V0.1“ (Menü, alle Spiele an jedem Automaten).

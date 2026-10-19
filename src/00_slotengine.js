@@ -49,16 +49,17 @@ var SlotEngine=(function(){
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/54,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
+      mystery:{chance:1/62,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
       // Gewinnplan wie der echte Merkur-Spielplan bei 0,20 € (Diamant 2/10/100 €, Rubin 1,40/4/8 €, Saphir/Smaragd 1/2/6 €, A/K 0,40/1/4 €, Q/J/10 0,20/0,60/2 €), pro Linie bei 1 Cent je Linie
       pay:{'10':[0,0,0,10,30,100],'J':[0,0,0,10,30,100],'Q':[0,0,0,10,30,100],'K':[0,0,0,20,50,200],'A':[0,0,0,20,50,200],
            'SMARAGD':[0,0,0,50,100,300],'SAPHIR':[0,0,0,50,100,300],'RUBIN':[0,0,0,70,200,400],'BRILLANT':[0,0,0,100,500,5000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null},
     // Zentaurus Power Spins: 20 Linien, Zentaur = Wild und verdoppelt je Zentaur auf der Linie, 3 Münzen = 10 Freispiele mit Superspin, Power Spins
-    zent:{id:'zent',title:'ZENTAURUS',sub:'POWER SPINS',lines:LINES20,lineOpts:[20],betOpts:[1,2,3,4,5,10,20,30,40,50,100],
-      wild:'ZENT',scatter:'MUENZE',wildMult:true,power:true,top:'OLYMP',
-      pay:{'9':[0,0,0,1,2,4],'10':[0,0,0,1,2,4],'J':[0,0,0,1,4,8],'Q':[0,0,0,1,4,8],'K':[0,0,0,2,6,16],'A':[0,0,0,2,6,16],
-           'FUELL':[0,0,0,4,8,24],'VASE':[0,0,0,8,16,32],'HARFE':[0,0,8,16,32,80],'OLYMP':[0,0,20,40,60,200],'ZENT':[0,0,10,100,1000,5000]},
+    // Echter Merkur-Gewinnplan bei 0,10 € und 20 Linien (Linieneinsatz 0,5 Cent: lineDiv 2, Gewinne hier pro 0,5-Cent-Einheit in halben Cent)
+    zent:{id:'zent',title:'ZENTAURUS',sub:'SUPERSPIN',lines:LINES20,lineOpts:[20],lineDiv:2,betOpts:[1,2,4,6,8,10,20,40,60,80,100],
+      wild:'ZENT',scatter:'MUENZE',wildMult:true,top:'OLYMP',
+      pay:{'9':[0,0,0,20,40,80],'10':[0,0,0,20,40,80],'J':[0,0,0,20,80,160],'Q':[0,0,0,20,80,160],'K':[0,0,0,40,120,320],'A':[0,0,0,40,120,320],
+           'FUELL':[0,0,0,80,160,480],'VASE':[0,0,0,160,320,640],'HARFE':[0,0,160,320,640,1600],'OLYMP':[0,0,400,800,1200,4000],'ZENT':[0,0,0,0,0,100000]},
       scatterPay:[0,0,0,0,0,0],free:{count:10,trigger:3,superspin:true,desc:['10 FREISPIELE','MIT SUPERSPIN']},counts:null},
     // Tizona: 10 Linien, Schwert = wanderndes Wild (zieht jede Runde eine Walze nach links), 3/4/5 Schilde = 10/15/20 Freispiele, dort wächst das Schwert
     tizona:{id:'tizona',title:'TIZONA',sub:'DAS SCHWERT DES CID',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
@@ -69,8 +70,9 @@ var SlotEngine=(function(){
     // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
     doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
       wild:'BUCH',scatter:'BUCH',doppel:true,
-      pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,5,20,60],'A':[0,0,0,5,20,60],
-           'SKARAB':[0,0,5,30,100,250],'GREIF':[0,0,5,30,100,250],'MASKE':[0,0,5,50,250,500],'FORSCH':[0,0,10,100,500,1000]},
+      // Echter Merkur-Spielplan bei 0,10 € und 5 Linien (2 Cent je Linie), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 100 €
+      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],
+           'SKARAB':[0,0,5,30,100,750],'GREIF':[0,0,5,30,100,750],'MASKE':[0,0,5,50,500,2000],'FORSCH':[0,0,10,100,1000,5000]},
       scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
     // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
     spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
@@ -124,7 +126,11 @@ var SlotEngine=(function(){
     else if(r<M.shape[0]+M.shape[1]+M.shape[2]){var L=G.lines[Math.floor(rnd()*G.lines.length)],n2=3+Math.floor(rnd()*3),s0=Math.floor(rnd()*(6-n2));for(i=0;i<n2;i++)cells.push([L[s0+i],s0+i]);}
     else{var n3=3+Math.floor(rnd()*4),all=[];for(i=0;i<15;i++)all.push(i);for(i=14;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=all[i];all[i]=all[j];all[j]=t;}
       for(i=0;i<n3;i++)cells.push([all[i]/5|0,all[i]%5]);}
-    var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
+    // Symbol nach Gewicht ziehen, aber nur aus denen, die mit den verdeckten Feldern einen Gewinn ergeben (verdeckt = immer Gewinn)
+    var key,ok={},tot=0,g0=[g[0].slice(),g[1].slice(),g[2].slice()];
+    for(key in M.w){var gt=[g0[0].slice(),g0[1].slice(),g0[2].slice()];cells.forEach(function(q){gt[q[0]][q[1]]=key;});if(evaluate(G,gt,G.lines.length,1).total>0){ok[key]=M.w[key];tot+=M.w[key];}}
+    if(!tot){ok={};ok[G.wild]=1;tot=1;var gw=[g0[0].slice(),g0[1].slice(),g0[2].slice()];cells.forEach(function(q){gw[q[0]][q[1]]=G.wild;});if(!(evaluate(G,gw,G.lines.length,1).total>0))return null;}
+    var x=rnd()*tot,sym=null;for(key in ok){x-=ok[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(ok)[0];
     cells.forEach(function(q){g[q[0]][q[1]]=sym;});return {cells:cells,sym:sym};}
   // Tizona: wandernde Schwerter. ww = [{c,r,h}] aus der letzten Runde; sie ziehen eine Walze nach links,
   // neue Schwerter kommen dazu. h = Höhe (1-3, in Freispielen durch Schilde). Rückgabe: neue Liste, Raster wird überschrieben.

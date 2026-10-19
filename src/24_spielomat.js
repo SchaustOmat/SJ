@@ -2,9 +2,10 @@
    SPIELOMAT V0.1 – das Automaten-System von Sinan's Keller
    Startbildschirm, Spielauswahl mit allen Spielen, MENÜ-Taste im Spiel.
    ========================================================= */
-const SPIELOMAT={ver:'V0.1',games:[['book','BUCH'],['fruit','SIEBEN'],['viking','HELM'],['mine','DIAMANT'],['reef','DELFIN'],['temple','FEUER'],['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
+const SPIELOMAT={ver:'V0.1',games:[['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
 const SM_TILE={x0:11,y0:42,w:70,h:56,gx:6,gy:4,cols:4};
 function setMachineGame(m,id){
+  if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
   if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
   m.G=G;m.power=null;m.myst=null;m.fx=null;m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;

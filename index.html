@@ -535,7 +535,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792393195";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792393871";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -592,16 +592,17 @@ var SlotEngine=(function(){
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
-      mystery:{chance:1/54,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
+      mystery:{chance:1/62,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
       // Gewinnplan wie der echte Merkur-Spielplan bei 0,20 € (Diamant 2/10/100 €, Rubin 1,40/4/8 €, Saphir/Smaragd 1/2/6 €, A/K 0,40/1/4 €, Q/J/10 0,20/0,60/2 €), pro Linie bei 1 Cent je Linie
       pay:{'10':[0,0,0,10,30,100],'J':[0,0,0,10,30,100],'Q':[0,0,0,10,30,100],'K':[0,0,0,20,50,200],'A':[0,0,0,20,50,200],
            'SMARAGD':[0,0,0,50,100,300],'SAPHIR':[0,0,0,50,100,300],'RUBIN':[0,0,0,70,200,400],'BRILLANT':[0,0,0,100,500,5000]},
       scatterPay:[0,0,0,0,0,0],free:null,counts:null},
     // Zentaurus Power Spins: 20 Linien, Zentaur = Wild und verdoppelt je Zentaur auf der Linie, 3 Münzen = 10 Freispiele mit Superspin, Power Spins
-    zent:{id:'zent',title:'ZENTAURUS',sub:'POWER SPINS',lines:LINES20,lineOpts:[20],betOpts:[1,2,3,4,5,10,20,30,40,50,100],
-      wild:'ZENT',scatter:'MUENZE',wildMult:true,power:true,top:'OLYMP',
-      pay:{'9':[0,0,0,1,2,4],'10':[0,0,0,1,2,4],'J':[0,0,0,1,4,8],'Q':[0,0,0,1,4,8],'K':[0,0,0,2,6,16],'A':[0,0,0,2,6,16],
-           'FUELL':[0,0,0,4,8,24],'VASE':[0,0,0,8,16,32],'HARFE':[0,0,8,16,32,80],'OLYMP':[0,0,20,40,60,200],'ZENT':[0,0,10,100,1000,5000]},
+    // Echter Merkur-Gewinnplan bei 0,10 € und 20 Linien (Linieneinsatz 0,5 Cent: lineDiv 2, Gewinne hier pro 0,5-Cent-Einheit in halben Cent)
+    zent:{id:'zent',title:'ZENTAURUS',sub:'SUPERSPIN',lines:LINES20,lineOpts:[20],lineDiv:2,betOpts:[1,2,4,6,8,10,20,40,60,80,100],
+      wild:'ZENT',scatter:'MUENZE',wildMult:true,top:'OLYMP',
+      pay:{'9':[0,0,0,20,40,80],'10':[0,0,0,20,40,80],'J':[0,0,0,20,80,160],'Q':[0,0,0,20,80,160],'K':[0,0,0,40,120,320],'A':[0,0,0,40,120,320],
+           'FUELL':[0,0,0,80,160,480],'VASE':[0,0,0,160,320,640],'HARFE':[0,0,160,320,640,1600],'OLYMP':[0,0,400,800,1200,4000],'ZENT':[0,0,0,0,0,100000]},
       scatterPay:[0,0,0,0,0,0],free:{count:10,trigger:3,superspin:true,desc:['10 FREISPIELE','MIT SUPERSPIN']},counts:null},
     // Tizona: 10 Linien, Schwert = wanderndes Wild (zieht jede Runde eine Walze nach links), 3/4/5 Schilde = 10/15/20 Freispiele, dort wächst das Schwert
     tizona:{id:'tizona',title:'TIZONA',sub:'DAS SCHWERT DES CID',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
@@ -612,8 +613,9 @@ var SlotEngine=(function(){
     // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
     doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
       wild:'BUCH',scatter:'BUCH',doppel:true,
-      pay:{'10':[0,0,0,5,15,50],'J':[0,0,0,5,15,50],'Q':[0,0,0,5,15,50],'K':[0,0,0,5,20,60],'A':[0,0,0,5,20,60],
-           'SKARAB':[0,0,5,30,100,250],'GREIF':[0,0,5,30,100,250],'MASKE':[0,0,5,50,250,500],'FORSCH':[0,0,10,100,500,1000]},
+      // Echter Merkur-Spielplan bei 0,10 € und 5 Linien (2 Cent je Linie), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 100 €
+      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],
+           'SKARAB':[0,0,5,30,100,750],'GREIF':[0,0,5,30,100,750],'MASKE':[0,0,5,50,500,2000],'FORSCH':[0,0,10,100,1000,5000]},
       scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
     // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
     spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
@@ -667,7 +669,11 @@ var SlotEngine=(function(){
     else if(r<M.shape[0]+M.shape[1]+M.shape[2]){var L=G.lines[Math.floor(rnd()*G.lines.length)],n2=3+Math.floor(rnd()*3),s0=Math.floor(rnd()*(6-n2));for(i=0;i<n2;i++)cells.push([L[s0+i],s0+i]);}
     else{var n3=3+Math.floor(rnd()*4),all=[];for(i=0;i<15;i++)all.push(i);for(i=14;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=all[i];all[i]=all[j];all[j]=t;}
       for(i=0;i<n3;i++)cells.push([all[i]/5|0,all[i]%5]);}
-    var tot=0,key;for(key in M.w)tot+=M.w[key];var x=rnd()*tot,sym=null;for(key in M.w){x-=M.w[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(M.w)[0];
+    // Symbol nach Gewicht ziehen, aber nur aus denen, die mit den verdeckten Feldern einen Gewinn ergeben (verdeckt = immer Gewinn)
+    var key,ok={},tot=0,g0=[g[0].slice(),g[1].slice(),g[2].slice()];
+    for(key in M.w){var gt=[g0[0].slice(),g0[1].slice(),g0[2].slice()];cells.forEach(function(q){gt[q[0]][q[1]]=key;});if(evaluate(G,gt,G.lines.length,1).total>0){ok[key]=M.w[key];tot+=M.w[key];}}
+    if(!tot){ok={};ok[G.wild]=1;tot=1;var gw=[g0[0].slice(),g0[1].slice(),g0[2].slice()];cells.forEach(function(q){gw[q[0]][q[1]]=G.wild;});if(!(evaluate(G,gw,G.lines.length,1).total>0))return null;}
+    var x=rnd()*tot,sym=null;for(key in ok){x-=ok[key];if(x<0){sym=key;break;}}if(!sym)sym=Object.keys(ok)[0];
     cells.forEach(function(q){g[q[0]][q[1]]=sym;});return {cells:cells,sym:sym};}
   // Tizona: wandernde Schwerter. ww = [{c,r,h}] aus der letzten Runde; sie ziehen eine Walze nach links,
   // neue Schwerter kommen dazu. h = Höhe (1-3, in Freispielen durch Schilde). Rückgabe: neue Liste, Raster wird überschrieben.
@@ -1256,12 +1262,12 @@ SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2
   SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:211,KLEE:68,PFEN:26,KAEF:7,KOEN:3,TEUF:85})),501);
   const TIZ_ROWS=[[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3]];
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
-  SlotEngine.setup('zent',[0,1,2,3,4].map(()=>R_([8,8,7,7,6,6,4,4,3,2,1,2],ZK)),704,null,4.07);
+  SlotEngine.setup('zent',[[20,15,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
   SlotEngine.setup('tizona',TIZ_ROWS.map(a=>R_(a,TK)),706);
-  SlotEngine.setup('doppel',[[6,6,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[8,8,7,7,6,3,3,2,1,1]].map(a=>R_(a,DK)),706,null,1.33);
+  SlotEngine.setup('doppel',[[6,5,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[7,7,7,7,6,3,3,2,1,1]].map(a=>R_(a,DK)),706);
   SlotEngine.setup('pharao',[[7,12,9,11,6,18,11,1,1,1],[17,17,15,0,12,1,1,4,1,1],[15,8,18,18,14,3,2,5,7,1],[1,21,2,13,1,9,12,1,3,1],[17,3,13,0,6,1,1,6,1,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'97',fs:'105',hit:'3',power:'20'},tizona:{rtp:'96,9',fs:'161',hit:'3'},doppel:{rtp:'97',fs:'186',hit:'3'}};
+const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'96,9',fs:'161',hit:'3'},doppel:{rtp:'96,5',fs:'180',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -1395,8 +1401,8 @@ function buildMachine(F,x,z,rotY,gameId,accent){
 }
 function slotIdleMsg(m){const G=m.G;m.msg=G.special?'KLEE · PFENNIG · KÄFER · KÖNIG':G.power?'AB 4× EINSATZ GEWINN: POWER SPINS':G.id==='book'?'3 BÜCHER = 10 FREISPIELE':G.walkWild?'3/4/5 SCHILDE = 10/15/20 FREISPIELE':G.free?'3 '+SYMNAME[G.scatter]+' = '+G.free.count+' FREISPIELE':'VIEL GLÜCK';}
 function betLine(m){return m.G.betOpts[m.betIdx];}
-function totalBet(m){return betLine(m)*m.lines*(m.G.doppel&&m.dbl?2:1);}
-function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.36:1);}
+function totalBet(m){return betLine(m)*m.lines*(m.G.doppel&&m.dbl?2:1)/(m.G.lineDiv||1);}
+function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.33:1)/(m.G.lineDiv||1);}
 function wwPend(m){return !!(m.G.walkWild&&SlotEngine.wwPending(m.ww));}
 function wwCells(ww){const o={};(ww||[]).forEach(w=>{const hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(let i=0;i<hh;i++)o[(r0+i)+','+w.c]=1;});return o;}
 
@@ -2151,7 +2157,7 @@ function goldSword(){if(goldSword.c)return goldSword.c;const c=document.createEl
 function drawHeader(m,g){
   g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,320,RY-4);
   px(g,8);g.textBaseline='middle';g.textAlign='left';g.fillStyle='#ffd23a';g.fillText(m.G.title,6,12);
-  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);if(!(m.fs&&m.G.free&&m.G.free.shields))g.fillText(m.G.special?'EINSATZ '+fmt(totalBet(m)):m.lines+' LINIEN × '+fmt(betLine(m)),314,12);
+  g.textAlign='right';g.fillStyle='#e8e0cc';px(g,6);if(!(m.fs&&m.G.free&&m.G.free.shields))g.fillText(m.G.special||m.G.lineDiv?'EINSATZ '+fmt(totalBet(m)):m.lines+' LINIEN × '+fmt(betLine(m)),314,12);
   if(m.fs&&m.G.free&&m.G.free.shields&&!m.info)drawShieldMeter(m,g);
   if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=t.length*6+10;g.fillStyle='#3adf5a';g.fillRect(160-w/2,5,w,13);g.fillStyle='#001a04';g.textAlign='center';g.fillText(t,160,12);}
 }
@@ -2159,7 +2165,7 @@ function drawHeader(m,g){
 function fitL(g,t,x,y,w,sz){let s=sz;px(g,s);while(s>4&&g.measureText(t).width>w){s--;px(g,s);}const mw=g.measureText(t).width;g.save();g.translate(x,y);if(mw>w)g.scale(w/mw,1);g.textAlign='left';g.fillText(t,0,0);g.restore();}
 function drawInfo(m,g){
   g.fillStyle='rgba(10,6,16,.94)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
-  const G=m.G,syms=Object.keys(G.pay).reverse(),bl=betLine(m),tb=totalBet(m),e=v=>fmt(v).replace(' €','');
+  const G=m.G,syms=Object.keys(G.pay).reverse(),bl=payLine(m),tb=totalBet(m),e=v=>fmt(v).replace(' €','');
   g.textBaseline='middle';
   // Tabelle: Symbol | 5× | 4× | 3× (in € beim aktuellen Einsatz), zwei Spalten nebeneinander
   const half=Math.ceil(syms.length/2),rh=Math.min(22,Math.floor(108/half)),two=syms.some(s=>G.pay[s][2]);
@@ -2849,9 +2855,10 @@ Object.assign(SYMNAME,{PHARAO:'PHARAO',BRILLANT:'BRILLANT',RUBIN:'RUBIN',SAPHIR:
    SPIELOMAT V0.1 – das Automaten-System von Sinan's Keller
    Startbildschirm, Spielauswahl mit allen Spielen, MENÜ-Taste im Spiel.
    ========================================================= */
-const SPIELOMAT={ver:'V0.1',games:[['book','BUCH'],['fruit','SIEBEN'],['viking','HELM'],['mine','DIAMANT'],['reef','DELFIN'],['temple','FEUER'],['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
+const SPIELOMAT={ver:'V0.1',games:[['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
 const SM_TILE={x0:11,y0:42,w:70,h:56,gx:6,gy:4,cols:4};
 function setMachineGame(m,id){
+  if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
   if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
   m.G=G;m.power=null;m.myst=null;m.fx=null;m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
@@ -4073,7 +4080,7 @@ function remotePhase(m){
   m.gamble=null;
   if(ps==='poffer'){m.state='poffer';m.pmult=gx.pm;m.dirty=true;return;}
   if(m.reels.some(r=>r.spin))return;
-  if((ps==='show'||ps==='count'||ps==='myst')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,betLine(m));
+  if((ps==='show'||ps==='count'||ps==='myst')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m));
     if(ev.total>0){if(m.state!=='show'||!m.present)m.present={items:[...ev.wins],idx:0,t:0};if(ev.scatter&&!m.present.items.some(i=>i.scatter))m.present.items.push({scatter:true,...ev.scatter});m.state='show';m.dirty=true;return;}}
   if(m.state==='show'||m.state==='gamble'||m.state==='gambleNext'||m.state==='poffer'||m.state==='power'){m.state='idle_r';m.present=null;m.dirty=true;}
 }
@@ -4591,9 +4598,9 @@ function buildWorld(){
   const conc=lam({map:canvasTex(32,32,concrete,1,4)});
   pillar(A,-5,-7,conc,0x29f0ff);pillar(A,5,-6.5,conc,0xff2e88);pillar(A,-5,4.5,conc,0xff2e88);pillar(A,5,4.5,conc,0x29f0ff);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
-  const mA=[[-6.5,'book',0xd6a02a],[-4,'fruit',0xc42a3a],[-1.5,'book',0x2a6ad6],[1,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
+  const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
-  [[-10.3,'viking',0x4a9aff],[-8.9,'mine',0x29f0ff],[-7.5,'reef',0x2ad8c8],[-6.1,'temple',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
+  [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
   buildBar(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
@@ -4637,7 +4644,7 @@ function buildWorld(){
   const v1=npc(B,{x:6.2,z:-5.9,rot:0,anim:'watch',lines:LINES.roulette,name:'HIGHROLLER',glasses:true,color:0x8a6a1a});
   const v2=npc(B,{x:7.0,z:-4.5,rot:-Math.PI/2,anim:'watch',lines:LINES.vip,name:'GAST'});
   B.rouletteFans=[v1,v2];
-  const mB=[[1.5,'book',0xd6a02a],[4,'book',0xc42a3a],[6.5,'fruit',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
+  const mB=[[1.5,'pharao',0xd6a02a],[4,'doppel',0xc42a3a],[6.5,'spitze',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
   mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
   sofa(B,-9.5,9.8,Math.PI,0x6a1020);sofa(B,-10.8,6.8,Math.PI/2,0x6a1020);
