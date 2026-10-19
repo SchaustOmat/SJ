@@ -798,7 +798,7 @@ function drawReelArea(m,g){
     const rg=g.createLinearGradient(0,RY,0,RY+CH*3);
     const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#5a6a8a','#eef2f8'],doppel:['#5a4020','#e8d8b0']}[G.id];
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
-    if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
+    if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else if(G.id==='zent')g.drawImage(ztMarble(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;
     for(let k=0;k<4;k++){
       const idx=((fl+k-1)%L+L)%L,y=RY+(k-off)*CH+bo;
@@ -808,7 +808,7 @@ function drawReelArea(m,g){
         hl=it.cells.some(([cr,cc])=>cr===row&&cc===i);alpha=hl?1:.4;}
       g.globalAlpha=alpha;
       if(k<3&&!r.spin&&m.wwc&&m.wwc[k+','+i]){g.globalAlpha=1;continue;} // Schwert kommt in drawWalkers drüber
-      if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){g.fillStyle='rgba(60,200,255,.22)';g.fillRect(x+1,y,CW-2,CH);g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
+      if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){if(G.id==='zent')g.drawImage(ztRed(),x+1,y,CW-2,CH);else{g.fillStyle='rgba(60,200,255,.22)';g.fillRect(x+1,y,CW-2,CH);}g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
       if(k<3&&!r.spin&&mystHas(m.myst,k,i)){drawMystCell(m,g,x+1,y,CW-2,CH,k,i);g.globalAlpha=1;continue;}
       const im=symCanvas(sym);
       if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.28;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-18,46,70);g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2+4,46,70);
@@ -845,6 +845,8 @@ function drawReelArea(m,g){
       for(let r=0;r<3;r++)g.drawImage(symCanvas(E.sym),x+(CW-46)/2,RY+r*CH+(CH-46)/2,46,46);
       g.restore();g.strokeStyle=Math.floor(now*6)%2?'#fff':'#ffd23a';g.lineWidth=2;g.strokeRect(x+2,RY+1,CW-4,h-2);});
   });
+  // Zentaurus: Tempelsäulen mit LINIEN 20
+  if(G.id==='zent'){g.drawImage(ztColumn(),1,RY-4,19,CH*3+8);g.drawImage(ztColumn(),300,RY-4,19,CH*3+8);}
   // paylines markers
   for(let li=0;li<(G.lines.length>10?0:G.lines.length);li++){
     const p=G.lines[li],active=li<m.lines,yL=RY+p[0]*CH+CH/2+((li%3)-1)*10,yR=RY+p[4]*CH+CH/2+((li%3)-1)*10;
