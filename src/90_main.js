@@ -192,7 +192,7 @@ const mouseLocked=()=>document.pointerLockElement===cv;
 function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 function pcUi(){
-  document.body.classList.toggle('pc',PC);
+  document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
   const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
   if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
 }
@@ -464,7 +464,7 @@ function setFloor(i){
 }
 const BAR_MIN=2000; // unter 20 € gibt der Barkeeper 200 € (Werte in Cent)
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
-let GFX='sharp';try{GFX=localStorage.getItem('nk_gfx')||'sharp';}catch(e){}
+const GFX='sharp'; // immer scharf, keine Auswahl mehr
 function resize(){
   const w=LW(),h=LH();let iw,ih;
   if(GFX==='sharp'){
@@ -482,10 +482,8 @@ function resize(){
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
 $('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
-function gfxLabel(){$('#gfxBtn').textContent='GRAFIK: '+(GFX==='sharp'?'SCHARF':'RETRO (PS1)');}
 const sensIn=$('#sensIn');sensIn.value=String(SENS);$('#sensVal').textContent=SENS.toFixed(1)+'×';
 sensIn.addEventListener('input',()=>{SENS=clamp(+sensIn.value||1,.2,3);$('#sensVal').textContent=SENS.toFixed(1)+'×';store('nk_sens',SENS);});
-$('#gfxBtn').addEventListener('click',()=>{GFX=GFX==='sharp'?'retro':'sharp';store('nk_gfx',GFX);gfxLabel();resize();});gfxLabel();
 $('#chatBtn').addEventListener('click',()=>{openPanel('pChat');});
 $('#onlineTag').addEventListener('click',()=>{if(window.NK_STANDALONE){openPanel('pMulti');lobbyOpen();return;}if(!MP.room)toast('Nicht verbunden. Der Link allein reicht nicht: Du musst über TEILEN mit deiner E-Mail eingeladen sein und eingeloggt mit genau dieser E-Mail öffnen.');else if(!MP.online)toast('Verbunden. Warte auf deinen Kollegen…');else toast((MP.online+1)+' Spieler im Keller.');});
 document.querySelectorAll('#pChat [data-say]').forEach(b=>b.addEventListener('click',()=>{mpSay(b.dataset.say);closePanel();}));
@@ -552,23 +550,28 @@ function frame(){
 }
 
 /* ---------- boot ---------- */
-const fontWait=Promise.race([Promise.all([document.fonts.load('16px "Press Start 2P"'),document.fonts.load('20px VT323')]),new Promise(r=>setTimeout(r,2500))]).catch(()=>{});
+const fontWait=Promise.race([Promise.all([document.fonts.load('16px "Press Start 2P"'),document.fonts.load('700 20px Cinzel'),document.fonts.load('600 20px "Cormorant Garamond"')]),new Promise(r=>setTimeout(r,3000))]).catch(()=>{});
 fontWait.then(()=>{
   setChips(chips);mtBarInit();
   buildWorld();setFloor(0);P.x=0;P.z=9;P.yaw=0;resvRestore();
   camera.position.set(P.x,1.6,P.z);camera.rotation.set(P.pitch,P.yaw,0);
   applyRot();
   frame();
-  const go=$('#startGo');go.textContent='TIPPEN ZUM STARTEN';go.dataset.loading='false';
-  const ni=$('#nameIn');ni.value=MP.name;
-  ni.addEventListener('click',e=>e.stopPropagation());ni.addEventListener('pointerdown',e=>e.stopPropagation());
-  ni.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')$('#start').click();});
+  const go=$('#startGo');go.textContent='HEREINSPAZIERT';go.dataset.loading='false';
+  // Name jetzt in der Steuerung (Fragezeichen oben); wird beim Ändern gespeichert
+  const ni=$('#nameIn');ni.value=MP.name==='GAST'?'':MP.name;
+  ni.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')ni.blur();});
+  ni.addEventListener('change',()=>{MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.dirty=true;mpTag();});
   mpInit();cloudSaveInit();
-  $('#start').addEventListener('click',()=>{
-    MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.started=true;MP.dirty=true;mpTag();
-    initAudio();$('#start').hidden=true;$('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
+  // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
+  const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
+  addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
+  setTimeout(()=>{
+    MP.started=true;MP.dirty=true;mpTag();
+    $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
+    $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
     if(!seen)openPanel('pHelp');
     try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
-  });
+  },700);
 });

@@ -11,12 +11,17 @@ function faceTo(x,z,cx,cz){return Math.atan2(cx-x,cz-z);}
 function planeUV(w,h,sx,sy,tw,th){const g=new THREE.PlaneGeometry(w,h,sx||1,sy||1);const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/tw,uv.getY(i)*h/th);return g;}
 
 function signTex(text,color,bg){
-  const fs=16,cw=text.length*fs+20;
-  return canvasTex(cw,32,(g,w,h)=>{g.fillStyle=bg||'#0a0610';g.fillRect(0,0,w,h);g.strokeStyle=color;g.lineWidth=2;g.strokeRect(2,2,w-4,h-4);
-    px(g,fs);g.textAlign='center';g.textBaseline='middle';g.shadowColor=color;g.shadowBlur=6;g.fillStyle=color;g.fillText(text,w/2,h/2+1);g.shadowBlur=0;g.fillStyle='#fff';g.globalAlpha=.55;g.fillText(text,w/2,h/2+1);g.globalAlpha=1;});
+  // edles Schild: dunkles Holz, doppelter Goldrahmen, Goldschrift in Cinzel (hoch aufgelöst)
+  const S=4,fs=17*S,c0=document.createElement('canvas').getContext('2d');c0.font='700 '+fs+'px Cinzel, Georgia, serif';
+  const cw=Math.ceil(c0.measureText(text).width/S+28)*S;
+  return canvasTex(cw,32*S,(g,w,h)=>{const bg2=g.createLinearGradient(0,0,0,h);bg2.addColorStop(0,'#2a1608');bg2.addColorStop(1,'#120804');g.fillStyle=bg2;g.fillRect(0,0,w,h);
+    g.strokeStyle='#d4a849';g.lineWidth=2*S;g.strokeRect(S*2,S*2,w-S*4,h-S*4);g.strokeStyle='rgba(212,168,73,.45)';g.lineWidth=S*.8;g.strokeRect(S*5,S*5,w-S*10,h-S*10);
+    g.font='700 '+fs+'px Cinzel, Georgia, serif';g.textAlign='center';g.textBaseline='middle';
+    const gr=g.createLinearGradient(0,h*.2,0,h*.8);gr.addColorStop(0,'#fff4d0');gr.addColorStop(.5,'#e8c060');gr.addColorStop(1,'#9a6a18');
+    g.shadowColor='rgba(232,192,96,.6)';g.shadowBlur=6*S;g.fillStyle=gr;g.fillText(text,w/2,h/2+S);g.shadowBlur=0;},null,null,true);
 }
 function sign(F,text,color,x,y,z,rotY,h){
-  h=h||.55;const t=signTex(text,color);const w=h*t.image.width/32;
+  h=h||.55;const t=signTex(text,color);const w=h*t.image.width/t.image.height;
   const m=mesh(new THREE.PlaneGeometry(w,h),bas({map:t,side:THREE.DoubleSide}),x,y,z,F.group);m.rotation.y=rotY||0;(F.signs||(F.signs=[])).push(m);return m;
 }
 function decal(F,tex,w,h,x,y,z,rotY){const m=mesh(new THREE.PlaneGeometry(w,h),lam({map:tex,transparent:true,alphaTest:.5}),x,y,z,F.group);m.rotation.y=rotY;return m;}
