@@ -63,7 +63,9 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .rd-now{font-family:var(--f-body);font-size:20px;color:var(--gold);margin:0 0 6px;overflow-wrap:anywhere}
 .rd-ctl{align-items:center;gap:8px}.rd-ctl .btn{color:var(--ink)}.rd-ctl b{font-family:var(--f-title);font-size:15.4px;color:var(--ink);margin-left:auto}
 #pRadio{width:min(680px,calc(100vw - 24px))}
-#rdRes{display:flex;flex-direction:column;gap:8px;max-height:min(62vh,640px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#rdRes{display:flex;flex-direction:column;gap:8px;flex:0 0 auto;min-height:min(320px,55vh);max-height:min(62vh,640px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#pRadio:has(#rdRes:not(:empty)) .mps{display:none}
+#app.rotated #rdRes{min-height:min(300px,55vw);max-height:65vw}
 #rdRes:empty{display:none}
 .rd-it{display:flex;gap:8px;align-items:center;background:var(--black);border:2px solid var(--line);padding:4px;cursor:pointer;text-align:left;color:var(--txt,#f4f0e8);font-family:var(--f-body);font-size:15px;line-height:1.15;width:100%}
 .rd-it:hover,.rd-it:focus{border-color:var(--gold)}
@@ -507,8 +509,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <header><h2>RADIO</h2><button class="x" data-close>ZU</button></header>
   <p class="rd-now" id="rdNow">Noch nichts.</p>
   <div class="row" style="flex-wrap:nowrap"><input id="rdUrl" autocomplete="off" enterkeyhint="search" placeholder="Song suchen oder YouTube-Link"><button class="btn gold" id="rdGo">SUCHEN</button></div>
-  <div id="rdRes" class="rd-res"></div>
   <div class="row rd-ctl"><button class="btn" id="rdDown">LEISER</button><button class="btn hot" id="rdPlay">PLAY</button><button class="btn" id="rdUp">LAUTER</button><b id="rdVol">60 %</b></div>
+  <div id="rdRes" class="rd-res"></div>
   <p class="mps" style="color:var(--dim)">Im Multiplayer-Raum hören alle dasselbe: gleicher Song, gleiche Stelle, gleiche Lautstärke, Play und Pause für alle.</p>
 </section>
 <section id="pHelp" class="panel" hidden aria-label="Steuerung">

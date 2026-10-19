@@ -8,7 +8,7 @@ function setMachineGame(m,id){
   if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
   if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
-  m.G=G;m.power=null;m.myst=null;m.fx=null;m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
+  m.G=G;m.power=null;m.myst=null;m.fx=null;if(/^(fs|expand|ssSpin)/.test(m.state))m.state='idle';m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
   m.reels.forEach((r,i)=>{r.spin=false;r.bounce=0;r.pos=Math.floor(Math.random()*G.strips[i].length);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);m.ev=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;
 }
@@ -31,6 +31,7 @@ function smPress(m,key){
   m.dirty=true;
 }
 function smTap(m,uv){
+  if(typeof tzBuyTap==='function'&&tzBuyTap(m,uv))return true;
   if(m.state==='poffer')return offerTap(m,uv);
   if(m.state!=='menu'||!uv)return false;
   const x=uv.x*320,y=(1-uv.y)*240,T=SM_TILE;
