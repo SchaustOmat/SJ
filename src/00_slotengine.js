@@ -70,10 +70,10 @@ var SlotEngine=(function(){
     // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
     doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
       wild:'BUCH',scatter:'BUCH',doppel:true,
-      // Echter Merkur-Spielplan bei 0,10 € und 5 Linien (2 Cent je Linie), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 100 €
-      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],
-           'SKARAB':[0,0,5,30,100,750],'GREIF':[0,0,5,30,100,750],'MASKE':[0,0,5,50,500,2000],'FORSCH':[0,0,10,100,1000,5000]},
-      scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
+      // Echter Merkur-Spielplan (Werte gelten bei 0,20 € = Level 20), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 5× der 4er-Gewinn
+      pay:{'10':[0,0,0,2.5,12.5,50],'J':[0,0,0,2.5,12.5,50],'Q':[0,0,0,2.5,12.5,50],'K':[0,0,0,2.5,20,75],'A':[0,0,0,2.5,20,75],
+           'SKARAB':[0,0,2.5,15,50,375],'GREIF':[0,0,2.5,15,50,375],'MASKE':[0,0,2.5,25,250,1000],'FORSCH':[0,0,5,50,500,2500]},
+      scatterPay:[0,0,0,1,10,100],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
     // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
     spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
       wild:null,scatter:null,pay:{},scatterPay:[0,0,0,0,0,0],free:null,counts:null}

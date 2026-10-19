@@ -24,10 +24,10 @@ SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
   SlotEngine.setup('zent',[[20,15,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
   SlotEngine.setup('tizona',TIZ_ROWS.map(a=>R_(a,TK)),706);
-  SlotEngine.setup('doppel',[[6,5,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[7,7,7,7,6,3,3,2,1,1]].map(a=>R_(a,DK)),706);
+  SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
   SlotEngine.setup('pharao',[[7,12,9,11,6,18,11,1,1,1],[17,17,15,0,12,1,1,4,1,1],[15,8,18,18,14,3,2,5,7,1],[1,21,2,13,1,9,12,1,3,1],[17,3,13,0,6,1,1,6,1,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'96,9',fs:'161',hit:'3'},doppel:{rtp:'96,5',fs:'180',hit:'3'}};
+const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'96,9',fs:'161',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -161,7 +161,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
 function slotIdleMsg(m){const G=m.G;m.msg=G.special?'KLEE · PFENNIG · KÄFER · KÖNIG':G.power?'AB 4× EINSATZ GEWINN: POWER SPINS':G.id==='book'?'3 BÜCHER = 10 FREISPIELE':G.walkWild?'3/4/5 SCHILDE = 10/15/20 FREISPIELE':G.free?'3 '+SYMNAME[G.scatter]+' = '+G.free.count+' FREISPIELE':'VIEL GLÜCK';}
 function betLine(m){return m.G.betOpts[m.betIdx];}
 function totalBet(m){return betLine(m)*m.lines*(m.G.doppel&&m.dbl?2:1)/(m.G.lineDiv||1);}
-function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.33:1)/(m.G.lineDiv||1);}
+function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.39:1)/(m.G.lineDiv||1);}
 function wwPend(m){return !!(m.G.walkWild&&SlotEngine.wwPending(m.ww));}
 function wwCells(ww){const o={};(ww||[]).forEach(w=>{const hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(let i=0;i<hh;i++)o[(r0+i)+','+w.c]=1;});return o;}
 
@@ -796,7 +796,7 @@ function drawReelArea(m,g){
     const x=RX+i*CW,r=m.reels[i],S=stripsFor(m)[i],L=S.length;
     g.save();g.beginPath();g.rect(x+1,RY,CW-2,CH*3);g.clip();
     const rg=g.createLinearGradient(0,RY,0,RY+CH*3);
-    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#5a6a8a','#eef2f8'],doppel:['#5a4020','#e8d8b0']}[G.id];
+    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#5a6a8a','#eef2f8'],doppel:['#000000','#0c0a08']}[G.id];
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
     if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else if(G.id==='zent')g.drawImage(ztMarble(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;

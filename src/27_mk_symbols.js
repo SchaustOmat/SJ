@@ -184,22 +184,28 @@ const ZT_SYM={
 };
 
 /* ---------------- DOPPEL BUCH ---------------- */
-const dbL=(t,c0,c1,c2)=>g=>mkLetter(g,t,c0,c1,c2,{rim:g=>mkLin(g,0,12,0,86,[[0,'#fff8d0'],[1,'#a07020']]),sx:.9});
+// Buchstaben wie im Original: kantige Schrift, satte Farbe mit Kantenglanz, schwarzer Hintergrund
+const dbL=(t,c0,c1,c2)=>g=>mkLetter(g,t,c0,c1,c2,{font:'"Copperplate Gothic Bold","Copperplate","Trebuchet MS",'+MK_BLOCK,size:78,s10:66,sx:.9,sx10:.7,out:5,outC:'rgba(0,0,0,.9)',y:80,rim:g=>mkLin(g,0,12,0,86,[[0,'rgba(255,255,255,.5)'],[1,'rgba(0,0,0,.4)']])});
 const DB_SYM={
-  '10':dbL('10','#f0c0ff','#b02ae0','#4a0a6a'),
-  'J':dbL('J','#b0d8ff','#1a5ae0','#06106a'),
-  'Q':dbL('Q','#c8ffb0','#2ab81a','#0a4a04'),
-  'K':dbL('K','#ffb8a0','#e01a10','#6a0000'),
-  'A':dbL('A','#fff8c0','#f0b818','#8a4a00'),
-  BUCH(g){// Scatter/Wild: goldenes Buch mit Skarabäus, leuchtend
-    g.fillStyle=mkRad(g,48,48,4,56,[[0,'rgba(255,240,160,.9)'],[1,'rgba(255,160,20,0)']]);g.fillRect(0,0,96,96);
-    mkPoly(g,[[10,24],[48,30],[86,24],[86,80],[48,86],[10,80]],mkLin(g,0,20,0,86,[[0,'#ffe8a0'],[1,'#a06a10']]),'#4a2a00',2);
-    mkPoly(g,[[14,26],[46,32],[46,82],[14,76]],mkLin(g,14,0,46,0,[[0,'#f4dca0'],[1,'#fff6d8']]));mkPoly(g,[[50,32],[82,26],[82,76],[50,82]],mkLin(g,50,0,82,0,[[0,'#fff6d8'],[1,'#e8cc88']]));
-    g.strokeStyle='rgba(120,80,20,.5)';g.lineWidth=1;for(let y=38;y<74;y+=6){g.beginPath();g.moveTo(18,y);g.lineTo(42,y+3);g.moveTo(54,y+3);g.lineTo(78,y);g.stroke();}
-    // Skarabäus mit Flügeln
-    mkPoly(g,[[48,50],[26,40],[30,52],[48,58]],'#2a8ae0','#0a2a6a',1);mkPoly(g,[[48,50],[70,40],[66,52],[48,58]],'#2a8ae0','#0a2a6a',1);
-    mkEll(g,48,56,7,9,mkLin(g,0,46,0,66,[[0,'#6ad0ff'],[1,'#0a3a9a']]));mkEll(g,48,46,4.5,3.6,'#0a2a6a');mkEll(g,48,42,5,3,'#e8b020');
-    g.fillStyle='rgba(255,255,255,.6)';g.fillRect(45,51,2,6);},
+  '10':dbL('10','#d870f0','#8a1aa8','#3a0650'),
+  'J':dbL('J','#7a8aff','#1a2ab8','#060a50'),
+  'Q':dbL('Q','#7ae08a','#1a8a2a','#063a0a'),
+  'K':dbL('K','#f0605a','#b01818','#4a0404'),
+  'A':dbL('A','#fff0a0','#d8a020','#6a4400'),
+  BUCH(g){// Scatter/Wild: leuchtende Schriftrolle mit geflügeltem Skarabäus auf Feuerglanz
+    g.fillStyle=mkRad(g,48,48,4,60,[[0,'#fff0a0'],[.35,'#ff9a20'],[.7,'#c02a08'],[1,'#3a0800']]);g.fillRect(2,2,92,92);
+    g.fillStyle='rgba(255,230,120,.35)';for(let i=0;i<16;i++){const a=i/16*TAU;g.beginPath();g.moveTo(48,48);g.lineTo(48+Math.cos(a)*68,48+Math.sin(a)*68);g.lineTo(48+Math.cos(a+.1)*68,48+Math.sin(a+.1)*68);g.fill();}
+    // Rolle: Pergament mit Holzstäben oben und unten
+    g.save();g.translate(48,48);g.rotate(-.08);
+    g.fillStyle=mkLin(g,-30,0,30,0,[[0,'#d8b878'],[.5,'#fff4d0'],[1,'#c8a060']]);g.fillRect(-28,-26,56,52);
+    g.strokeStyle='rgba(120,80,20,.5)';g.lineWidth=1;g.strokeRect(-28,-26,56,52);
+    [-30,30].forEach(y=>{g.fillStyle=mkLin(g,0,y-5,0,y+5,[[0,'#e8c060'],[.5,'#8a5a10'],[1,'#4a2a04']]);g.fillRect(-34,y-5,68,10);
+      [-36,36].forEach(x=>{g.fillStyle=mkGold(g,y-6,y+6);g.beginPath();g.arc(x,y,5,0,TAU);g.fill();});});
+    // geflügelter Skarabäus mit roter Sonne
+    mkPoly(g,[[0,2],[-24,-6],[-22,4],[-10,8]],'#2aa0d8','#0a3a6a',1);mkPoly(g,[[0,2],[24,-6],[22,4],[10,8]],'#2aa0d8','#0a3a6a',1);
+    g.fillStyle='#e8c040';[-18,-12,12,18].forEach(x=>g.fillRect(x,-3,2,8));
+    mkEll(g,0,8,6,8,mkLin(g,0,0,0,16,[[0,'#6ad0ff'],[1,'#0a3a9a']]));mkEll(g,0,-6,5,5,mkRad(g,-1,-7,1,5,[[0,'#ff8a6a'],[1,'#a00808']]));
+    g.restore();},
   FORSCH(g){// Forscherin
     g.fillStyle='#0a0604';g.fillRect(3,3,90,90);g.fillStyle=mkRad(g,48,40,6,60,[[0,'#ffe8a0'],[.5,'#c88a30'],[1,'#3a2008']]);g.fillRect(6,6,84,84);
     // Haare
@@ -259,12 +265,15 @@ const MK_BG={
     for(let i=0;i<26;i++){const x=r()*340-10,y=r()*240,w=40+r()*90;g.fillStyle='rgba('+(150+r()*60|0)+',210,220,'+(.05+r()*.1).toFixed(2)+')';g.beginPath();g.ellipse(x,y,w,10+r()*16,0,0,TAU);g.fill();}
     g.strokeStyle='rgba(200,240,255,.55)';g.lineWidth=1;g.beginPath();let x=250,y=0;g.moveTo(x,y);for(let k=0;k<8;k++){x+=(r()-.5)*18;y+=6;g.lineTo(x,y);}g.stroke();
     g.fillStyle=mkLin(g,0,182,0,240,[[0,'#c8ccd4'],[1,'#7a808a']]);g.fillRect(0,182,320,58);g.fillStyle='rgba(60,64,72,.5)';[188,206,224].forEach(y=>g.fillRect(0,y,320,1));}),
-  doppel:()=>mkCanvas('bg_doppel',320,240,g=>{// Grabkammer: dunkelbraun mit goldenem Glanz und Hieroglyphen
+  doppel:()=>mkCanvas('bg_doppel',320,240,g=>{// Grabkammer wie im Original: dunkelbraun, Hieroglyphen, goldene Säulen links und rechts
     g.fillStyle=mkLin(g,0,0,0,240,[[0,'#3a2208'],[.5,'#1a0e04'],[1,'#2a1606']]);g.fillRect(0,0,320,240);
     g.fillStyle=mkRad(g,160,120,10,200,[[0,'rgba(255,190,80,.18)'],[1,'rgba(0,0,0,0)']]);g.fillRect(0,0,320,240);
     g.strokeStyle='rgba(200,150,60,.18)';g.lineWidth=1;let s=5;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;};
     for(let col=0;col<16;col++)for(let y=4;y<236;y+=14){const x=4+col*20;g.beginPath();const k=r()*4|0;
-      if(k===0){g.arc(x+5,y+4,3,0,TAU);}else if(k===1){g.moveTo(x,y+9);g.quadraticCurveTo(x+5,y,x+10,y+9);}else if(k===2){g.moveTo(x+5,y);g.lineTo(x+5,y+10);g.moveTo(x+1,y+4);g.lineTo(x+9,y+4);}else{g.rect(x+1,y+1,8,8);}g.stroke();}}),
+      if(k===0){g.arc(x+5,y+4,3,0,TAU);}else if(k===1){g.moveTo(x,y+9);g.quadraticCurveTo(x+5,y,x+10,y+9);}else if(k===2){g.moveTo(x+5,y);g.lineTo(x+5,y+10);g.moveTo(x+1,y+4);g.lineTo(x+9,y+4);}else{g.rect(x+1,y+1,8,8);}g.stroke();}
+    [[0,21],[299,21]].forEach(([x,w])=>{g.fillStyle=mkLin(g,x,0,x+w,0,[[0,'#5a3a08'],[.45,'#f0c860'],[1,'#5a3a08']]);g.fillRect(x,22,w,160);
+      g.fillStyle='rgba(60,30,0,.45)';for(let y=30;y<180;y+=9)g.fillRect(x+3,y,w-6,2);g.fillStyle=mkGold(g,14,26);g.fillRect(x-2,14,w+4,10);});
+    g.fillStyle=mkLin(g,0,182,0,240,[[0,'#6a4a10'],[1,'#2a1804']]);g.fillRect(0,182,320,58);}),
   pharao:()=>mkCanvas('bg_pharao',320,240,g=>{// rot-pinker Tempel mit Hieroglyphen, Säulen und Fackeln
     g.fillStyle=mkLin(g,0,0,0,240,[[0,'#c03aa0'],[.35,'#e0306a'],[.7,'#b01010'],[1,'#5a0404']]);g.fillRect(0,0,320,240);
     g.strokeStyle='rgba(80,10,40,.22)';g.lineWidth=1;let s=8;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;};
