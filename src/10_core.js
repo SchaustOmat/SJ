@@ -49,6 +49,24 @@ function tone(fr,d,type,v,when,slide){
   g.gain.setValueAtTime(v||.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
   o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03);
 }
+// Glocke (FM): heller Spielhallen-"Ding"-Klang wie bei den Merkur-Geräten (selbst erzeugt, keine Originaldateien)
+function bell(fr,d,v,when,ratio){
+  if(!AC||muted)return;const t=AC.currentTime+(when||0);
+  const c=AC.createOscillator(),m=AC.createOscillator(),mg=AC.createGain(),g=AC.createGain();
+  c.type='sine';m.type='sine';c.frequency.value=fr;m.frequency.value=fr*(ratio||3.5);
+  mg.gain.setValueAtTime(fr*2.2,t);mg.gain.exponentialRampToValueAtTime(fr*.05,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.12,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  m.connect(mg);mg.connect(c.frequency);c.connect(g);g.connect(master);c.start(t);m.start(t);c.stop(t+d+.05);m.stop(t+d+.05);
+}
+// weicher Synth-Ton (gefilterte Rechteckwelle) für Melodien und Fanfaren
+function soft(fr,d,v,when,type){
+  if(!AC||muted)return;const t=AC.currentTime+(when||0);
+  const o=AC.createOscillator(),f=AC.createBiquadFilter(),g=AC.createGain();o.type=type||'square';o.frequency.value=fr;
+  f.type='lowpass';f.frequency.setValueAtTime(fr*6,t);f.frequency.exponentialRampToValueAtTime(fr*1.5,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.08,t+.01);g.gain.setValueAtTime(v||.08,t+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(f);f.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05);
+}
+const NOTE=n=>440*Math.pow(2,(n-69)/12); // MIDI-Nummer -> Hz
 let noiseBuf=null;
 function noise(d,v,freq,when){
   if(!AC||muted)return;
@@ -65,32 +83,33 @@ const SFX={
   card(){noise(.07,.1,3000);},
   step(){noise(.06,.06,260);},
   tick(){tone(2400,.015,'square',.035);},
-  count(){tone(1760,.02,'square',.03);},
+  count(){bell(NOTE(96+(Math.random()*3|0)*2),.06,.035);}, // schnelles helles Hochzählen
   ding(){tone(1318,.7,'sine',.2);tone(1046,.9,'sine',.16,.28);},
-  win(){[523,659,784,1046,1318].forEach((f,i)=>tone(f,.18,'square',.08,i*.08));},
-  big(){[523,659,784,1046,784,1046,1318,1568].forEach((f,i)=>tone(f,.16,'square',.09,i*.07));},
+  win(){[72,76,79,84].forEach((n,i)=>{bell(NOTE(n+12),.35,.09,i*.075);soft(NOTE(n),.12,.05,i*.075);});bell(NOTE(91),.6,.07,.33);},
+  big(){[[72,0],[76,.1],[79,.2],[84,.3],[79,.45],[84,.55],[88,.65],[91,.8]].forEach(([n,t])=>{soft(NOTE(n),.2,.07,t);bell(NOTE(n+12),.5,.07,t);});soft(NOTE(48),1.1,.06,.8,'sawtooth');bell(NOTE(96),1.2,.08,.8);},
   lose(){tone(220,.35,'square',.07,0,90);},
   clunk(){noise(.06,.14,600);tone(140,.06,'square',.06);},
-  reelStart(){noise(.15,.08,900);},
-  tease(i){tone(300+i*90,.5,'sawtooth',.05,0,600+i*120);},
-  scatter(i){tone(660+i*220,.25,'square',.09);tone(990+i*220,.25,'square',.06,.06);},
+  reelStart(){noise(.12,.06,1400);soft(NOTE(60),.06,.04);soft(NOTE(67),.06,.04,.05);}, // kurzes Start-Signal
+  tease(i){for(let k=0;k<8;k++)bell(NOTE(79+i*2+(k%2)*5),.12,.05,k*.06);}, // Spannungs-Triller wie bei Merkur
+  scatter(i){const n=[84,88,91,96,100][Math.min(4,Math.max(0,i-1))];bell(NOTE(n),.7,.13);bell(NOTE(n+7),.5,.06,.05);}, // Scatter: aufsteigende Glocken
   hum(){tone(65,3,'sawtooth',.06,0,95);noise(2.8,.03,120);},
   doors(){noise(1,.05,400);},
-  fsIntro(){[392,523,659,784,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.11,i*.13));},
-  expand(){[262,330,392,523,659,784].forEach((f,i)=>tone(f,.12,'square',.08,i*.05));},
+  fsIntro(){[[67,0],[72,.14],[76,.28],[79,.42],[76,.6],[79,.72],[84,.86]].forEach(([n,t])=>{soft(NOTE(n),.24,.08,t);bell(NOTE(n+12),.4,.06,t);});soft(NOTE(48),1.3,.07,.86,'sawtooth');soft(NOTE(55),1.3,.05,.86,'sawtooth');bell(NOTE(96),1.4,.09,.86);},
+  expand(){for(let k=0;k<10;k++)bell(NOTE(72+k*2),.25,.07,k*.045);},
   gambleTick(on){tone(on?1047:880,.045,'square',.05);}, // Leiter-Blinken: C6/A5 im Wechsel
-  reelStop(i){noise(.05,.16,700+i*90);tone(120+i*14,.07,'square',.07);},
+  reelStop(i){tone(150-i*6,.09,'sine',.22,0,70);noise(.025,.12,1800+i*120);}, // dumpfes Holz-Tock wie beim Walzenstopp
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
   sparkle(){[2093,2637,3136,4186].forEach((f,i)=>tone(f,.07,'square',.025,i*.035));},
   tierUp(i){[523,659,784,1046,1318].forEach((f,k)=>tone(f*(1+i*.2),.15,'square',.09,k*.055));noise(.35,.14,500);tone(70,.4,'sine',.25,0,40);},
   riseTick(p){tone(500+p*1600,.03,'square',.035);},
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
-  coinUp(i){const f=Math.pow(1.0595,Math.min(i,24));tone(988*f,.07,'square',.06);tone(1976*f,.05,'square',.03,.03);},
+  coinUp(i){bell(NOTE(83+Math.min(i,24)),.18,.06);},
   ausTick(k){tone(1000+k*600,.035,'square',.05);}, // Ausspielung: helle Ticks, Tonhöhe steigt (k = 0..1)
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
-  wildLand(){tone(196,.25,'square',.08,0,392);tone(1568,.12,'square',.04,.05);noise(.12,.12,3000);}
+  wildLand(){bell(NOTE(67),.8,.12,0,1.5);bell(NOTE(91),.4,.05,.04);noise(.1,.06,4000);},
+  spinTick(){noise(.018,.035,2600);} // leises Rattern der laufenden Walzen
 };
 let beatTimer=null,beatN=0;
 function setBeat(on){

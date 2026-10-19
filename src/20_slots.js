@@ -422,7 +422,7 @@ function updReels(m,dt){
   if(!any&&m.state==='spin'){
     if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=MY_T0+m.myst.cells.length*MY_DT+.45;m.msg='ZUFALLSSYMBOLE!';SFX.tease(3);SFX.whoosh();updateButtons(m);}
     else onResult(m);}
-  if(any)m.dirty=true;
+  if(any){m.dirty=true;if(!m.demo&&((focus&&focus.m===m)||m===RESV)&&now-(m.spinTk||0)>.075){m.spinTk=now;SFX.spinTick();}}
 }
 function onResult(m){
   if(m.G.special==='spitze'){if(m.demo){m.state='idle';m.demo=false;m.dirty=true;return;}spitzeResult(m);return;}
