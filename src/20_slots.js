@@ -132,7 +132,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const ledMat=bas({color:accent});
   box(.03,2.2,.03,ledMat,-.465,1.3,.1,g);box(.03,2.2,.03,ledMat,.465,1.3,.1,g);
   // stool
-  const stool=gamingChair(g,accent);stool.position.set(0,0,.98); // Gaming-Stuhl vor dem Automaten
+  const stool=gamingChair(g,accent);stool.position.set(0,0,.98);stool.rotation.y=.25;g.userData.chair=stool; // Gaming-Stuhl, beim Hinsetzen ausgeblendet
   // Kartenschlitz unter dem Bildschirm rechts: Chromrahmen, dunkler Schlitz, LED daneben
   const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);box(.17,.014,.044,dark,.2,1.125,.172,g);
   const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.045,.045,.046,cardLed,.36,1.125,.171,g);

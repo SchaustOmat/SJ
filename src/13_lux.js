@@ -47,22 +47,23 @@ function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=canvasTex(48,32,(g,W,H)=>
     g.fillStyle='rgba(255,240,200,.6)';g.beginPath();g.arc(W*.7,H*.25,3,0,TAU);g.fill();});
   const grp=new THREE.Group();grp.position.set(x,y,z);grp.rotation.y=rotY;F.group.add(grp);
   box(w+.16,h+.16,.05,lam({color:0xc8962a,emissive:0x2a1800}),0,0,0,grp);mesh(new THREE.PlaneGeometry(w,h),lam({map:tex}),0,0,.03,grp);}
-// Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe)
+// Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe).
+// Niedrige Lehne, damit er den Bildschirm beim Hinlaufen nicht verdeckt; Farbteile mit Abstand + polygonOffset gegen Flackern.
 function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
-  const blk=lam({color:0x16161a}),acc=lam({color:accent,emissive:new THREE.Color(accent).multiplyScalar(.12)}),chr=lam({color:0x9aa0aa});
+  const blk=lam({color:0x16161a}),chr=lam({color:0x9aa0aa});
+  const acc=lam({color:accent,emissive:new THREE.Color(accent).multiplyScalar(.12)});acc.polygonOffset=true;acc.polygonOffsetFactor=-2;acc.polygonOffsetUnits=-4;
   // Fußkreuz mit Rollen
-  for(let i=0;i<5;i++){const a=i/5*TAU+.3,leg=box(.05,.04,.32,blk,Math.sin(a)*.16,.09,Math.cos(a)*.16,c);leg.rotation.y=a;
-    mesh(new THREE.SphereGeometry(.035,6,4),blk,Math.sin(a)*.31,.035,Math.cos(a)*.31,c);}
-  mesh(new THREE.CylinderGeometry(.03,.03,.36,6),chr,0,.28,0,c);mesh(new THREE.CylinderGeometry(.06,.07,.08,8),blk,0,.11,0,c);
-  // Sitz mit Seitenwangen
-  box(.5,.09,.5,blk,0,.5,0,c);box(.08,.07,.48,acc,-.23,.57,0,c);box(.08,.07,.48,acc,.23,.57,0,c);box(.24,.012,.4,acc,0,.548,0,c);
+  for(let i=0;i<5;i++){const a=i/5*TAU+.3,leg=box(.05,.04,.3,blk,Math.sin(a)*.15,.08,Math.cos(a)*.15,c);leg.rotation.y=a;
+    mesh(new THREE.SphereGeometry(.035,6,4),blk,Math.sin(a)*.29,.035,Math.cos(a)*.29,c);}
+  mesh(new THREE.CylinderGeometry(.03,.03,.34,6),chr,0,.27,0,c);
+  // Sitz mit farbigen Seitenwangen
+  box(.46,.08,.46,blk,0,.47,0,c);box(.07,.06,.44,acc,-.22,.53,0,c);box(.07,.06,.44,acc,.22,.53,0,c);
   // Armlehnen
-  [-.29,.29].forEach(x=>{box(.04,.2,.04,blk,x,.62,.06,c);box(.07,.035,.24,blk,x,.73,.02,c);});
-  // Rückenlehne mit Flügeln, Streifen, Kopfkissen und Gurtschlitzen (leicht nach hinten geneigt)
-  const back=new THREE.Group();back.position.set(0,.55,.24);back.rotation.x=.14;c.add(back);
-  box(.5,.86,.09,blk,0,.45,0,back);box(.1,.5,.1,acc,-.22,.38,-.005,back);box(.1,.5,.1,acc,.22,.38,-.005,back);
-  box(.06,.7,.095,acc,-.12,.48,-.002,back);box(.06,.7,.095,acc,.12,.48,-.002,back);
-  box(.56,.12,.1,blk,0,.82,0,back);box(.12,.08,.1,acc,-.25,.84,0,back);box(.12,.08,.1,acc,.25,.84,0,back);
-  box(.05,.1,.1,new THREE.MeshBasicMaterial({color:0x050505}),-.1,.7,-.01,back);box(.05,.1,.1,new THREE.MeshBasicMaterial({color:0x050505}),.1,.7,-.01,back);
-  box(.24,.12,.06,acc,0,.72,-.07,back);box(.24,.12,.07,acc,0,.22,-.07,back);
+  [-.28,.28].forEach(x=>{box(.04,.16,.04,blk,x,.58,.06,c);box(.06,.03,.22,blk,x,.67,.03,c);});
+  // Rückenlehne (bis ca. 1,1 m) mit Farbstreifen, leicht nach hinten geneigt
+  const back=new THREE.Group();back.position.set(0,.5,.23);back.rotation.x=.18;c.add(back);
+  box(.46,.6,.08,blk,0,.32,0,back);box(.52,.1,.08,blk,0,.6,0,back);
+  box(.06,.5,.02,acc,-.13,.3,-.05,back);box(.06,.5,.02,acc,.13,.3,-.05,back);
+  box(.1,.07,.02,acc,-.22,.61,-.05,back);box(.1,.07,.02,acc,.22,.61,-.05,back);
+  box(.2,.09,.05,acc,0,.5,-.065,back);
   return c;}
