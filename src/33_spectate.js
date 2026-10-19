@@ -13,7 +13,8 @@ function mpActivity(){
 }
 function slotGx(m){{
     return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
-      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs?m.fs.special:'',gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.cells.map(q=>q[0]*5+q[1]),m.myst.sym]:0,
+      fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs&&m.fs.special?(Array.isArray(m.fs.special)?m.fs.special:[m.fs.special]):0,db:m.dbl?1:0,sh:m.fs?m.fs.sh||0:0,
+      gr:m.state!=='spin'&&m.grid?[0,1,2].flatMap(r=>m.grid[r].map(s=>m.G.syms.indexOf(s))):0,ww:m.ww&&m.ww.length?m.ww.map(w=>[w.c,w.r,w.h,w.fresh?1:0]):0,hd:m.ssHeld?Object.keys(m.ssHeld).map(k=>{const [r,c]=k.split(',');return r*5+ +c;}):0,gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.cells.map(q=>q[0]*5+q[1]),m.myst.sym]:0,
       ps:m.state,pm:m.pmult||0,ls:m.sp?[m.sp.lv.KLEE,m.sp.lv.PFEN,m.sp.lv.KAEF,m.sp.pot]:0,
       lg:m.gamble&&m.gamble.kind==='ladder'?[m.gamble.idx,m.gamble.up?1:0,m.gamble.last===null?-1:m.gamble.last]:0,
       cd:m.gamble&&m.gamble.kind==='rb'?[m.gamble.card===null?-1:m.gamble.card].concat(m.history.slice(0,6)):0,
@@ -32,7 +33,9 @@ function cleanGx(gx){
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
   return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
-    l:num(gx.l,1,10),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:cleanText(gx.sx,10),gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].slice(0,15).map(x=>num(x,0,14)),cleanText(gx.my[1],10)]:0,
+    l:num(gx.l,1,20),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:Array.isArray(gx.sx)?gx.sx.slice(0,2).map(x=>cleanText(x,10)):(gx.sx?[cleanText(gx.sx,10)]:[]),
+    db:gx.db?1:0,sh:num(gx.sh,0,999),gr:Array.isArray(gx.gr)&&gx.gr.length===15?gx.gr.map(x=>num(x,-1,40)):0,
+    ww:Array.isArray(gx.ww)?gx.ww.slice(0,5).filter(Array.isArray).map(w=>[num(w[0],0,4),num(w[1],0,2),num(w[2],1,3),w[3]?1:0]):0,hd:Array.isArray(gx.hd)?gx.hd.slice(0,15).map(x=>num(x,0,14)):0,gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].slice(0,15).map(x=>num(x,0,14)),cleanText(gx.my[1],10)]:0,
     ps:cleanText(gx.ps,12),ls:Array.isArray(gx.ls)?gx.ls.slice(0,4).map((x,i)=>num(x,0,i<3?5:1e9)):0,pm:num(gx.pm,0,9),lg:Array.isArray(gx.lg)?[num(gx.lg[0],-1,99),gx.lg[1]?1:0,num(gx.lg[2],-1,99)]:0,
     cd:Array.isArray(gx.cd)?gx.cd.slice(0,7).map(x=>num(x,-1,51)):0,pw:cleanPw(gx.pw),
     c:cards(gx.c),bd:cards(gx.bd),pot:num(gx.pot,0,1e9),f:gx.f?1:0,o:validCard(gx.o)?gx.o:-1,p:validCard(gx.p)?gx.p:-1,pe:num(gx.pe,0,1e9),b:num(gx.b,0,1e9),rid:num(gx.rid,0,1e9),ri:num(gx.ri,0,36),rt:num(gx.rt,0,3),re:Number.isFinite(+gx.re)?clamp(+gx.re,0,WHEEL_DUR):0};
@@ -58,8 +61,12 @@ function remotePhase(m){
   if(gx.cd){const c=gx.cd;if(!m.gamble||m.gamble.kind!=='rb')m.gamble={kind:'rb',n:0,busy:false,card:null};m.gamble.card=c[0]<0?null:c[0];m.history=c.slice(1);m.state=ps==='gambleNext'?'gambleNext':'gamble';m.dirty=true;return;}
   m.gamble=null;
   if(ps==='poffer'){m.state='poffer';m.pmult=gx.pm;m.dirty=true;return;}
+  if(ps==='ssSpin'){if(m.state!=='ssSpin'){m.state='ssSpin';m.present=null;}m.dirty=true;return;}
+  if((ps==='expand'||ps==='expandShow')&&m.fs&&m.fs.special&&m.grid){if(!m.expand){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m),m.fs.special,true);
+      if(ev.expand)m.expand={reels:ev.expand.reels,sym:ev.expand.sym,list:ev.expand.list,p:1,amount:ev.expand.amount};}m.state='expand';m.dirty=true;return;}
+  if(m.expand&&ps!=='expand'&&ps!=='expandShow'){m.expand=null;}
   if(m.reels.some(r=>r.spin))return;
-  if((ps==='show'||ps==='count'||ps==='myst')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m));
+  if((ps==='show'||ps==='count'||ps==='myst'||ps==='fsShow')&&m.grid){const ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m));
     if(ev.total>0){if(m.state!=='show'||!m.present)m.present={items:[...ev.wins],idx:0,t:0};if(ev.scatter&&!m.present.items.some(i=>i.scatter))m.present.items.push({scatter:true,...ev.scatter});m.state='show';m.dirty=true;return;}}
   if(m.state==='show'||m.state==='gamble'||m.state==='gambleNext'||m.state==='poffer'||m.state==='power'){m.state='idle_r';m.present=null;m.dirty=true;}
 }
@@ -72,22 +79,30 @@ function mirrorSlot(a,gx,credit){
   if(gx.gid&&m.G.id!==gx.gid)setMachineGame(m,gx.gid);
   m.lines=m.G.lineOpts.includes(gx.l)?gx.l:m.lines;m.betIdx=Math.min(gx.bi,m.G.betOpts.length-1);
   m.msg=gx.msg;m.disp=gx.w;m.win=gx.w;
-  if(gx.fs&&!m.fs)m.fs={n:gx.fs[0],total:gx.fs[1],left:0,special:SYMC&&gx.sx&&m.G.syms.includes(gx.sx)?gx.sx:m.G.syms[0]};
-  if(m.fs&&gx.fs){m.fs.n=gx.fs[0];m.fs.total=gx.fs[1];}
+  m.dbl=!!gx.db;
+  const sxs=(gx.sx||[]).filter(x=>m.G.syms.includes(x)),spc=m.G.free&&m.G.free.expanding&&sxs.length?(sxs.length>1?sxs:sxs[0]):null;
+  if(gx.fs&&!m.fs){m.fs={n:gx.fs[0],total:gx.fs[1],left:0,sh:gx.sh,special:spc};m.topDirty=true;}
+  if(m.fs&&gx.fs){m.fs.n=gx.fs[0];m.fs.total=gx.fs[1];m.fs.special=spc;if(m.fs.sh!==gx.sh){m.fs.sh=gx.sh;m.topDirty=true;}}
   if(!gx.fs&&m.fs){m.fs=null;m.topDirty=true;}
-  if(gx.sp&&m.state!=='rspin'){m.state='rspin';m.present=null;m.reels.forEach(r=>{r.spin=true;r.speed=24;r.stopAt=now+30;});}
+  if(gx.sp&&m.state!=='rspin'){m.state='rspin';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.speed=24;r.stopAt=now+30;});}
   if(!gx.sp&&gx.st&&gx.st.length===5){
     const same=gx.st.every((s,i)=>m.stops[i]===s);
     if(!same||m.state==='rspin'){m.stops=gx.st.map((s,i)=>s%m.G.strips[i].length);m.grid=SlotEngine.grid(m.G,m.stops);
-      m.reels.forEach((r,i)=>{r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=true;});m.state='rstop';}
+      m.reels.forEach((r,i)=>{if(m.G.special&&i!==2){r.pos=r.target=m.stops[i];return;}r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=true;});m.state='rstop';}
   }
   m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{cells:gx.my[0].map(v=>[v/5|0,v%5]),sym:gx.my[1],open:true}:null;
   if(m.myst&&m.grid){m.grid=SlotEngine.grid(m.G,m.stops);m.myst.cells.forEach(([r,c])=>{m.grid[r][c]=m.myst.sym;});}
-  if(gx.sp&&Array.isArray(gx.sp)&&m.G.special){const S=spOf(m);S.lv={KLEE:gx.sp[0],PFEN:gx.sp[1],KAEF:gx.sp[2]};S.pot=gx.sp[3];}
+  if(Array.isArray(gx.ls)&&m.G.special){const S=spOf(m);S.lv={KLEE:gx.ls[0],PFEN:gx.ls[1],KAEF:gx.ls[2]};S.pot=gx.ls[3];} // Alles Spitze: Türme und Cashpot
+  if(!gx.sp&&gx.gr&&m.grid&&m.state!=='rstop'&&!m.reels.some(r=>r.spin)){const gg=[0,1,2].map(r=>[0,1,2,3,4].map(c=>{const k=gx.gr[r*5+c];return k>=0&&m.G.syms[k]?m.G.syms[k]:m.grid[r][c];}));
+    if(m.G.free&&m.G.free.superspin){const base=SlotEngine.grid(m.G,m.stops,!!m.fs);m.ovr=gg.some((row,r)=>row.some((s,c)=>s!==base[r][c]))?gg:null;}
+    m.grid=gg;}
+  m.ssHeld=gx.hd?Object.fromEntries(gx.hd.map(v=>[(v/5|0)+','+(v%5),1])):null;
+  if(m.G.walkWild){const ww=gx.ww?gx.ww.map(w=>({c:w[0],r:w[1],h:w[2],fresh:!!w[3]})):[];const key=JSON.stringify(gx.ww||0);
+    if(key!==m.wwKey){m.wwKey=key;m.ww=ww;m.wwc=wwCells(ww);m.wwT=now;}}
   m.rgx=gx;if(gx.sp===1){m.present=null;m.power=null;m.gamble=null;}else remotePhase(m);
   m.dirty=true;
 }
-function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
+function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.ww=[];m.wwc=null;m.wwKey='';m.ssHeld=null;m.ovr=null;m.expand=null;m.dbl=false;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
 // Roulette eines Mitspielers live mitdrehen (Rad im Zuschauer-Fenster + 3D-Tisch)
 function remoteRoulette(a,gx){
   if(!a.rw)a.rw=newWheel();
@@ -102,7 +117,7 @@ function stepMirrors(dt){
     if(m.state==='rstop'&&!m.reels.some(r=>r.spin)){m.state='idle_r';remotePhase(m);}
     if(m.power){let any=false;m.power.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;r.pos-=24*dt;if(now>=r.stopAt){r.spin=false;r.pos=r.target;}}));if(any)m.dirty=true;}
     if(m.present&&m.present.items.length&&m.state==='show'){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;}m.dirty=true;}
-    if(m.state==='gamble'||m.state==='gambleNext'||m.state==='poffer'||m.state==='power')m.dirty=true;});
+    if(m.state==='gamble'||m.state==='gambleNext'||m.state==='poffer'||m.state==='power'||m.state==='ssSpin'||m.expand||(m.ww&&m.ww.length))m.dirty=true;});
 }
 function mpApplyActivity(a,pr){
   const gx=cleanGx(pr.gx);a.gx=gx;
