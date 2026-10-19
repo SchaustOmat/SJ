@@ -374,7 +374,7 @@ function startSpin(m,demo){
   m.info=false;m.demo=!!demo;
   m.rsp=!demo&&m.G.walkWild&&SlotEngine.wwPending(m.ww); // Schwert steht noch: Spin ist gratis und zählt nicht als Freispiel
   if(!demo&&!m.fs&&!m.rsp){const tb=totalBet(m);if(chips<tb){m.msg='GUTHABEN ZU NIEDRIG';m.auto=false;m.dirty=true;SFX.lose();updateButtons(m);return;}setChips(chips-tb);}
-  m.useFs=!!m.fs;
+  m.useFs=!!m.fs;m.spinT=now;m.spinId=(m.spinId||0)+1;m.spinFast=m.auto?.75:1; // für Zuschauer: gleicher Takt
   m.stops=SlotEngine.randStops(m.G,Math.random,m.useFs);
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
   m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);

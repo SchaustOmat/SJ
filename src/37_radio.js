@@ -56,7 +56,7 @@ async function radioSearch(q){
   const box=$('#rdRes'),seq=++rdSeq;box.innerHTML='<p class="rd-msg">Suche „'+escHtml(q)+'“ …</p>';
   for(let k=0;k<RD_API.length;k++){const i=(rdGood+k)%RD_API.length;
     try{const d=await rdFetch(RD_API[i]+'/search?q='+encodeURIComponent(q)+'&filter=videos',7000);if(seq!==rdSeq)return;
-      const items=(d.items||[]).filter(x=>x.type==='stream'&&ytId(x.url)&&!(x.duration<0)).slice(0,15);rdGood=i;radioList(items);return;}catch(e){if(seq!==rdSeq)return;}}
+      const items=(d.items||[]).filter(x=>x.type==='stream'&&ytId(x.url)&&!(x.duration<0)).slice(0,20);rdGood=i;radioList(items);return;}catch(e){if(seq!==rdSeq)return;}}
   box.innerHTML='<p class="rd-msg">Suche gerade nicht erreichbar. Du kannst aber einen YouTube-Link einfügen.</p>';}
 function rdDur(s){s=Math.max(0,s|0);return s>=3600?(s/3600|0)+':'+String((s/60|0)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0'):(s/60|0)+':'+String(s%60).padStart(2,'0');}
 function radioList(items){const box=$('#rdRes');box.innerHTML='';

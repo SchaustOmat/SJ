@@ -12,7 +12,7 @@ function mpActivity(){
   return mpActivity2();
 }
 function slotGx(m){{
-    return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
+    return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,sid:m.spinId||0,el:m.state==='spin'?Math.round((now-(m.spinT||now))*100)/100:0,fa:m.spinFast||1,uf:m.useFs?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
       fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs&&m.fs.special?(Array.isArray(m.fs.special)?m.fs.special:[m.fs.special]):0,db:m.dbl?1:0,sh:m.fs?m.fs.sh||0:0,
       gr:m.state!=='spin'&&m.grid?[0,1,2].flatMap(r=>m.grid[r].map(s=>m.G.syms.indexOf(s))):0,ww:m.ww&&m.ww.length?m.ww.map(w=>[w.c,w.r,w.h,w.fresh?1:0]):0,hd:m.ssHeld?Object.keys(m.ssHeld).map(k=>{const [r,c]=k.split(',');return r*5+ +c;}):0,gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.cells.map(q=>q[0]*5+q[1]),m.myst.sym]:0,
       ps:m.state,pm:m.pmult||0,ls:m.sp?[m.sp.lv.KLEE,m.sp.lv.PFEN,m.sp.lv.KAEF,m.sp.pot]:0,
@@ -32,7 +32,7 @@ function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
-  return {g:gx.g,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
+  return {g:gx.g,sid:num(gx.sid,0,1e9),el:Number.isFinite(+gx.el)?clamp(+gx.el,0,30):0,fa:+gx.fa===.75?.75:1,uf:gx.uf?1:0,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
     l:num(gx.l,1,20),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:Array.isArray(gx.sx)?gx.sx.slice(0,2).map(x=>cleanText(x,10)):(gx.sx?[cleanText(gx.sx,10)]:[]),
     db:gx.db?1:0,sh:num(gx.sh,0,999),gr:Array.isArray(gx.gr)&&gx.gr.length===15?gx.gr.map(x=>num(x,-1,40)):0,
     ww:Array.isArray(gx.ww)?gx.ww.slice(0,5).filter(Array.isArray).map(w=>[num(w[0],0,4),num(w[1],0,2),num(w[2],1,3),w[3]?1:0]):0,hd:Array.isArray(gx.hd)?gx.hd.slice(0,15).map(x=>num(x,0,14)):0,gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].slice(0,15).map(x=>num(x,0,14)),cleanText(gx.my[1],10)]:0,
@@ -84,16 +84,21 @@ function mirrorSlot(a,gx,credit){
   if(gx.fs&&!m.fs){m.fs={n:gx.fs[0],total:gx.fs[1],left:0,sh:gx.sh,special:spc};m.topDirty=true;}
   if(m.fs&&gx.fs){m.fs.n=gx.fs[0];m.fs.total=gx.fs[1];m.fs.special=spc;if(m.fs.sh!==gx.sh){m.fs.sh=gx.sh;m.topDirty=true;}}
   if(!gx.fs&&m.fs){m.fs=null;m.topDirty=true;}
-  if(gx.sp&&m.state!=='rspin'){m.state='rspin';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.speed=24;r.stopAt=now+30;});}
+  // neuer Spin: Ergebnis steht schon fest -> Walzen im selben Takt wie beim Spieler drehen und anhalten lassen
+  if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
+    m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,!!gx.uf)[i].length);m.useFs=!!gx.uf;m.grid=SlotEngine.grid(m.G,m.stops,!!gx.uf);const el=gx.el||0,f=gx.fa||1;
+    m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.target=m.stops[i];r.teased=false;r.land=null;r.vel=0;r.speed=28;
+      r.t0=now-el+i*.045;r.stopAt=Math.max(now+.05+i*.06,now-el+(m.G.special?.75:(.55+i*.2))*f);});}
+  else if(gx.sp&&m.state!=='rspin'&&m.state!=='rstop'){m.state='rspin';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.speed=24;r.stopAt=now+30;});}
   if(!gx.sp&&gx.st&&gx.st.length===5){
     const same=gx.st.every((s,i)=>m.stops[i]===s);
-    if(!same||m.state==='rspin'){m.stops=gx.st.map((s,i)=>s%m.G.strips[i].length);m.grid=SlotEngine.grid(m.G,m.stops);
-      m.reels.forEach((r,i)=>{if(m.G.special&&i!==2){r.pos=r.target=m.stops[i];return;}r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=true;});m.state='rstop';}
+    if((!same&&m.state!=='rstop')||m.state==='rspin'){m.useFs=!!gx.uf;m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,!!gx.uf)[i].length);m.grid=SlotEngine.grid(m.G,m.stops,!!gx.uf);
+      m.reels.forEach((r,i)=>{if(m.G.special&&i!==2){r.pos=r.target=m.stops[i];return;}r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=false;});m.state='rstop';}
   }
   m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{cells:gx.my[0].map(v=>[v/5|0,v%5]),sym:gx.my[1],open:true}:null;
   if(m.myst&&m.grid){m.grid=SlotEngine.grid(m.G,m.stops);m.myst.cells.forEach(([r,c])=>{m.grid[r][c]=m.myst.sym;});}
   if(Array.isArray(gx.ls)&&m.G.special){const S=spOf(m);S.lv={KLEE:gx.ls[0],PFEN:gx.ls[1],KAEF:gx.ls[2]};S.pot=gx.ls[3];} // Alles Spitze: Türme und Cashpot
-  if(!gx.sp&&gx.gr&&m.grid&&m.state!=='rstop'&&!m.reels.some(r=>r.spin)){const gg=[0,1,2].map(r=>[0,1,2,3,4].map(c=>{const k=gx.gr[r*5+c];return k>=0&&m.G.syms[k]?m.G.syms[k]:m.grid[r][c];}));
+  if(!gx.sp&&gx.gr&&m.grid&&!m.reels.some(r=>r.spin)){const gg=[0,1,2].map(r=>[0,1,2,3,4].map(c=>{const k=gx.gr[r*5+c];return k>=0&&m.G.syms[k]?m.G.syms[k]:m.grid[r][c];}));
     if(m.G.free&&m.G.free.superspin){const base=SlotEngine.grid(m.G,m.stops,!!m.fs);m.ovr=gg.some((row,r)=>row.some((s,c)=>s!==base[r][c]))?gg:null;}
     m.grid=gg;}
   m.ssHeld=gx.hd?Object.fromEntries(gx.hd.map(v=>[(v/5|0)+','+(v%5),1])):null;
