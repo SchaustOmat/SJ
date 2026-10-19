@@ -169,20 +169,48 @@ const ZT_SYM={
     g.fillStyle='#9a6a10';g.fillRect(36,48,24,8);[[37,56],[42,56],[53,56],[58,56]].forEach(([x,y])=>g.fillRect(x,y,2.6,10));
     g.fillRect(52,32,6,18);mkEll(g,55,29,3.6,3.6,'#9a6a10');g.strokeStyle='#9a6a10';g.lineWidth=2;g.beginPath();g.arc(46,36,7,-1.3,1.3);g.stroke();
     g.fillStyle='rgba(255,250,210,.5)';g.fillRect(38,48,20,2);g.fillRect(53,32,2,14);},
-  ZENT(g){// WILD: Zentaur-Porträt vor Himmel, Goldrahmen
-    ztKeyFrame(g);g.save();g.beginPath();g.rect(11,11,74,74);g.clip();g.fillStyle=mkLin(g,0,6,0,90,[[0,'#5a8ac8'],[.6,'#a8c8e8'],[1,'#d8e4f0']]);g.fillRect(6,6,84,84);
-    g.fillStyle='rgba(255,255,255,.6)';mkEll(g,24,24,14,5,'rgba(255,255,255,.6)');mkEll(g,72,18,12,4,'rgba(255,255,255,.5)');
-    // Oberkörper
-    g.fillStyle=mkLin(g,0,50,0,90,[[0,'#c88a50'],[1,'#7a4a20']]);g.beginPath();g.moveTo(12,90);g.quadraticCurveTo(14,62,36,58);g.lineTo(60,58);g.quadraticCurveTo(82,62,84,90);g.closePath();g.fill();
-    g.strokeStyle='rgba(80,40,10,.6)';g.lineWidth=1.5;g.beginPath();g.moveTo(48,64);g.lineTo(48,88);g.moveTo(34,70);g.quadraticCurveTo(42,74,48,70);g.moveTo(62,70);g.quadraticCurveTo(54,74,48,70);g.stroke();
-    // Kopf (kahl, spitze Ohren)
-    g.fillStyle=mkLin(g,0,16,0,60,[[0,'#e8a868'],[1,'#a86830']]);g.beginPath();g.ellipse(48,36,14,19,0,0,TAU);g.fill();g.fillRect(42,50,12,10);
-    mkPoly(g,[[34,32],[24,22],[34,40]],'#c88850');mkPoly(g,[[62,32],[72,22],[62,40]],'#c88850');
-    g.fillStyle='#3a1a08';g.fillRect(38,32,8,2);g.fillRect(50,32,8,2);g.fillStyle='#fff';g.fillRect(40,35,5,2.5);g.fillRect(51,35,5,2.5);g.fillStyle='#1a0a00';g.fillRect(42,35,2,2.5);g.fillRect(53,35,2,2.5);
-    g.strokeStyle='#8a4a20';g.lineWidth=1.5;g.beginPath();g.moveTo(48,37);g.lineTo(46,44);g.lineTo(50,44);g.moveTo(43,48);g.quadraticCurveTo(48,50,53,48);g.stroke();
-    g.fillStyle='rgba(255,230,190,.35)';g.beginPath();g.ellipse(43,24,5,7,-.3,0,TAU);g.fill();
+  ZENT(g){// WILD wie im Original: grimmiger Zentaur mit Spitzohren und Haarbüschel vor Wolkenhimmel, Mäander-Goldrahmen, goldenes WILD
+    ztKeyFrame(g);g.save();g.beginPath();g.rect(11,11,74,74);g.clip();
+    // Wolkenhimmel
+    g.fillStyle=mkLin(g,0,11,0,85,[[0,'#3a6a9a'],[.45,'#7aa4c8'],[1,'#c8d8e4']]);g.fillRect(11,11,74,74);
+    let sd=5;const r=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+    for(let k=0;k<14;k++){g.fillStyle='rgba(255,255,255,'+(.15+r()*.35).toFixed(2)+')';g.beginPath();g.ellipse(11+r()*74,14+r()*50,8+r()*14,2+r()*3,(r()-.5)*.4,0,TAU);g.fill();}
+    const skin=(y0,y1)=>mkLin(g,0,y0,0,y1,[[0,'#d89a5a'],[.5,'#a86a32'],[1,'#6a3a14']]);
+    // Schultern und Brust
+    g.fillStyle=skin(56,90);g.beginPath();g.moveTo(6,90);g.quadraticCurveTo(8,64,30,60);g.quadraticCurveTo(48,56,66,60);g.quadraticCurveTo(88,64,90,90);g.closePath();g.fill();
+    g.strokeStyle='rgba(60,26,6,.55)';g.lineWidth=1.6;g.beginPath();
+    g.moveTo(48,66);g.lineTo(48,90);g.moveTo(28,72);g.quadraticCurveTo(38,80,48,74);g.moveTo(68,72);g.quadraticCurveTo(58,80,48,74);
+    g.moveTo(20,66);g.quadraticCurveTo(24,74,22,84);g.moveTo(76,66);g.quadraticCurveTo(72,74,74,84);g.stroke();
+    g.fillStyle='rgba(255,220,170,.28)';g.beginPath();g.ellipse(34,68,8,4,-.3,0,TAU);g.fill();g.beginPath();g.ellipse(62,68,8,4,.3,0,TAU);g.fill();
+    // Hals
+    g.fillStyle=skin(46,64);g.beginPath();g.moveTo(37,48);g.lineTo(59,48);g.lineTo(62,62);g.lineTo(34,62);g.closePath();g.fill();
+    g.strokeStyle='rgba(60,26,6,.45)';g.lineWidth=1.2;g.beginPath();g.moveTo(40,52);g.lineTo(44,62);g.moveTo(56,52);g.lineTo(52,62);g.stroke();
+    // Spitzohren
+    mkPoly(g,[[33,30],[18,16],[24,30],[32,40]],'#b8783c','#5a2a08',1);mkPoly(g,[[63,30],[78,16],[72,30],[64,40]],'#b8783c','#5a2a08',1);
+    mkPoly(g,[[31,32],[23,22],[27,32]],'rgba(90,40,10,.5)');mkPoly(g,[[65,32],[73,22],[69,32]],'rgba(90,40,10,.5)');
+    // Kopf: breiter Kiefer, kahl
+    g.fillStyle=mkLin(g,0,14,0,56,[[0,'#e8aa6a'],[.6,'#b87a40'],[1,'#7a4a1c']]);
+    g.beginPath();g.moveTo(48,14);g.quadraticCurveTo(64,15,64,32);g.quadraticCurveTo(65,46,58,52);g.quadraticCurveTo(48,57,38,52);g.quadraticCurveTo(31,46,32,32);g.quadraticCurveTo(32,15,48,14);g.fill();
+    g.strokeStyle='rgba(70,30,8,.6)';g.lineWidth=1;g.stroke();
+    // Haarbüschel (Irokese)
+    g.fillStyle='#4a2a10';mkPoly(g,[[44,17],[46,7],[48,13],[50,6],[52,16]],'#4a2a10');g.fillStyle='#6a3a18';mkPoly(g,[[46,16],[48,10],[50,16]],'#7a4a20');
+    // Glanz auf der Glatze
+    g.fillStyle='rgba(255,236,200,.4)';g.beginPath();g.ellipse(43,22,5,3,-.4,0,TAU);g.fill();
+    // Augenbrauen (zornig), Augen
+    g.fillStyle='#5a2a0a';mkPoly(g,[[36,31],[46,34],[46,36],[36,33.5]],'#4a2008');mkPoly(g,[[60,31],[50,34],[50,36],[60,33.5]],'#4a2008');
+    [[41,37.5],[55,37.5]].forEach(([x,y])=>{mkEll(g,x,y,3.6,1.9,'#f4eee0');mkEll(g,x,y,1.6,1.6,'#3a2010');mkEll(g,x-.5,y-.5,.5,.5,'#fff');});
+    g.strokeStyle='rgba(60,24,6,.7)';g.lineWidth=1;g.beginPath();g.moveTo(37,40);g.quadraticCurveTo(41,41.5,45,40);g.moveTo(51,40);g.quadraticCurveTo(55,41.5,59,40);g.stroke();
+    // Nase, Mund (grimmig), Falten
+    g.fillStyle='rgba(90,40,10,.45)';mkPoly(g,[[47,37],[49,37],[52,46],[44,46]],'rgba(120,60,20,.35)');
+    g.strokeStyle='#5a2408';g.lineWidth=1.4;g.beginPath();g.moveTo(44,46);g.quadraticCurveTo(48,48,52,46);g.stroke();
+    g.lineWidth=1.8;g.beginPath();g.moveTo(42,51);g.quadraticCurveTo(48,48.5,54,51);g.stroke();
+    g.strokeStyle='rgba(60,24,6,.45)';g.lineWidth=1;g.beginPath();g.moveTo(42,44);g.quadraticCurveTo(40,48,41,51);g.moveTo(54,44);g.quadraticCurveTo(56,48,55,51);g.moveTo(44,28);g.lineTo(52,28);g.stroke();
     g.restore();
-    g.font='bold 19px '+MK_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=5;g.strokeStyle='#2a1404';g.strokeText('WILD',48,75);g.fillStyle=mkGold(g,66,84);g.fillText('WILD',48,75);}
+    // WILD: große goldene Antiqua mit dunklem Rand
+    g.font='bold 22px "Times New Roman",'+MK_SERIF;g.textAlign='center';g.textBaseline='alphabetic';g.lineJoin='round';
+    g.lineWidth=5;g.strokeStyle='#1a0c02';g.strokeText('WILD',48,82);
+    g.fillStyle=mkLin(g,0,64,0,82,[[0,'#fff4c0'],[.45,'#e8c060'],[1,'#8a5a10']]);g.fillText('WILD',48,82);
+    g.lineWidth=.8;g.strokeStyle='rgba(255,250,220,.6)';g.strokeText('WILD',48,81.2);}
 };
 
 /* ---------------- DOPPEL BUCH ---------------- */
