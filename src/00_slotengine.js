@@ -84,7 +84,9 @@ var SlotEngine=(function(){
     if(payScale&&!G.scaled){G.scaled=1;Object.keys(G.pay).forEach(function(k){G.pay[k]=G.pay[k].map(function(v){return Math.round(v*payScale);});});}SCAT_TMP=G.scatter;G.counts=counts;G.strips=buildStrips(counts,seed,G.stack,[G.wild]);G.syms=Object.keys(counts[0]);
     if(G.wildStack){G.strips.forEach(function(st,ri){var ws=Array.isArray(G.wildStack)?G.wildStack[ri]:G.wildStack,idx=[];st.forEach(function(s,i){if(s===G.wild)idx.push(i);});idx.forEach(function(i){for(var k=1;k<ws;k++)st[(i+k)%st.length]=G.wild;});});}
     G.fsStrips=fsCounts?buildStrips(fsCounts,seed+999,G.stack,[G.wild]):(G.stack&&G.fsNoStack?buildStrips(counts,seed,0,[G.wild]):null); /* Freispiele ungestapelt (Sondersymbole/Superspin) */return G;}
-  function stripsOf(G,fs){return fs&&G.fsStrips?G.fsStrips:G.strips;}
+  function stripsOf(G,fs){return fs==='buy'&&G.buyStrips?G.buyStrips:(fs&&G.fsStrips?G.fsStrips:G.strips);}
+  // eigene Walzen für gekaufte Freispiele (Tizona)
+  function setBuy(id,counts,seed){var G=GAMES[id];G.buyStrips=buildStrips(counts,seed,G.stack,[G.wild]);return G;}
   function grid(G,stops,fs){var g=[[],[],[]],S=stripsOf(G,fs);for(var c=0;c<5;c++){var s=S[c],L=s.length;for(var r=0;r<3;r++)g[r][c]=s[(stops[c]+r-1+L)%L];}return g;}
   function evaluate(G,g,lines,betLine,special,fs){
     var res={wins:[],scatter:null,expand:null,total:0,trigger:false,wildReels:null};
@@ -157,6 +159,6 @@ var SlotEngine=(function(){
       var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;seq.push({grid:ng,ev:e2,held:held});if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
     return {grid:gg,total:best,steps:steps,ev:ev,ev0:ev0,seq:seq};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,setBuy:setBuy,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
 })();
 if(typeof module!=='undefined')module.exports=SlotEngine;

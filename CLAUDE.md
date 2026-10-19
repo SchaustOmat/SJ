@@ -34,3 +34,6 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - Gewinne nur glatte Beträge (Pharao = echter Merkur-Spielplan), Einsatzstufen wie Merkur-Level (10, 20, 40, 60, 80, 100, 200 …). Quoten ~96–98 % über die Walzenbelegung, nicht über krumme Gewinne, per Simulation prüfen (`node tools/sim_pharao.js '<strips-json>' <scale> 2000000`, andere Spiele mit tools/slot_sim.js).
 - Text darf nie aus dem Bild laufen, Hoch- und Querformat müssen gehen.
 - Keine Dateien/Grafiken/Sounds aus echten Merkur-Apps übernehmen (Urheberrecht, Seite ist öffentlich). Zahlen/Regeln aus Spielplänen sind ok, Optik selbst nachzeichnen.
+- Knopfleiste wie Merkur-App: runde Knöpfe Starten (=AUTO), ERFOLG, LEVEL, Risiko 1:1 Leiter (ohne Gewinn: Einsatz +1 Stufe), Risiko 1:1 Karte (ohne Gewinn: max. Einsatz), Start. Freispiele startet der Spieler selbst (außer AUTO).
+- Tizona: Freispiele kaufen = 100× Einsatz, 10 Freispiele auf eigenen Kauf-Walzen (mehr Schwerter, kein Startschwert), Quote ~98 %.
+- Walzen gestapelt (stack:3) für dicke Gewinne bei gleicher Quote; bei Zentaurus/Doppel Buch Freispiele ungestapelt.

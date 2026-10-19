@@ -31,10 +31,16 @@ function svGate(m){
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
 function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.toggle('land',W>H);}
+$('#mkLevel').addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,'EINSATZ');});
 function svButtons(m){
   if(m!==SV.m||!m.btnModel)return;
   SVKEYS.forEach(k=>{const b=SV.btn[k],d=m.btnModel[k];if(!d)return;
-    if(b.dataset.l!==d.label){b.dataset.l=d.label;b.textContent=d.label;const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
+    if(b.dataset.l!==d.label){b.dataset.l=d.label;
+      // Merkur-Beschriftung wie am Gerät
+      const MK={LEITER:{'RISIKO LEITER':'<small>Risiko 1:1</small><b>Leiter</b><small>Level</small>'},KARTE:{'RISIKO KARTE':'<small>Risiko 1:1</small><b>Karte</b><small>max.Level</small>'},
+        AUTO:{'AUTO':'Starten','STOP':'Stop'},START:{'START':'Start','STOP':'Stopp','NEHMEN':'Nehmen','FREISPIEL':'Frei-<br>spiel'}};
+      const h=MK[k]&&MK[k][d.label];if(h)b.innerHTML=h;else b.textContent=d.label;
+      const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
     b.className='svb c-'+d.color+(d.lit?' lit':'')+(d.blink?' blink':'')+(k==='START'?' big':'');
     b.disabled=false;b.setAttribute('aria-disabled',String(!d.lit));});
 }
@@ -45,6 +51,11 @@ function svDraw(m){
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}
   if(SV.last.msg!==m.msg){$('#svMsg').textContent=m.msg||'';SV.last.msg=m.msg;}
+  // ERFOLG und LEVEL wie am Merkur-Gerät (Euro groß, Cent klein)
+  const eu=v=>{v=Math.max(0,Math.round(v));return (Math.floor(v/100))+'<small>'+String(v%100).padStart(2,'0')+'</small>';};
+  const ef=eu(m.disp),lv=eu(totalBet(m));
+  if(SV.last.ef!==ef){$('#mkErfolg b').innerHTML=ef;SV.last.ef=ef;}
+  if(SV.last.lv!==lv){$('#mkLevel b').innerHTML=lv;SV.last.lv=lv;}
 }
 
 /* ---- Poker ---- */

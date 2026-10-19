@@ -305,7 +305,7 @@ body.pcmode .svb.lit:hover{transform:translateY(-2px)}
 body.pcmode .svb:not(.lit),#slotView.land .svb:not(.lit){filter:brightness(.62) saturate(.8)}
 body.pcmode .svb.lit:hover{filter:brightness(1.12)}
 body.pcmode .svb{cursor:pointer}
-#slotView.land .sv-deck{display:grid;grid-template-columns:repeat(5,1fr) 14px 1.25fr 1.25fr 14px 2fr;gap:8px;padding:8px 10px;align-items:stretch}
+#slotView.land .sv-deck:not(.mk){display:grid;grid-template-columns:repeat(5,1fr) 14px 1.25fr 1.25fr 14px 2fr;gap:8px;padding:8px 10px;align-items:stretch}
 #slotView.land .sv-row{display:contents}
 #slotView.land #sv-KARTE{grid-column:7}#slotView.land #sv-LEITER{grid-column:8}#slotView.land #sv-START{grid-column:10}
 #slotView.land .svb{min-height:52px;font-size:10px}
@@ -412,6 +412,29 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .wc-s{font-size:18px;color:var(--ink);overflow-wrap:anywhere}
 #watchCard .pcards{justify-content:flex-start}
 #micBtn{width:auto;padding:0 8px;font-size:10px}#micBtn.on{border-color:#3adf5a;color:#3adf5a}#micBtn.mute{border-color:var(--neon);color:var(--neon)}
+/* Merkur-Knopfleiste wie in der App: runde Knöpfe, ERFOLG- und LEVEL-Anzeige */
+#slotView .sv-deck.mk{display:flex!important;flex-direction:column;gap:6px;padding:8px 10px;background:linear-gradient(#141014,#050405);border-top:2px solid #6a5028}
+.mk-sm{display:flex;gap:6px;justify-content:center}
+.mk-sm .svb{flex:0 1 110px;min-height:32px!important;font-size:12px!important;border-radius:16px;padding:4px 8px}
+.mk-main{display:flex;align-items:center;justify-content:center;gap:clamp(4px,1.6vw,14px)}
+#slotView .mk-main .svb{flex:0 0 auto;width:clamp(54px,15vw,76px);height:clamp(54px,15vw,76px);min-height:0!important;border-radius:50%;padding:0;border:3px solid #111;
+  font-family:var(--f-body);font-size:clamp(13px,3.6vw,18px)!important;font-weight:700;line-height:1.05;display:flex;flex-direction:column;align-items:center;justify-content:center;letter-spacing:0;
+  box-shadow:0 3px 0 #000,inset 0 3px 6px rgba(255,255,255,.55),inset 0 -6px 10px rgba(0,0,0,.35)!important;text-transform:none}
+#slotView .mk-main #sv-AUTO,#slotView .mk-main #sv-START{background:radial-gradient(circle at 40% 30%,#c8ffb0,#3adf3a 45%,#0a7a10 100%)!important;color:#0a2a06}
+#slotView .mk-main #sv-LEITER{background:linear-gradient(#e81818 0 46%,#f4f4f4 46%)!important;color:#1a1a1a}
+#slotView .mk-main #sv-KARTE{background:linear-gradient(#2a2a2e 0 46%,#e8e8ec 46%)!important;color:#1a1a1a}
+#slotView .mk-main .svb small{font-size:.62em;font-weight:700;color:inherit;line-height:1}
+#slotView .mk-main #sv-LEITER small:first-child,#slotView .mk-main #sv-KARTE small:first-child{color:#fff}
+#slotView .mk-main .svb b{background:#ffe23a;color:#1a0e00;border-radius:7px;padding:0 5px;margin:2px 0;font-weight:700;border:1px solid #6a5000}
+#slotView .mk-main .svb:not(.lit){filter:grayscale(.7) brightness(.6)!important}
+#slotView .mk-main .svb .key{display:none!important}
+.mk-disp{flex:1 1 0;min-width:0;max-width:200px;background:linear-gradient(#5a5a62,#2a2a30);border:2px solid #111;border-radius:4px;padding:2px 6px 4px;box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 2px 0 #000;
+  display:flex;flex-direction:column;align-items:stretch;color:#fff;font:inherit}
+.mk-disp span{font-family:var(--f-title);font-size:11px;letter-spacing:.06em;text-align:center;color:#f4f4f4}
+.mk-disp b{background:#050505;border-radius:3px;text-align:right;padding:0 6px;font-family:"Arial Black",Arial,sans-serif;font-size:clamp(18px,5vw,30px);color:#ffd820;line-height:1.15;white-space:nowrap;overflow:hidden}
+.mk-disp b small{font-size:.62em}
+.mk-disp.lvl{flex:0 0 auto;width:clamp(58px,16vw,96px);cursor:pointer;pointer-events:auto}
+@media (max-width:560px){.mk-main{flex-wrap:wrap;row-gap:6px}.mk-disp{order:-1;flex:1 1 55%;max-width:none}.mk-disp.lvl{order:-1;flex:1 1 30%;width:auto}.mk-sm .svb{font-size:10px!important;min-height:28px!important}}
 </style>
 <div id="app">
 <canvas id="game"></canvas>
@@ -443,9 +466,15 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="sv-side">
     <div class="sv-info"><div><span>GUTHABEN</span><b id="svCredit">0</b></div><div><span>EINSATZ</span><b id="svBet">0</b></div><div id="svWinBox"><span>GEWINN</span><b id="svWin">0</b></div></div>
     <div class="sv-msg" id="svMsg"></div>
-    <div class="sv-deck">
-      <div class="sv-row"><button class="svb" id="sv-MENU">MENÜ</button><button class="svb" id="sv-INFO">INFO</button><button class="svb" id="sv-LINIEN">LINIEN</button><button class="svb" id="sv-EINSATZ">EINSATZ</button><button class="svb" id="sv-AUTO">AUTO</button></div>
-      <div class="sv-row"><button class="svb" id="sv-KARTE">RISIKO KARTE</button><button class="svb" id="sv-LEITER">RISIKO LEITER</button><button class="svb big" id="sv-START">START</button></div>
+    <div class="sv-deck mk">
+      <div class="mk-sm"><button class="svb" id="sv-MENU">MENÜ</button><button class="svb" id="sv-INFO">INFO</button><button class="svb" id="sv-LINIEN">LINIEN</button><button class="svb" id="sv-EINSATZ">EINSATZ</button></div>
+      <div class="mk-main">
+        <button class="svb" id="sv-AUTO">AUTO</button>
+        <div class="mk-disp" id="mkErfolg"><span>ERFOLG</span><b>0<small>00</small></b></div>
+        <button class="mk-disp lvl" id="mkLevel" type="button"><span>LEVEL</span><b>0<small>10</small></b></button>
+        <button class="svb" id="sv-LEITER">RISIKO LEITER</button><button class="svb" id="sv-KARTE">RISIKO KARTE</button>
+        <button class="svb big" id="sv-START">START</button>
+      </div>
     </div>
   </div>
   <button id="svStand">◄ AUFSTEHEN</button>
@@ -553,7 +582,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792411286";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792412651";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -645,7 +674,9 @@ var SlotEngine=(function(){
     if(payScale&&!G.scaled){G.scaled=1;Object.keys(G.pay).forEach(function(k){G.pay[k]=G.pay[k].map(function(v){return Math.round(v*payScale);});});}SCAT_TMP=G.scatter;G.counts=counts;G.strips=buildStrips(counts,seed,G.stack,[G.wild]);G.syms=Object.keys(counts[0]);
     if(G.wildStack){G.strips.forEach(function(st,ri){var ws=Array.isArray(G.wildStack)?G.wildStack[ri]:G.wildStack,idx=[];st.forEach(function(s,i){if(s===G.wild)idx.push(i);});idx.forEach(function(i){for(var k=1;k<ws;k++)st[(i+k)%st.length]=G.wild;});});}
     G.fsStrips=fsCounts?buildStrips(fsCounts,seed+999,G.stack,[G.wild]):(G.stack&&G.fsNoStack?buildStrips(counts,seed,0,[G.wild]):null); /* Freispiele ungestapelt (Sondersymbole/Superspin) */return G;}
-  function stripsOf(G,fs){return fs&&G.fsStrips?G.fsStrips:G.strips;}
+  function stripsOf(G,fs){return fs==='buy'&&G.buyStrips?G.buyStrips:(fs&&G.fsStrips?G.fsStrips:G.strips);}
+  // eigene Walzen für gekaufte Freispiele (Tizona)
+  function setBuy(id,counts,seed){var G=GAMES[id];G.buyStrips=buildStrips(counts,seed,G.stack,[G.wild]);return G;}
   function grid(G,stops,fs){var g=[[],[],[]],S=stripsOf(G,fs);for(var c=0;c<5;c++){var s=S[c],L=s.length;for(var r=0;r<3;r++)g[r][c]=s[(stops[c]+r-1+L)%L];}return g;}
   function evaluate(G,g,lines,betLine,special,fs){
     var res={wins:[],scatter:null,expand:null,total:0,trigger:false,wildReels:null};
@@ -718,7 +749,7 @@ var SlotEngine=(function(){
       var e2=evaluate(G,ng,lines,betLine,null,fs);steps++;seq.push({grid:ng,ev:e2,held:held});if(e2.total>best){best=e2.total;gg=ng;ev=e2;}else break;}
     return {grid:gg,total:best,steps:steps,ev:ev,ev0:ev0,seq:seq};}
   function randStops(G,rnd,fs){return stripsOf(G,fs).map(function(s){return Math.floor(rnd()*s.length);});}
-  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
+  return {GAMES:GAMES,setup:setup,grid:grid,evaluate:evaluate,randStops:randStops,stripsOf:stripsOf,mystery:mystery,walk:walk,superspin:superspin,setBuy:setBuy,tizLevel:tizLevel,tizHeight:tizHeight,wwPending:wwPending,tizEval:tizEval};
 })();
 
 
@@ -1385,11 +1416,13 @@ SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
   SlotEngine.setup('zent',[[22,17,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
   SlotEngine.setup('tizona',TIZ_ROWS.map(a=>R_(a,TK)),706);
+  // gekaufte Freispiele: mehr Schwerter (1-1-2-2-2), sonst gleiche Walzen -> 10 Freispiele im Schnitt ~98 % von 100× Einsatz (tools: tzbuy3.js)
+  SlotEngine.setBuy('tizona',[1,1,2,2,2].map(k=>{const a=TIZ_ROWS[0].slice();a[10]=k;return R_(a,TK);}),706);
   SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
   SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,1],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,1],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
 })();
 const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
-const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
+const stripsFor=m=>SlotEngine.stripsOf(m.G,m.useFs==='buy'?'buy':!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
 /* ---------- symbol art (procedural, 48px) ---------- */
@@ -1562,10 +1595,11 @@ function btnModel(m){
   B('EINSATZ','EINSATZ','amber',idle&&!wwPend(m));
   B('AUTO',m.auto?'STOP':'AUTO','blue',idle||show||m.auto,m.auto);
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
-  B('KARTE','RISIKO KARTE','red',canRisk,canRisk);
+  const lvlBtn=idle&&!m.fs&&!wwPend(m)&&!G.special; // ohne Gewinn: Einsatz einstellen
+  B('KARTE','RISIKO KARTE','red',canRisk||lvlBtn,canRisk);
   const canLadder=canRisk; // Leiter geht bei jedem Gewinn
   if(m.auto&&!canLadder)B('LEITER',m.autoRisk?'AUTO-RISIKO AN':'AUTO-RISIKO','yellow',true,m.autoRisk); // Risiko-Automatik bis zur Ausspielung
-  else B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
+  else B('LEITER','RISIKO LEITER','yellow',canLadder||lvlBtn,canLadder);
   B('START',s==='spin'?'STOP':show?'NEHMEN':s==='fsReady'?'FREISPIEL':'START','green',idle||show||s==='fsReady'||(s==='spin'&&!m.fs),s==='fsReady');
   return o;
 }
@@ -1608,6 +1642,8 @@ function pressButton(m,key){
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
       if(key==='LEITER'&&m.auto&&!(s==='show'||s==='count')){m.autoRisk=!m.autoRisk;m.msg=m.autoRisk?'AUTO-RISIKO AN · BIS '+fmt(ladOf(m)[AUS_I]):'AUTO-RISIKO AUS';SFX.click();break;}
+      // wie am Merkur-Gerät: ohne Gewinn stellen die Risiko-Knöpfe den Einsatz ein (Leiter = Level +1, Karte = max. Level)
+      if(s==='idle'&&!m.fs&&!wwPend(m)&&!m.G.special){if(key==='LEITER')m.betIdx=(m.betIdx+1)%m.G.betOpts.length;else m.betIdx=m.G.betOpts.length-1;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));SFX.click();m.dirty=true;break;}
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
       if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
     case 'START':
@@ -1735,7 +1771,7 @@ function startSpin(m,demo){
   m.info=false;m.demo=!!demo;
   m.rsp=!demo&&m.G.walkWild&&SlotEngine.wwPending(m.ww); // Schwert steht noch: Spin ist gratis und zählt nicht als Freispiel
   if(!demo&&!m.fs&&!m.rsp){const tb=totalBet(m);if(chips<tb){m.msg='GUTHABEN ZU NIEDRIG';m.auto=false;m.dirty=true;SFX.lose();updateButtons(m);return;}setChips(chips-tb);}
-  m.useFs=!!m.fs;m.spinT=now;m.spinId=(m.spinId||0)+1;m.spinFast=m.auto?.75:1; // für Zuschauer: gleicher Takt
+  m.useFs=m.fs?(m.fs.bought?'buy':true):false;m.spinT=now;m.spinId=(m.spinId||0)+1;m.spinFast=m.auto?.75:1; // für Zuschauer: gleicher Takt
   m.stops=SlotEngine.randStops(m.G,Math.random,m.useFs);
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
   m.myst=demo?null:SlotEngine.mystery(m.G,m.grid,Math.random,m.useFs);
@@ -2293,19 +2329,18 @@ function drawWalkers(m,g){const gold=m.fs&&m.G.walkWild&&SlotEngine.tizLevel(m.f
   g.restore();}
 function goldSword(){if(goldSword.c)return goldSword.c;const c=document.createElement('canvas');c.width=c.height=48;const x=c.getContext('2d');x.drawImage(symCanvas('SCHWERT'),0,0,48,48);
   x.globalCompositeOperation='source-atop';const gr=x.createLinearGradient(0,0,48,48);gr.addColorStop(0,'rgba(255,250,190,.75)');gr.addColorStop(.5,'rgba(255,190,30,.6)');gr.addColorStop(1,'rgba(180,90,0,.7)');x.fillStyle=gr;x.fillRect(0,0,48,48);return goldSword.c=c;}
-// Tizona: Freispiele kaufen (100× Einsatz). 17 Freispiele, Schild-Leiste startet bei 7 oder 8 Schilden,
-// ein großes Schwert zieht von rechts herein -> im Schnitt ~98,3 % zurück (tools: tzbuy.js)
+// Tizona: Freispiele kaufen (100× Einsatz): 10 Freispiele auf Kauf-Walzen mit mehr Schwertern, die Schwerter müssen erst einlaufen -> im Schnitt ~98 % zurück
 const TZ_BUY={x:58,y:3,w:76,h:16};
 function tzBuyable(m){return m.G.walkWild&&!m.fs&&!m.remote&&(m.state==='idle'||m.state==='show')&&!wwPend(m)&&!m.info;}
 function tzBuyTap(m,uv){if(!tzBuyable(m)||!uv)return false;const x=uv.x*320,y=(1-uv.y)*240,B=TZ_BUY;
   if(x<B.x-3||x>B.x+B.w+3||y<B.y-3||y>B.y+B.h+3)return false;
   const price=100*totalBet(m);
-  if(!m.buyArm||now-m.buyArm>3){m.buyArm=now;m.msg='NOCHMAL TIPPEN: 17 FREISPIELE FÜR '+fmt(price);SFX.click();m.dirty=true;return true;}
+  if(!m.buyArm||now-m.buyArm>3){m.buyArm=now;m.msg='NOCHMAL TIPPEN: 10 FREISPIELE FÜR '+fmt(price);SFX.click();m.dirty=true;return true;}
   m.buyArm=0;if(chips<price){m.msg='GUTHABEN ZU NIEDRIG';SFX.lose();m.dirty=true;return true;}
   if(m.win>0)collect(m);setChips(chips-price);m.auto=false;m.present=null;
-  m.fs={left:17,total:17,n:0,sh:Math.random()<.35?8:7,special:null,bought:true};m.ww=[{c:5,r:1,h:3}];m.wwc=null;
+  m.fs={left:10,total:10,n:0,sh:0,special:null,bought:true};m.ww=[];m.wwc=null;
   mpWin('kauft '+m.fs.total+' Freispiele an TIZONA!');
-  m.state='fsIntro';m.timer=3;m.stateT=0;m.msg='17 FREISPIELE GEKAUFT!';SFX.fsIntro();SFX.boom();fxFlash(m,1);fxShake(m,.8,true);
+  m.state='fsIntro';m.timer=3;m.stateT=0;m.msg='10 FREISPIELE GEKAUFT!';SFX.fsIntro();SFX.boom();fxFlash(m,1);fxShake(m,.8,true);
   fxBurst(m,160,100,60,{coin:true,spd:170,up:100,sz:5,life:1.6});m.topDirty=true;m.dirty=true;updateButtons(m);return true;}
 function fitC2(g,t,x,y,w,sz){let z=sz;px(g,z);const mw=g.measureText(t).width;g.save();g.translate(x,y);if(mw>w)g.scale(w/mw,1);g.fillText(t,0,0);g.restore();}
 function drawHeader(m,g){
@@ -4137,10 +4172,16 @@ function svGate(m){
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
 function svClose(){SV.m=null;SV.el.hidden=true;if(started)$('#hudTop').hidden=false;}
 function svLayout(){if(SV.el.hidden)return;const W=LW(),H=LH();SV.el.classList.toggle('land',W>H);}
+$('#mkLevel').addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,'EINSATZ');});
 function svButtons(m){
   if(m!==SV.m||!m.btnModel)return;
   SVKEYS.forEach(k=>{const b=SV.btn[k],d=m.btnModel[k];if(!d)return;
-    if(b.dataset.l!==d.label){b.dataset.l=d.label;b.textContent=d.label;const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
+    if(b.dataset.l!==d.label){b.dataset.l=d.label;
+      // Merkur-Beschriftung wie am Gerät
+      const MK={LEITER:{'RISIKO LEITER':'<small>Risiko 1:1</small><b>Leiter</b><small>Level</small>'},KARTE:{'RISIKO KARTE':'<small>Risiko 1:1</small><b>Karte</b><small>max.Level</small>'},
+        AUTO:{'AUTO':'Starten','STOP':'Stop'},START:{'START':'Start','STOP':'Stopp','NEHMEN':'Nehmen','FREISPIEL':'Frei-<br>spiel'}};
+      const h=MK[k]&&MK[k][d.label];if(h)b.innerHTML=h;else b.textContent=d.label;
+      const kk=document.createElement('span');kk.className='key';kk.textContent=SVHOT[k]||'';b.appendChild(kk);}
     b.className='svb c-'+d.color+(d.lit?' lit':'')+(d.blink?' blink':'')+(k==='START'?' big':'');
     b.disabled=false;b.setAttribute('aria-disabled',String(!d.lit));});
 }
@@ -4151,6 +4192,11 @@ function svDraw(m){
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}
   if(SV.last.msg!==m.msg){$('#svMsg').textContent=m.msg||'';SV.last.msg=m.msg;}
+  // ERFOLG und LEVEL wie am Merkur-Gerät (Euro groß, Cent klein)
+  const eu=v=>{v=Math.max(0,Math.round(v));return (Math.floor(v/100))+'<small>'+String(v%100).padStart(2,'0')+'</small>';};
+  const ef=eu(m.disp),lv=eu(totalBet(m));
+  if(SV.last.ef!==ef){$('#mkErfolg b').innerHTML=ef;SV.last.ef=ef;}
+  if(SV.last.lv!==lv){$('#mkLevel b').innerHTML=lv;SV.last.lv=lv;}
 }
 
 /* ---- Poker ---- */
@@ -4546,7 +4592,7 @@ function mpActivity(){
   return mpActivity2();
 }
 function slotGx(m){{
-    return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,sid:m.spinId||0,el:m.state==='spin'?Math.round((now-(m.spinT||now))*100)/100:0,fa:m.spinFast||1,uf:m.useFs?1:0,w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
+    return {g:'slot',gid:m.G.id,mi:allMachines().indexOf(m),st:m.stops.slice(),sp:m.state==='spin'?1:0,sid:m.spinId||0,el:m.state==='spin'?Math.round((now-(m.spinT||now))*100)/100:0,fa:m.spinFast||1,uf:m.useFs==='buy'?2:(m.useFs?1:0),w:Math.round(m.disp),msg:cleanText(m.msg,40),l:m.lines,bi:m.betIdx,
       fs:m.fs?[m.fs.n,m.fs.total]:0,sx:m.fs&&m.fs.special?(Array.isArray(m.fs.special)?m.fs.special:[m.fs.special]):0,db:m.dbl?1:0,sh:m.fs?m.fs.sh||0:0,
       gr:m.state!=='spin'&&m.grid?[0,1,2].flatMap(r=>m.grid[r].map(s=>m.G.syms.indexOf(s))):0,ww:m.ww&&m.ww.length?m.ww.map(w=>[w.c,w.r,w.h,w.fresh?1:0]):0,hd:m.ssHeld?Object.keys(m.ssHeld).map(k=>{const [r,c]=k.split(',');return r*5+ +c;}):0,gm:m.gamble?(m.gamble.kind==='ladder'?'LEITER':'KARTE'):'',my:m.myst&&m.myst.open&&m.state!=='spin'?[m.myst.cells.map(q=>q[0]*5+q[1]),m.myst.sym]:0,
       ps:m.state,pm:m.pmult||0,ls:m.sp?[m.sp.lv.KLEE,m.sp.lv.PFEN,m.sp.lv.KAEF,m.sp.pot]:0,
@@ -4566,7 +4612,7 @@ function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;
   const num=(x,lo,hi)=>Number.isFinite(+x)?clamp(Math.round(+x),lo,hi):0;
   const cards=a=>Array.isArray(a)?a.filter(validCard).slice(0,5):[];
-  return {g:gx.g,sid:num(gx.sid,0,1e9),el:Number.isFinite(+gx.el)?clamp(+gx.el,0,30):0,fa:+gx.fa===.75?.75:1,uf:gx.uf?1:0,gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
+  return {g:gx.g,sid:num(gx.sid,0,1e9),el:Number.isFinite(+gx.el)?clamp(+gx.el,0,30):0,fa:+gx.fa===.75?.75:1,uf:+gx.uf===2?2:(gx.uf?1:0),gid:typeof gx.gid==='string'&&SlotEngine.GAMES[gx.gid]?gx.gid:'',mi:num(gx.mi,-1,99),st:Array.isArray(gx.st)?gx.st.slice(0,5).map(x=>num(x,0,999)):null,sp:gx.sp?1:0,w:num(gx.w,0,1e9),msg:cleanText(gx.msg,40),
     l:num(gx.l,1,20),bi:num(gx.bi,0,20),fs:Array.isArray(gx.fs)?[num(gx.fs[0],0,999),num(gx.fs[1],0,999)]:0,sx:Array.isArray(gx.sx)?gx.sx.slice(0,2).map(x=>cleanText(x,10)):(gx.sx?[cleanText(gx.sx,10)]:[]),
     db:gx.db?1:0,sh:num(gx.sh,0,999),gr:Array.isArray(gx.gr)&&gx.gr.length===15?gx.gr.map(x=>num(x,-1,40)):0,
     ww:Array.isArray(gx.ww)?gx.ww.slice(0,5).filter(Array.isArray).map(w=>[num(w[0],0,4),num(w[1],0,2),num(w[2],1,3),w[3]?1:0]):0,hd:Array.isArray(gx.hd)?gx.hd.slice(0,15).map(x=>num(x,0,14)):0,gm:cleanText(gx.gm,8),my:Array.isArray(gx.my)&&Array.isArray(gx.my[0])?[gx.my[0].slice(0,15).map(x=>num(x,0,14)),cleanText(gx.my[1],10)]:0,
@@ -4620,13 +4666,13 @@ function mirrorSlot(a,gx,credit){
   if(!gx.fs&&m.fs){m.fs=null;m.topDirty=true;}
   // neuer Spin: Ergebnis steht schon fest -> Walzen im selben Takt wie beim Spieler drehen und anhalten lassen
   if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
-    m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,!!gx.uf)[i].length);m.useFs=!!gx.uf;m.grid=SlotEngine.grid(m.G,m.stops,!!gx.uf);const el=gx.el||0,f=gx.fa||1;
+    m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,(gx.uf===2?'buy':!!gx.uf))[i].length);m.useFs=gx.uf===2?'buy':!!gx.uf;m.grid=SlotEngine.grid(m.G,m.stops,(gx.uf===2?'buy':!!gx.uf));const el=gx.el||0,f=gx.fa||1;
     m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.target=m.stops[i];r.teased=false;r.land=null;r.vel=0;r.speed=28;
       r.t0=now-el+i*.045;r.stopAt=Math.max(now+.05+i*.06,now-el+(m.G.special?.75:(.55+i*.2))*f);});}
   else if(gx.sp&&m.state!=='rspin'&&m.state!=='rstop'){m.state='rspin';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.speed=24;r.stopAt=now+30;});}
   if(!gx.sp&&gx.st&&gx.st.length===5){
     const same=gx.st.every((s,i)=>m.stops[i]===s);
-    if((!same&&m.state!=='rstop')||m.state==='rspin'){m.useFs=!!gx.uf;m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,!!gx.uf)[i].length);m.grid=SlotEngine.grid(m.G,m.stops,!!gx.uf);
+    if((!same&&m.state!=='rstop')||m.state==='rspin'){m.useFs=gx.uf===2?'buy':!!gx.uf;m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,(gx.uf===2?'buy':!!gx.uf))[i].length);m.grid=SlotEngine.grid(m.G,m.stops,(gx.uf===2?'buy':!!gx.uf));
       m.reels.forEach((r,i)=>{if(m.G.special&&i!==2){r.pos=r.target=m.stops[i];return;}r.target=m.stops[i];if(!r.spin){r.spin=true;r.speed=24;}r.stopAt=now+.1+i*.15;r.teased=false;});m.state='rstop';}
   }
   m.myst=!gx.sp&&gx.my&&m.G.syms.includes(gx.my[1])?{cells:gx.my[0].map(v=>[v/5|0,v%5]),sym:gx.my[1],open:true}:null;
