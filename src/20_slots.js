@@ -205,7 +205,7 @@ function btnModel(m){
   const canLadder=canRisk; // Leiter geht bei jedem Gewinn
   if(m.auto&&!canLadder)B('LEITER',m.autoRisk?'AUTO-RISIKO AN':'AUTO-RISIKO','yellow',true,m.autoRisk); // Risiko-Automatik bis zur Ausspielung
   else B('LEITER','RISIKO LEITER','yellow',canLadder,canLadder);
-  B('START',s==='spin'?'STOP':show?'NEHMEN':'START','green',idle||show||(s==='spin'&&!m.fs));
+  B('START',s==='spin'?'STOP':show?'NEHMEN':s==='fsReady'?'FREISPIEL':'START','green',idle||show||s==='fsReady'||(s==='spin'&&!m.fs),s==='fsReady');
   return o;
 }
 function updateButtons(m){
@@ -250,7 +250,7 @@ function pressButton(m,key){
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
       if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
     case 'START':
-      if(s==='idle')startSpin(m);
+      if(s==='idle'||s==='fsReady')startSpin(m);
       else if(s==='show'){collect(m);startSpin(m);}
       else if(s==='spin'&&!m.fs)quickStop(m);
       break;
@@ -498,7 +498,7 @@ function timerDone(m){
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
     case 'splash':m.state='idle';slotIdleMsg(m);m.dirty=true;updateButtons(m);break;
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
-    case 'fsWait':startSpin(m);break;
+    case 'fsWait':if(m.auto)startSpin(m);else{m.state='fsReady';m.msg='START DRÜCKEN · FREISPIEL '+Math.min(m.fs.n+1,m.fs.total)+' VON '+m.fs.total;m.dirty=true;updateButtons(m);}break;
     case 'fsShow':{
       if(m.ss&&m.ss.i<m.ss.seq.length){// Superspin: Gewinnfelder bleiben rot stehen, der Rest dreht neu
         const st=m.ss.seq[m.ss.i];m.ssHeld=st.held;m.state='ssSpin';m.timer=.95;m.present=null;m.msg='SUPERSPIN!';SFX.reelStart();m.dirty=true;break;}
@@ -709,7 +709,8 @@ function gambleRB(m,red){
   m.state='gambleNext';m.timer=isRed===red?1.3:2.2;m.dirty=true;updateButtons(m);
 }
 /* ---------- RISIKO+ Leiter (wie am echten Gerät: goldene Stufen über den abgedunkelten Walzen) ---------- */
-const LAD_HZ=1.5;
+const LAD_TEILEN={x:155,y:166}; // unten zwischen RISIKO+-Spalte und Leiter
+const LAD_HZ=1.65; // Blinktakt wie am Gerät (Video: Wechsel alle ~0,3 s)
 function goldRung(g,x,y,w,h,lit,txt,col,zone){
   const fr=g.createLinearGradient(0,y,0,y+h);fr.addColorStop(0,'#fff0a0');fr.addColorStop(.5,'#c88a10');fr.addColorStop(1,'#6a3a00');
   g.fillStyle='#000';g.fillRect(x-1,y-1,w+2,h+2);g.fillStyle=fr;g.fillRect(x,y,w,h);
@@ -734,19 +735,18 @@ function drawLadder(m,g,gm){
     let lit=false,col='y';
     if(run){lit=k===rk;col='red';}
     else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
-    else{if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}
-    goldRung(g,xx,y,w,rh-1.4,lit,fmt(L[k]).replace(' €',''),col,up);
-    if(!result&&!run&&k===cur){g.strokeStyle='#fff';g.lineWidth=1.2;g.strokeRect(xx-2,y-2,w+4,rh+2.6);}}
+    else{if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}
+    goldRung(g,xx,y,w,rh-1.4,lit,String(L[k]),col,up);}
   {const y=yOf(AUS_I),lit=run?true:(!result&&cur===AUS_I-1&&ph);goldRung(g,x+3,y,W-6,rh-1.4,lit,'AUSSPIELUNG',lit?'red':'y',true);}
   const zl=!run&&((result&&cur<0)||(!result&&dnT<0&&!ph));
   goldRung(g,x+18,yb-rh,W-36,rh-1.4,zl,'0',zl&&result?'red':'y');
   // RISIKO+-Spalte (links neben der Leiter): 100 · 140 · 180 · 220 · 260 · 300 €
   {const PV=L.slice(F_I),bh=19,bx=118,bw=70;
     PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,col='y';
-      if(k>=F_I){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
+      if(k>=F_I){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
       g.fillStyle='#000';g.fillRect(bx-2,y-2,bw+4,bh+4);g.fillStyle=lit?(col==='green'?'#3adf5a':'#ffd23a'):'#2a0608';g.fillRect(bx,y,bw,bh);
       g.strokeStyle=k===cur&&!run?'#fff':'#c01020';g.lineWidth=k===cur&&!run?2:1.5;g.strokeRect(bx+1,y+1,bw-2,bh-2);
-      const t=fmt(v).replace(' €','');px(g,Math.min(9,Math.floor((bw-8)/t.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2,y+bh/2+1);});}
+      const t=String(Math.round(v/100));px(g,10);g.textAlign='right';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2+14,y+bh/2+1);px(g,6);g.textAlign='left';g.fillText('00',bx+bw/2+15,y+bh/2+3);});}
   // RISIKO+ Schriftzug und Erfolg ganz links
   g.textAlign='left';g.textBaseline='middle';px(g,13);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',24,RY+16+dy);
   const tg=g.createLinearGradient(0,RY+8,0,RY+26);tg.addColorStop(0,'#fff6a0');tg.addColorStop(1,'#e07a00');g.fillStyle=tg;g.fillText('RISIKO',24,RY+16+dy);
@@ -756,7 +756,10 @@ function drawLadder(m,g,gm){
   {const t=fmt(m.disp);px(g,Math.min(12,Math.floor(82/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,108,RY+70);}
   g.fillStyle='#9b8fb3';
   fitL(g,run?'AUSSPIELUNG ...':result?(cur<0?'VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):cur>=F_I?'RISIKO+ · MIND. 100':'LEITER = HOCH',26,RY+96,86,6);
-  if(!result&&!run&&cur>=1){g.fillStyle=Math.floor(now*2)%2?'#ffd23a':'#fff';fitL(g,'TEILEN = HÄLFTE',26,RY+110,86,6);}
+  if(!result&&!run&&cur>=1){// gelber Teilen-Knopf wie am Gerät (antippbar)
+    const ox=LAD_TEILEN.x,oy=LAD_TEILEN.y+dy;g.fillStyle='#000';g.beginPath();g.ellipse(ox,oy,24,11,0,0,TAU);g.fill();
+    const tb=g.createLinearGradient(0,oy-10,0,oy+10);tb.addColorStop(0,'#fff8a0');tb.addColorStop(1,'#d8a000');g.fillStyle=tb;g.beginPath();g.ellipse(ox,oy,22,9.5,0,0,TAU);g.fill();
+    g.fillStyle='#1a0e00';g.textAlign='center';px(g,6);g.fillText('Teilen',ox,oy+1);}
   g.fillStyle='#9b8fb3';fitL(g,'START = NEHMEN',26,RY+124,86,6);
   g.restore();
 }

@@ -262,7 +262,7 @@ function leaveFocus(){
   const f=focus;
   if(f.type==='slot'&&f.m===RESV){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}
-  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
+  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}

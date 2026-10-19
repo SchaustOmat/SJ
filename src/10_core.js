@@ -96,7 +96,9 @@ const SFX={
   doors(){noise(1,.05,400);},
   fsIntro(){[[67,0],[72,.14],[76,.28],[79,.42],[76,.6],[79,.72],[84,.86]].forEach(([n,t])=>{soft(NOTE(n),.24,.08,t);bell(NOTE(n+12),.4,.06,t);});soft(NOTE(48),1.3,.07,.86,'sawtooth');soft(NOTE(55),1.3,.05,.86,'sawtooth');bell(NOTE(96),1.4,.09,.86);},
   expand(){for(let k=0;k<10;k++)bell(NOTE(72+k*2),.25,.07,k*.045);},
-  gambleTick(on){tone(on?1047:880,.045,'square',.05);}, // Leiter-Blinken: C6/A5 im Wechsel
+  gambleTick(on){ // Leiter-Blinken nach dem Video: Hoch-Phase A6 mit kurzem H5, Runter-Phase schnelle Folge D6-A5-C6-D6-F5-D6-A5 und D6
+    if(on){soft(NOTE(93),.16,.05,0,'square');soft(NOTE(71),.035,.03,.07,'square');return;}
+    [[86,.05],[81,.012],[84,.015],[86,.012],[77,.04],[86,.03],[81,.08],[86,.14]].reduce((t,[n,d])=>{soft(NOTE(n),d+.01,.045,t,'square');return t+d;},0);},
   reelStop(i){tone(150-i*6,.09,'sine',.22,0,70);noise(.025,.12,1800+i*120);}, // dumpfes Holz-Tock wie beim Walzenstopp
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
