@@ -66,7 +66,7 @@ const TZ_SYM={
       g.fillStyle='rgba(90,60,10,.35)';g.fillRect(x+w-4,y,4,76-y);for(let i=0;i<3;i++){g.fillStyle=wall;g.fillRect(x+i*5,y-5,3,5);}
       g.fillStyle='#2a1a08';g.fillRect(x+5,y+10,3,6);});
     g.fillStyle='#2a1a08';g.beginPath();g.arc(48,74,7,Math.PI,0);g.fill();g.fillStyle='rgba(120,80,20,.4)';for(let y=48;y<74;y+=6)g.fillRect(22,y,52,1);},
-  ROSS(g){mkTile(g,'#f4e030','#c8a010');
+  ROSS(g){mkTile(g,'#9ad040','#3a7a10');
     // Pferdekopf mit Rossstirn
     g.fillStyle=mkLin(g,0,10,0,90,[[0,'#3a3028'],[1,'#120c08']]);g.beginPath();g.moveTo(30,90);g.lineTo(34,56);g.quadraticCurveTo(26,30,40,14);g.quadraticCurveTo(62,6,74,26);
     g.lineTo(84,52);g.quadraticCurveTo(86,62,76,64);g.lineTo(62,58);g.quadraticCurveTo(58,74,66,90);g.closePath();g.fill();
@@ -89,15 +89,17 @@ const TZ_SYM={
       g.fillStyle='rgba(255,255,255,.55)';g.fillRect(x+1,y+1,2,h-2);});
     g.fillStyle=st;mkPoly(g,[[66,58],[80,40],[86,46],[72,66]],st,'#2a3040',1.2);
     g.strokeStyle='#2a3040';g.lineWidth=1.5;g.strokeRect(28,58,40,30);g.fillStyle='#2a3040';for(let x=32;x<66;x+=8){g.beginPath();g.arc(x,74,1.4,0,TAU);g.fill();}},
-  SCHILD(g){// freistehender Wappenschild: orange-rot, schwarzes Kreuz-Feld mit Adler
-    const sh=[[14,10],[82,10],[84,40],[48,92],[12,40]];
-    mkPoly(g,sh,mkLin(g,0,10,0,92,[[0,'#ffa060'],[.5,'#e04a18'],[1,'#8a1a04']]),'#3a1000',3);
-    g.save();mkPoly(g,sh);g.clip();g.fillStyle='rgba(20,10,10,.9)';g.fillRect(14,10,34,32);g.fillRect(48,42,40,50);
-    mkNoise(g,10,8,80,86,200,['rgba(255,220,180,.25)','rgba(60,10,0,.3)'],5);g.restore();
-    g.strokeStyle=mkGold(g,8,92);g.lineWidth=2.5;mkPoly(g,[[17,13],[79,13],[81,40],[48,87],[15,40]],null,mkGold(g,8,92),2);
-    // Adler
-    g.fillStyle='#120808';g.beginPath();g.moveTo(48,30);g.lineTo(36,22);g.lineTo(40,34);g.lineTo(28,32);g.lineTo(40,42);g.lineTo(44,56);g.lineTo(48,50);g.lineTo(52,56);g.lineTo(56,42);g.lineTo(68,32);g.lineTo(56,34);g.lineTo(60,22);g.closePath();g.fill();
-    g.fillStyle='#ffd23a';g.fillRect(47,26,2,2);mkEll(g,48,24,3,3,'#120808');},
+  SCHILD(g){// Wappenschild wie im Original: geviertelt rot und gold, Lilien, schwarzer Adler in der Mitte
+    const sh=[[48,4],[84,22],[82,56],[48,92],[14,56],[12,22]];
+    mkPoly(g,sh,'#2a0a00');g.save();mkPoly(g,sh);g.clip();
+    g.fillStyle=mkLin(g,0,0,96,96,[[0,'#ff5a2a'],[1,'#a01808']]);g.fillRect(0,0,48,48);g.fillRect(48,48,48,48);
+    g.fillStyle=mkLin(g,0,0,96,96,[[0,'#ffe090'],[1,'#c08a20']]);g.fillRect(48,0,48,48);g.fillRect(0,48,48,48);
+    mkNoise(g,0,0,96,96,300,['rgba(255,240,200,.25)','rgba(60,10,0,.3)'],9);
+    const lily=(x,y,c)=>{g.fillStyle=c;g.beginPath();g.ellipse(x,y-4,2,5,0,0,TAU);g.fill();g.beginPath();g.ellipse(x-4,y-1,4,2,.6,0,TAU);g.fill();g.beginPath();g.ellipse(x+4,y-1,4,2,-.6,0,TAU);g.fill();g.fillRect(x-4,y+1,8,2);g.fillRect(x-1,y+3,2,4);};
+    lily(30,26,'#3a1000');lily(66,70,'#3a1000');lily(66,26,'#8a1a08');lily(30,70,'#8a1a08');
+    g.restore();mkPoly(g,sh,null,mkGold(g,4,92),3);
+    g.fillStyle='#120808';g.beginPath();g.moveTo(48,40);g.lineTo(34,30);g.lineTo(38,44);g.lineTo(26,42);g.lineTo(40,52);g.lineTo(44,64);g.lineTo(48,58);g.lineTo(52,64);g.lineTo(56,52);g.lineTo(70,42);g.lineTo(58,44);g.lineTo(62,30);g.closePath();g.fill();
+    mkEll(g,48,36,4,4,'#120808');g.fillStyle='#ffd23a';g.fillRect(47,35,2,2);},
   SCHWERT(g){// WILD: goldenes Schwert, Spitze nach unten, auf blauem Leuchten
     g.fillStyle='#06103a';g.fillRect(3,3,90,90);g.fillStyle=mkRad(g,48,40,4,56,[[0,'#bfe0ff'],[.35,'#2a6ae0'],[1,'#06144a']]);g.fillRect(5,5,86,86);
     g.strokeStyle='#8ab0f0';g.lineWidth=1.5;g.strokeRect(5,5,86,86);
@@ -252,7 +254,8 @@ const SYM_SETS={tizona:TZ_SYM,zent:ZT_SYM,doppel:DB_SYM};
 
 /* ---------------- Hintergründe (Bildschirm 320x240, gecacht) ---------------- */
 const MK_BG={
-  tizona:()=>mkCanvas('bg_tizona',320,240,g=>{// Nachthimmel mit Mond und Wolken
+  tizona:m=>m&&m.fs?mkCanvas('bg_tizona_fs',320,240,g=>tzCastle(g,true)):mkCanvas('bg_tizona',320,240,g=>tzCastle(g,false)),
+  tizona_alt:()=>mkCanvas('bg_tizona_alt',320,240,g=>{// (alt) Nachthimmel mit Mond und Wolken
     g.fillStyle=mkLin(g,0,0,0,240,[[0,'#0a1a3a'],[.6,'#1a3a6a'],[1,'#0a1430']]);g.fillRect(0,0,320,240);
     g.fillStyle=mkRad(g,70,70,4,46,[[0,'rgba(240,248,255,.95)'],[.55,'rgba(200,220,240,.75)'],[1,'rgba(160,190,230,0)']]);g.beginPath();g.arc(70,70,46,0,TAU);g.fill();
     mkNoise(g,40,40,60,60,60,['rgba(140,160,190,.35)'],4);
@@ -295,3 +298,19 @@ function ztColumn(){return mkCanvas('zt_col',20,160,g=>{g.fillStyle=mkLin(g,0,0,
   g.fillStyle='rgba(80,86,96,.35)';[4,9,14].forEach(x=>g.fillRect(x,8,1,144));g.fillStyle='#e8ecf0';g.fillRect(0,0,20,6);g.fillRect(0,154,20,6);
   g.fillStyle='#0a3a3a';g.fillRect(4,12,12,136);g.font='bold 9px '+MK_BLOCK;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#5af0e0';
   'LINIEN'.split('').forEach((c,i)=>g.fillText(c,10,20+i*10));g.font='bold 10px '+MK_BLOCK;g.fillText('20',10,82);'LINIEN'.split('').forEach((c,i)=>g.fillText(c,10,96+i*10));});}
+
+// Tizona: Burg vor Nachthimmel (Basisspiel) bzw. vor glühendem Abendrot (Freispiele)
+function tzCastle(g,fs){g.fillStyle=fs?mkLin(g,0,0,0,240,[[0,'#2a0a04'],[.45,'#c8501a'],[1,'#3a1404']]):mkLin(g,0,0,0,240,[[0,'#020818'],[.5,'#0e2448'],[1,'#040a18']]);g.fillRect(0,0,320,240);
+  let s=31;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;};
+  if(!fs)for(let i=0;i<70;i++){g.fillStyle='rgba(255,255,255,'+(.3+r()*.6).toFixed(2)+')';g.fillRect(r()*320,r()*90,1,1);}
+  else for(let i=0;i<40;i++){g.fillStyle='rgba(255,'+(160+r()*80|0)+',60,'+(.3+r()*.5).toFixed(2)+')';g.fillRect(r()*320,r()*200,1,1+r()*2);}
+  // Berge links und rechts
+  g.fillStyle=fs?'#1a0804':'#06101e';g.beginPath();g.moveTo(0,240);g.lineTo(0,90);g.lineTo(30,60);g.lineTo(60,110);g.lineTo(60,240);g.fill();g.beginPath();g.moveTo(320,240);g.lineTo(320,80);g.lineTo(290,50);g.lineTo(262,110);g.lineTo(262,240);g.fill();
+  // Burg-Silhouette mit Zinnen
+  g.fillStyle=fs?'rgba(40,14,4,.85)':'rgba(10,22,44,.9)';g.fillRect(70,40,180,60);
+  [[86,18,26],[130,6,30],[176,10,28],[220,22,24]].forEach(([x,y,w])=>{g.fillRect(x,y,w,82-y);for(let k=0;k<w;k+=6)g.fillRect(x+k,y-5,4,5);});
+  for(let k=70;k<250;k+=8)g.fillRect(k,34,5,6);
+  g.fillStyle=fs?'rgba(255,170,60,.7)':'rgba(255,220,140,.55)';[[96,40],[140,26],[186,30],[228,44],[160,60]].forEach(([x,y])=>g.fillRect(x,y,3,5));
+  if(!fs){g.fillStyle=mkRad(g,268,30,2,26,[[0,'rgba(230,240,255,.9)'],[1,'rgba(160,190,230,0)']]);g.beginPath();g.arc(268,30,26,0,TAU);g.fill();}
+  // Titel-Leiste unten wie Spielhallen-Rahmen
+  g.fillStyle=fs?mkLin(g,0,182,0,240,[[0,'#4a1a08'],[1,'#1a0602']]):mkLin(g,0,182,0,240,[[0,'#0a1830'],[1,'#02060e']]);g.fillRect(0,182,320,58);}

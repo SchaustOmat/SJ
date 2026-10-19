@@ -20,14 +20,14 @@ SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2
   SlotEngine.setup('temple',mk('temple',ADJ(BASE,[1,1,0,0,-1])),304);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
   SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:211,KLEE:68,PFEN:26,KAEF:7,KOEN:3,TEUF:85})),501);
-  const TIZ_ROWS=[[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3],[15,16,16,13,13,9,9,6,6,4,1,3]];
+  const TIZ_ROWS=[[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3]];
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
   SlotEngine.setup('zent',[[20,15,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
   SlotEngine.setup('tizona',TIZ_ROWS.map(a=>R_(a,TK)),706);
   SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
   SlotEngine.setup('pharao',[[7,12,9,11,6,18,11,1,1,1],[17,17,15,0,12,1,1,4,1,1],[15,8,18,18,14,3,2,5,7,1],[1,21,2,13,1,9,12,1,3,1],[17,3,13,0,6,1,1,6,1,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'96,9',fs:'161',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
+const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'3,6',power:'13'},spitze:{rtp:'97',fs:null,hit:'3,7'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -382,7 +382,8 @@ function startSpin(m,demo){
   m.ovr=null;
   if(m.G.walkWild&&!demo){let sc=0;for(let r=0;r<3;r++)for(let c=0;c<5;c++)if(m.grid[r][c]===m.G.scatter)sc++;m.shN=sc; // vor dem Schwert zählen
     if(m.fs&&m.G.free.shields){const l0=SlotEngine.tizLevel(m.fs.sh);m.fs.sh=(m.fs.sh||0)+sc;m.fs.lvUp=SlotEngine.tizLevel(m.fs.sh)>l0;}
-    const h=m.fs?SlotEngine.tizHeight(m.fs.sh):1;m.ww=SlotEngine.walk(m.G,m.grid,m.ww,h);m.wwc=wwCells(m.ww);m.wwT=now;}
+    const h=m.fs?SlotEngine.tizHeight(m.fs.sh):1;m.ww=SlotEngine.walk(m.G,m.grid,m.ww,h);m.wwc=wwCells(m.ww);m.wwT=now;
+    if(m.fs){const fr=m.ww.filter(w=>w.fresh).length;if(fr){m.fs.left+=fr;m.fs.total+=fr;m.topDirty=true;}}} // Merkur: jedes neue Schwert = +1 Freispiel
   else if(!m.G.walkWild){m.ww=null;m.wwc=null;}
   if(m.fs&&m.G.free&&m.G.free.superspin&&!demo){const ss=SlotEngine.superspin(m.G,m.grid,m.lines,payLine(m),Math.random,true);if(ss.grid!==m.grid){m.ovr=ss.grid;m.grid=ss.grid;m.ssSteps=ss.steps;}m.ev=ss.ev;}
   else if(m.G.walkWild&&m.fs&&!demo)m.ev=SlotEngine.tizEval(m.G,m.grid,m.lines,payLine(m),m.fs.sh,true);
@@ -781,7 +782,7 @@ function drawMystCell(m,g,x,y,w,h,r,c){
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
 function bgFor(m,g){
-  if(typeof MK_BG!=='undefined'&&MK_BG[m.G.id]){g.drawImage(MK_BG[m.G.id](),0,0);return;}
+  if(typeof MK_BG!=='undefined'&&MK_BG[m.G.id]){g.drawImage(MK_BG[m.G.id](m),0,0);return;}
   const BGC={viking:['#0a1a30','#04101e'],mine:['#1a1410','#0a0806'],reef:['#03304a','#011a2a'],temple:['#3a1004','#1a0602'],pharao:['#4a0808','#140202'],spitze:['#0a1030','#02040e'],zent:['#0a2a4a','#04101e'],tizona:['#2a1a0a','#0a0604'],doppel:['#3a2208','#120802']}[m.G.id];
   if(BGC){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,BGC[0]);gr.addColorStop(1,BGC[1]);g.fillStyle=gr;g.fillRect(0,0,320,240);return;}
   if(m.G.id==='book'){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,'#3a2208');gr.addColorStop(.5,'#1a0e04');gr.addColorStop(1,'#2a1606');g.fillStyle=gr;g.fillRect(0,0,320,240);
@@ -796,7 +797,7 @@ function drawReelArea(m,g){
     const x=RX+i*CW,r=m.reels[i],S=stripsFor(m)[i],L=S.length;
     g.save();g.beginPath();g.rect(x+1,RY,CW-2,CH*3);g.clip();
     const rg=g.createLinearGradient(0,RY,0,RY+CH*3);
-    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#5a6a8a','#eef2f8'],doppel:['#000000','#0c0a08']}[G.id];
+    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#060c1a','#101c34'],doppel:['#000000','#0c0a08']}[G.id];
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
     if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else if(G.id==='zent')g.drawImage(ztMarble(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;
