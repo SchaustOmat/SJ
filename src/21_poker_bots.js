@@ -1,7 +1,9 @@
 /* =========================================================
    TEXAS HOLD'EM TISCH (2. Stock)
    ========================================================= */
-const PK={F:null,group:null,cx:-5,cz:-4,seats:[],dealer:0,sb:50,bb:100,board:[],deck:[],stage:'off',toAct:-1,curBet:0,minRaise:100,
+// Blinds 20/40 €, Bots mit eigener Kasse ab 2.000 € (jeder anders, bis ~9.000 €)
+const BOT_STACK=()=>Math.round((200000+Math.random()*Math.random()*700000)/5000)*5000;
+const PK={F:null,group:null,cx:-5,cz:-4,seats:[],dealer:0,sb:2000,bb:4000,board:[],deck:[],stage:'off',toAct:-1,curBet:0,minRaise:4000,
   wait:0,next:null,raiseTo:0,cards:[],boardMeshes:[],msg:'',info:'',human:null,consoleTex:null,potSprite:null,potStack:null,dbtn:null,handNo:0,btns:{}};
 const BOT_DEF=[
   {name:'BOSS',pos:[-1.78,-.85],agg:.55,loose:.35,glasses:true,color:0x8a6a1a},
@@ -16,7 +18,7 @@ function buildPoker(F){
   const top=mesh(new THREE.CylinderGeometry(1,1,.1,56),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
   const rim=mesh(new THREE.CylinderGeometry(1,1,.12,56),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
   mesh(new THREE.CylinderGeometry(.35,.6,.76,24),lam({color:0x120c18}),0,.38,0,g);
-  const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 50/100',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
+  const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 20/40 €',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+2.3);
   col(F,cx,cz,2.8,4.4);
   // seats
@@ -31,9 +33,9 @@ function buildPoker(F){
     const n=npc(F,{x:wx,z:wz,rot:faceTo(wx,wz,cx,cz),sit:true,anim:'cards',lines:LINES.poker,name:d.name,glasses:d.glasses,color:d.color,hair:d.hair,noCol:true});
     mesh(new THREE.CylinderGeometry(.24,.22,.08,20),lam({color:0x6a1020}),wx,.6,wz,F.group);col(F,wx,wz,.55,.55);
     const lab=spriteLabel(192,56,.2);lab.position.set(wx,1.78,wz);F.group.add(lab);
-    PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:20000,hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
+    PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:BOT_STACK(),hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
   });
-  const dl=npc(F,{x:cx,z:cz-2.55,rot:0,anim:'dealer',lines:["Blinds 50 und 100.","Setz dich, wenn du dich traust.","Karten kommen."],name:'DEALERIN',color:0x1a1a1e,hair:0xb02a5a});
+  const dl=npc(F,{x:cx,z:cz-2.55,rot:0,anim:'dealer',lines:["Blinds 20 und 40 Euro.","Setz dich, wenn du dich traust.","Karten kommen."],name:'DEALERIN',color:0x1a1a1e,hair:0xb02a5a});
   PK.dealerNpc=dl;
   // pot sprite
   PK.potSprite=spriteLabel(256,64,.2);PK.potSprite.position.set(cx,1.02,cz-.75);F.group.add(PK.potSprite);
@@ -123,7 +125,7 @@ function pressPBtn(key){
   const b=PK.btns[key];b.press=1;SFX.btn();if(!b.lit)return;
   if(PK.stage==='off'&&key==='CALL'&&PK.human.out){rebuyHuman();return;}
   if(!humanTurn())return;
-  const h=PK.human,minTo=Math.min(h.bet+h.stack,PK.curBet+PK.minRaise),maxTo=h.bet+h.stack,step=Math.max(PK.bb,Math.round(potTotal()/4/10)*10);
+  const h=PK.human,minTo=Math.min(h.bet+h.stack,PK.curBet+PK.minRaise),maxTo=h.bet+h.stack,step=Math.max(PK.bb,Math.round(potTotal()/4/100)*100);
   switch(key){
     case 'FOLD':doAction(0,'fold');break;
     case 'CALL':doAction(0,PK.curBet>h.bet?'call':'check');break;
@@ -138,13 +140,13 @@ function pressPBtn(key){
 function later(sec,fn){PK.wait=sec;PK.next=fn;}
 function pokerSit(){
   if(PK.sitting)return true;
-  const buy=chips;if(buy<500){toast('Du brauchst mindestens 5 € für den Tisch.');return false;}
+  const buy=chips;if(buy<2*PK.bb){toast('Du brauchst mindestens '+fmt(2*PK.bb)+' für den Tisch (Blinds 20/40 €).');return false;}
   setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;PK.sitting=true;store('nk_pstack',PK.human.stack);
   PK.info='BUY-IN '+fmt(buy)+' · GLEICH GEHT\'S LOS';PK.msg='NEUE RUNDE';drawPot();updConsole();
-  say(PK.dealerNpc,'Willkommen am Tisch. Blinds 50 und 100.',3);
+  say(PK.dealerNpc,'Willkommen am Tisch. Blinds 20 und 40 Euro.',3);
   later(1.6,newHand);return true;
 }
-function rebuyHuman(){const buy=chips;if(buy<500){PK.info='ZU WENIG GELD';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
+function rebuyHuman(){const buy=chips;if(buy<2*PK.bb){PK.info='ZU WENIG GELD';updConsole();return;}setChips(chips-buy);PK.human.stack=buy;PK.human.out=false;store('nk_pstack',buy);PK.info='NACHGEKAUFT';updConsole();later(1,newHand);}
 function pokerLeave(){
   const h=PK.human;
   if(PK.stage!=='off'&&!h.folded){h.folded=true;h.last='FOLD';}
@@ -159,7 +161,7 @@ function active(){return PK.seats.filter(s=>!s.out);}
 function nextIdx(i,pred){for(let k=1;k<=PK.seats.length;k++){const j=(i+k)%PK.seats.length;if(pred(PK.seats[j]))return j;}return -1;}
 function newHand(){
   PK.next=null;
-  PK.seats.forEach(s=>{if(!s.human&&s.stack<=0){s.stack=20000;s.last='NACHGEKAUFT';say(s.npc,'Nachgekauft. Jetzt erst recht.',2.5);}});
+  PK.seats.forEach(s=>{if(!s.human&&s.stack<=0){s.stack=BOT_STACK();s.last='NACHGEKAUFT';say(s.npc,'Nachgekauft. Jetzt erst recht.',2.5);}});
   const h=PK.human;if(h.stack<=0){h.out=true;PK.stage='off';PK.info='KEIN GELD MEHR · NACHKAUFEN ODER AUFSTEHEN';PK.msg='';drawPot();updConsole();return;}
   clearTable();
   PK.handNo++;PK.board=[];
@@ -244,7 +246,7 @@ function botAct(i){
   const e=eq+(Math.random()-.5)*.12+(s.loose-.4)*.08;
   const strong=1/(opp+1)+.18;
   const bluff=Math.random()<s.agg*.08;
-  const sizeTo=()=>{const frac=.5+Math.random()*.6*(.5+s.agg);let t=PK.curBet+Math.max(PK.minRaise,Math.round(pot*frac/10)*10);return Math.min(t,s.bet+s.stack);};
+  const sizeTo=()=>{const frac=.5+Math.random()*.6*(.5+s.agg);let t=PK.curBet+Math.max(PK.minRaise,Math.round(pot*frac/100)*100);return Math.min(t,s.bet+s.stack);};
   if(toCall===0){
     if((e>strong&&Math.random()<.55+s.agg*.4)||bluff)return doAction(i,'raise',sizeTo());
     return doAction(i,'check');
