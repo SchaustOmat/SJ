@@ -1,12 +1,14 @@
 /* =========================================================
    ALLES SPITZE (Regeln wie bei Merkur): eine Walze, drei Leitern (Kleeblatt, Münze, Marienkäfer).
    Kleeblatt 1–10×, Münze 3–50×, Marienkäfer 10–350× Einsatz (je 5 Stufen, Werte wie der Spielplan bei Level 20).
-   Jeder Treffer hebt seine Leiter um eine Stufe. CASHPOT = Summe aller Leitern (auch volle).
-   Volle Leiter + ihr Symbol kommt nochmal = Höchstgewinn direkt, die Leiter fängt neu an.
+   Jeder Treffer hebt seine Leiter um eine Stufe. CASHPOT = Summe der Leitern, die noch nicht voll sind.
+   Leiter oben angekommen = Höchstgewinn direkt; sie BLEIBT voll und zahlt bei jedem weiteren Treffer
+   ihres Symbols wieder den Höchstgewinn, bis der Teufel kommt (Wunsch vom Nutzer).
    Sonne (Joker) hebt alle drei Leitern. Teufel setzt alles auf 0. Alle drei voll = 500×.
-   Annahme bucht den Cashpot, alle Leitern fangen neu an. Dauerstart stoppt ab einstellbarem Cashpot.
-   Quote (Walze LEER 212, Klee 95, Münze 38, Käfer 10, Sonne 4, Teufel 18; Simulation):
-   sofort nehmen ~97 %, ab 10× ~95 %, ab 50× ~98 %, nie nehmen ~75 %.
+   Annahme bucht den Cashpot, nur die nicht vollen Leitern fangen neu an. Dauerstart stoppt ab einstellbarem Cashpot.
+   Einsatz (auch mit Leiter-/Karte-Knopf) nur bei leeren Leitern änderbar, sonst ändern sich die Werte.
+   Quote (Walze LEER 185, Klee 95, Münze 38, Käfer 10, Sonne 4, Teufel 45; tools/spitze_sim.js 1):
+   sofort nehmen ~97 %, ab 10× ~98 %, ab 50× ~97 %, nie nehmen ~95 %.
    Bildschirm wie das echte Gerät: Titel im Feuer, Joker links, Walze im Flammenrahmen, Teufel rechts,
    Cashpot-Leiste mit Dauerstart-Stopp und Annahme; die drei Leitern stehen im Aufsatz.
    Alles Statische wird einmal vorgezeichnet (sonst ruckelt es auf dem Handy).
@@ -43,8 +45,9 @@ Object.assign(EXTRA_SYM,{
   LEER(){}
 });
 function spOf(m){return m.sp||(m.sp={lv:{KLEE:0,PFEN:0,KAEF:0},pot:0,jp:false,hit:{}});}
-// Cashpot = Summe aller Leitern (eine volle Leiter zählt mit ihrem Höchstwert)
-function spPot(S,bet){return SP_KEYS.reduce((a,k)=>a+(S.lv[k]>0?SPL[k][Math.min(5,S.lv[k])-1]*bet:0),0);}
+// Cashpot = Summe der Leitern, die noch nicht voll sind (volle zahlen ihren Höchstwert direkt aus)
+function spPot(S,bet){return SP_KEYS.reduce((a,k)=>a+(S.lv[k]>0&&S.lv[k]<5?SPL[k][S.lv[k]-1]*bet:0),0);}
+function spEmpty(m){const S=m.sp;return !S||SP_KEYS.every(k=>!S.lv[k]);}
 // Dauerstart stoppt ab … (Vielfache vom Einsatz, 0 = aus)
 const SP_STOP=[0,2,5,10,20,50,100];
 function spStopIdx(m){return m.spStop===undefined?3:m.spStop;}
@@ -53,19 +56,19 @@ function spStopVal(m){return SP_STOP[spStopIdx(m)]*totalBet(m);}
 function spitzeResult(m){
   const S=spOf(m),bet=totalBet(m),sym=m.grid[1][2];m.present=null;let direct=0;const full=[];
   const up=k=>{S.hit[k]=now;
-    if(S.lv[k]>=5){direct+=SPL[k][4]*bet;S.lv[k]=0;return;} // volle Leiter getroffen: Höchstgewinn, dann fängt sie neu an
-    S.lv[k]++;if(S.lv[k]===5)full.push(k);};
+    if(S.lv[k]>=5){direct+=SPL[k][4]*bet;S.again=k;return;} // volle Leiter getroffen: Höchstgewinn nochmal, sie bleibt voll
+    S.lv[k]++;if(S.lv[k]===5){full.push(k);direct+=SPL[k][4]*bet;}};
   if(sym==='KOEN'){SP_KEYS.forEach(up);m.msg=full.length?'SONNE! '+full.map(k=>SP_NAME[k]).join(' + ')+' VOLL!':'SONNE! ALLE LEITERN +1';
     SFX.big();fxFlash(m,.6,'255,220,120');fxShake(m,.4,true);S.flash='KOEN';S.flashT=now;}
   else if(sym==='TEUF'){const had=spPot(S,bet)>0;S.lv={KLEE:0,PFEN:0,KAEF:0};
     m.msg=had?'TEUFEL! CASHPOT AUF 0':'TEUFEL';SFX.lose();S.flash='TEUF';S.flashT=now;if(had){SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.6,true);}}
   else if(SPL[sym]){up(sym);fxBurst(m,160,SP_WIN.y+SP_WIN.h/2,14,{spd:90,life:.7});
-    m.msg=direct?SP_NAME[sym]+' VOLL GETROFFEN!':full.length?SP_NAME[sym]+'-LEITER VOLL!':SP_NAME[sym]+' · STUFE '+S.lv[sym];
-    if(direct)SFX.big();else if(full.length)SFX.tierUp(1);else SFX.win();}
+    m.msg=full.length?SP_NAME[sym]+'-LEITER VOLL!':direct?SP_NAME[sym]+' NOCHMAL: HÖCHSTGEWINN!':SP_NAME[sym]+' · STUFE '+S.lv[sym];
+    if(full.length)SFX.tierUp(1);else if(direct)SFX.big();else SFX.win();}
   else m.msg=spPot(S,bet)>0?'ANNAHME ODER WEITER':'VIEL GLÜCK';
   let jp=0;if(SP_KEYS.every(k=>S.lv[k]>=5)){jp=SP_JP*bet;S.lv={KLEE:0,PFEN:0,KAEF:0};SFX.ausFan();startBigSp(m);}
   S.pot=spPot(S,bet);m.topDirty=true;
-  if(direct||jp){m.win=direct+jp;m.disp=0;m.state='count';m.timer=1.1;m.msg=jp?'ALLE DREI VOLL! +'+fmt(m.win):'DIREKTGEWINN '+fmt(m.win);
+  if(direct||jp){m.win=direct+jp;m.disp=0;m.state='count';m.timer=1.1;m.msg=jp?'ALLE DREI VOLL! +'+fmt(m.win):(full.length?'LEITER VOLL · ':'')+'DIREKTGEWINN '+fmt(m.win);
     fxBurst(m,160,SP_WIN.y+SP_WIN.h/2,40,{coin:true,sz:4,spd:150,up:90,life:1.2});if(m.win>=bet*10)startBig(m,m.win);m.dirty=true;updateButtons(m);return;}
   m.state='idle';m.timer=m.auto?.55:0;
   // Dauerstart stoppt ab dem eingestellten Cashpot
@@ -73,9 +76,9 @@ function spitzeResult(m){
   m.dirty=true;updateButtons(m);
 }
 function startBigSp(m){fxFlash(m,1);fxShake(m,.8,true);fxBurst(m,160,100,80,{coin:true,spd:200,up:110,sz:5,life:1.8});}
-// Annahme: Cashpot wird zum Gewinn (danach Risiko oder Nehmen wie gewohnt); alle Leitern fangen neu an
+// Annahme: Cashpot wird zum Gewinn (danach Risiko oder Nehmen wie gewohnt); die nicht vollen Leitern fangen neu an
 function spitzeTake(m){const S=spOf(m);S.pot=spPot(S,totalBet(m));if(S.pot<=0||m.state!=='idle')return;
-  m.win=S.pot;S.pot=0;S.lv={KLEE:0,PFEN:0,KAEF:0};m.disp=0;m.state='count';m.timer=.9;m.msg='ANNAHME · CASHPOT '+fmt(m.win);SFX.chip();
+  m.win=S.pot;S.pot=0;SP_KEYS.forEach(k=>{if(S.lv[k]<5)S.lv[k]=0;});m.disp=0;m.state='count';m.timer=.9;m.msg='ANNAHME · CASHPOT '+fmt(m.win);SFX.chip();
   fxBurst(m,SP_POT.x+SP_POT.w/2,SP_POT.y+SP_POT.h/2,24,{coin:true,sz:4,spd:120,up:90,life:1.2});m.topDirty=true;m.dirty=true;updateButtons(m);}
 // Tippen auf den Bildschirm: Annahme-Knopf und Dauerstart-Pfeile
 function spitzeTap(m,uv){if(!m.G.special||!uv||m.remote)return false;const x=uv.x*320,y=(1-uv.y)*240,hit=B=>x>=B.x-3&&x<=B.x+B.w+3&&y>=B.y-3&&y<=B.y+B.h+3;
@@ -195,8 +198,8 @@ function spVisPos(M,p){const L=M.L,i=Math.floor(p),f=p-i,wrap=Math.floor(i/L),a=
   let va=M.V[a],vb=M.V[b];if(b<a)vb+=M.n;return wrap*M.n+va+(vb-va)*f;}
 function drawSpitzeInfo(m,g){
   g.fillStyle='rgba(10,6,16,.95)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);g.fillStyle='#ffd23a';
-  const L=['EINE WALZE · DREI LEITERN (OBEN IM AUFSATZ)','KLEEBLATT, MÜNZE, KÄFER: LEITER +1 STUFE','CASHPOT = SUMME DER LEITERN',
-    'VOLLE LEITER + SYMBOL NOCHMAL = HÖCHSTGEWINN','SONNE (JOKER): ALLE DREI LEITERN +1','TEUFEL: CASHPOT AUF 0','ALLE DREI VOLL: 500× EINSATZ',
-    'ANNAHME BUCHT DEN CASHPOT · DAUERSTART STOPPT AB …','QUOTE CA. 95–97 % (SOFORT ODER AB 10× NEHMEN)'];
+  const L=['EINE WALZE · DREI LEITERN (OBEN IM AUFSATZ)','KLEEBLATT, MÜNZE, KÄFER: LEITER +1 STUFE','LEITER OBEN = HÖCHSTGEWINN, SIE BLEIBT VOLL',
+    'VOLL + SYMBOL NOCHMAL = WIEDER HÖCHSTGEWINN','SONNE (JOKER): ALLE DREI LEITERN +1','TEUFEL: ALLES AUF 0','ALLE DREI VOLL: 500× EINSATZ',
+    'ANNAHME BUCHT DEN CASHPOT · DAUERSTART STOPPT AB …','QUOTE CA. 95–98 % · EINSATZ NUR BEI LEEREN LEITERN'];
   L.forEach((t,i)=>{g.fillStyle=i===0?'#ffd23a':i>=7?'#b8a888':'#f4f0e8';fitL(g,t,RX+4,RY+10+i*16,CW*5-8,7);});
 }

@@ -4,7 +4,7 @@
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
 (function(){
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:212,KLEE:95,PFEN:38,KAEF:10,KOEN:4,TEUF:18})),501);
+  SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:185,KLEE:95,PFEN:38,KAEF:10,KOEN:4,TEUF:45})),501);
   const TIZ_ROWS=[[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3]];
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
   SlotEngine.setup('zent',[[22,17,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
@@ -200,7 +200,7 @@ function btnModel(m){
   B('EINSATZ','EINSATZ','amber',idle&&!wwPend(m));
   B('AUTO',m.auto?'STOP':'AUTO','blue',idle||show||m.auto,m.auto);
   const canRisk=(show||(s==='count'&&!m.pendingFs))&&m.win>0;
-  const lvlBtn=idle&&!m.fs&&!wwPend(m)&&!G.special; // ohne Gewinn: Einsatz einstellen
+  const lvlBtn=idle&&!m.fs&&!wwPend(m)&&(!G.special||spEmpty(m)); // ohne Gewinn: Einsatz einstellen (Alles Spitze nur bei leeren Leitern)
   B('KARTE','RISIKO KARTE','red',canRisk||lvlBtn,canRisk);
   const canLadder=canRisk; // Leiter geht bei jedem Gewinn
   if(m.auto&&!canLadder)B('LEITER',m.autoRisk?'AUTO-RISIKO AN':'AUTO-RISIKO','yellow',true,m.autoRisk); // Risiko-Automatik bis zur Ausspielung
@@ -243,12 +243,13 @@ function pressButton(m,key){
   switch(key){
     case 'INFO':m.info=!m.info;m.dirty=true;break;
     case 'LINIEN':{if(m.G.special){spitzeTake(m);break;}if(m.G.doppel){m.dbl=!m.dbl;m.msg=m.dbl?'DOPPELBUCH: 15 FREISPIELE, 2 SONDERSYMBOLE':'EINZELBUCH: 10 FREISPIELE, 1 SONDERSYMBOL';m.dirty=true;m.topDirty=true;break;}const o=m.G.lineOpts;m.lines=o[(o.indexOf(m.lines)+1)%o.length];m.info=false;m.msg='LINIEN: '+m.lines;m.dirty=true;break;}
-    case 'EINSATZ':{m.betIdx=(m.betIdx+1)%m.G.betOpts.length;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));m.dirty=true;break;}
+    case 'EINSATZ':{if(m.G.special&&!spEmpty(m)){m.msg='EINSATZ NUR BEI LEEREN LEITERN';SFX.click();m.dirty=true;break;}m.betIdx=(m.betIdx+1)%m.G.betOpts.length;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));m.dirty=true;break;}
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
       if(key==='LEITER'&&m.auto&&!(s==='show'||s==='count')){m.autoRisk=!m.autoRisk;m.msg=m.autoRisk?'AUTO-RISIKO AN · BIS '+fmt(ladOf(m)[AUS_I]):'AUTO-RISIKO AUS';SFX.click();break;}
       // wie am Merkur-Gerät: ohne Gewinn stellen die Risiko-Knöpfe den Einsatz ein (Leiter = Level +1, Karte = max. Level)
-      if(s==='idle'&&!m.fs&&!wwPend(m)&&!m.G.special){if(key==='LEITER')m.betIdx=(m.betIdx+1)%m.G.betOpts.length;else m.betIdx=m.G.betOpts.length-1;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));SFX.click();m.dirty=true;break;}
+      if(s==='idle'&&m.G.special&&!spEmpty(m)){m.msg='EINSATZ NUR BEI LEEREN LEITERN';SFX.click();m.dirty=true;break;}
+      if(s==='idle'&&!m.fs&&!wwPend(m)){if(key==='LEITER')m.betIdx=(m.betIdx+1)%m.G.betOpts.length;else m.betIdx=m.G.betOpts.length-1;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));SFX.click();m.dirty=true;break;}
       if(s==='count'&&!m.pendingFs){m.timer=0;m.disp=m.win;m.state='show';}
       if(m.state==='show')startGamble(m,key==='KARTE'?'rb':'ladder');break;
     case 'START':

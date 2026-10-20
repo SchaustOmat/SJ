@@ -1,7 +1,7 @@
 /* =========================================================
    HÖHER / TIEFER  (Karten-Risiko, 3D-Tisch im 2. Stock)
    ========================================================= */
-const HL={F:null,cx:4,cz:7,state:'bet',stakes:[10,20,50,100,200,500,1000,2000,5000],si:3,pending:0,open:null,hidden:[],meshes:[],openMesh:null,pick:-1,msg:'',round:0,btns:{},tex:null,timer:0,next:null};
+const HL={F:null,cx:4,cz:7,state:'bet',stakes:[10,20,50,100,200,500,1000,2000,5000,10000,20000,50000],si:3,pending:0,open:null,hidden:[],meshes:[],openMesh:null,pick:-1,msg:'',round:0,btns:{},tex:null,timer:0,next:null};
 const HLBTN=[['MINUS',.12,'white'],['PLUS',.12,'white'],['GEBEN',.26,'green'],['NEHMEN',.26,'yellow'],['WEITER',.26,'red']];
 function buildHilo(F){
   HL.F=F;const cx=HL.cx,cz=HL.cz;

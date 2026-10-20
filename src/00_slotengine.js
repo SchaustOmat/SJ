@@ -19,7 +19,7 @@ var SlotEngine=(function(){
   var LINES20=LINES10.concat([[1,2,1,0,1],[1,0,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],[0,0,2,0,0],[2,2,0,2,2]]);
   var GAMES={
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
-    pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
+    pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200,300,400,500,1000],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],stack:3,
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
       mystery:{chance:1/70,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
@@ -29,26 +29,26 @@ var SlotEngine=(function(){
       scatterPay:[0,0,0,0,0,0],free:null,counts:null},
     // Zentaurus Power Spins: 20 Linien, Zentaur = Wild und verdoppelt je Zentaur auf der Linie, 3 Münzen = 10 Freispiele mit Superspin, Power Spins
     // Echter Merkur-Gewinnplan bei 0,10 € und 20 Linien (Linieneinsatz 0,5 Cent: lineDiv 2, Gewinne hier pro 0,5-Cent-Einheit in halben Cent)
-    zent:{id:'zent',title:'ZENTAURUS',sub:'SUPERSPIN',lines:LINES20,lineOpts:[20],lineDiv:2,betOpts:[1,2,4,6,8,10,20,40,60,80,100],
+    zent:{id:'zent',title:'ZENTAURUS',sub:'SUPERSPIN',lines:LINES20,lineOpts:[20],lineDiv:2,betOpts:[1,2,4,6,8,10,20,40,60,80,100,200,300,400,500,1000],
       wild:'ZENT',scatter:'MUENZE',wildMult:true,top:'OLYMP',stack:3,fsNoStack:true,
       pay:{'9':[0,0,0,20,40,80],'10':[0,0,0,20,40,80],'J':[0,0,0,20,80,160],'Q':[0,0,0,20,80,160],'K':[0,0,0,40,120,320],'A':[0,0,0,40,120,320],
            'FUELL':[0,0,0,80,160,480],'VASE':[0,0,0,160,320,640],'HARFE':[0,0,160,320,640,1600],'OLYMP':[0,0,400,800,1200,4000],'ZENT':[0,0,0,0,0,100000]},
       scatterPay:[0,0,0,0,0,0],free:{count:10,trigger:3,superspin:true,desc:['10 FREISPIELE','MIT SUPERSPIN']},counts:null},
     // Tizona: 10 Linien, Schwert = wanderndes Wild (zieht jede Runde eine Walze nach links), 3/4/5 Schilde = 10/15/20 Freispiele, dort wächst das Schwert
-    tizona:{id:'tizona',title:'TIZONA',sub:'DAS SCHWERT DES CID',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
+    tizona:{id:'tizona',title:'TIZONA',sub:'DAS SCHWERT DES CID',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200,300,400,500,1000],
       wild:'SCHWERT',scatter:'SCHILD',walkWild:true,top:'RITTER',stack:3,
       pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,40,150],'A':[0,0,0,10,40,150],
            'TRUHE':[0,0,0,20,75,500],'HANDS':[0,0,0,20,75,500],'BURG':[0,0,10,50,500,1000],'ROSS':[0,0,10,50,500,1000],'RITTER':[0,0,10,100,1000,3000]},
       scatterPay:[0,0,0,0,0,0],free:{count:10,byCount:[0,0,0,10,15,20],trigger:3,shields:true,desc:['10-20 FREISPIELE','4 SCHILDE = GRÖSSERES SCHWERT']},counts:null},
     // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
-    doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
+    doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400,600,800,1000,2000],
       wild:'BUCH',scatter:'BUCH',doppel:true,stack:3,fsNoStack:true,
       // Echter Merkur-Spielplan (Werte gelten bei 0,20 € = Level 20), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 5× der 4er-Gewinn
       pay:{'10':[0,0,0,2.5,12.5,50],'J':[0,0,0,2.5,12.5,50],'Q':[0,0,0,2.5,12.5,50],'K':[0,0,0,2.5,20,75],'A':[0,0,0,2.5,20,75],
            'SKARAB':[0,0,2.5,15,50,375],'GREIF':[0,0,2.5,15,50,375],'MASKE':[0,0,2.5,25,250,1000],'FORSCH':[0,0,5,50,500,2500]},
       scatterPay:[0,0,0,1,10,100],free:{count:10,trigger:3,expanding:true,desc:['10 ODER 15 FREISPIELE','1 ODER 2 SONDERSYMBOLE']},counts:null},
     // Alles Spitze: eine Walze, drei Gewinnleitern (Logik in 28_spitze.js)
-    spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500],
+    spitze:{id:'spitze',title:'ALLES SPITZE',sub:'DREI LEITERN · EIN KÖNIG',special:'spitze',lines:[[1,1,1,1,1]],lineOpts:[1],betOpts:[5,10,20,40,60,80,100,200,500,1000,2000,5000],
       wild:null,scatter:null,pay:{},scatterPay:[0,0,0,0,0,0],free:null,counts:null}
   };
   function setup(id,counts,seed,fsCounts,payScale){var G=GAMES[id];
