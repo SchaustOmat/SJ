@@ -469,7 +469,9 @@ function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
   if(m.auto&&m.autoRisk&&m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&!m.gamble.busy&&m.stateT>.4){
     if(m.win<=0||m.gamble.idx>=AUS_I){collect(m);if(m.auto)startSpin(m);}else ladderPress(m);}
-  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const t=Math.floor(m.stateT/.09);if(t!==m.gamble.rb&&m.stateT>.45){m.gamble.rb=t;SFX.ausTick(clamp(m.stateT/2.3,0,1));}}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const gm=m.gamble,t=Math.floor(m.stateT/.11);
+    if(t!==gm.rb&&m.stateT>.36&&m.stateT<1.74){gm.rb=t;if(!m.remote)SFX.ausRun(t);}
+    if(!gm.sh&&m.stateT>=1.78){gm.sh=true;if(!m.remote)SFX.shimmer();}}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
       M.fxn++;SFX.coinUp(M.fxn*2);fxBurst(m,cx,cy,14,{spd:110,life:.7});fxFlash(m,.15,'255,230,140');
@@ -660,7 +662,7 @@ function startGamble(m,kind){
     const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
     if(idx>=ladOf(m).length-1){collect(m);return;}
-    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';SFX.ladIn();m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
     if(idx>=AUS_I){m.gamble.last=idx;m.gamble.up=true;ausShow(m);m.dirty=true;m.topDirty=true;return;}}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
@@ -688,8 +690,8 @@ const ausEV=L=>AUS_IDX.reduce((a,i,k)=>a+L[i]*AUS_LAND[k],0)/AUS_LAND.reduce((a,
 function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_IDX[k];}return AUS_I;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[ladNext(i)];return (L[i]-D)/(nx-D)*.98;};
 // AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
-function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;m.state='gambleNext';m.stateT=0;m.timer=2.6;m.msg='AUSSPIELUNG!';SFX.ausFan();
-  gm.reveal=()=>{gm.run=false;SFX.ausFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
+function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;gm.sh=false;m.state='gambleNext';m.stateT=0;m.timer=2.0;m.msg='AUSSPIELUNG!';SFX.ausStart();
+  gm.reveal=()=>{gm.run=false;SFX.ladFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
     m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=gm.queued?.35:.9;if(then)then();};
   m.dirty=true;updateButtons(m);}
 function ladderPress(m){
@@ -701,7 +703,7 @@ function ladderPress(m){
 }
 function ladderResult(m){
   const gm=m.gamble,L=ladOf(m),from=gm.idx,t=gm.target;gm.run=false;gm.idx=t;gm.anim={from,to:t,t0:now};
-  if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);SFX.ladUp(t);
+  if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);if(!(t>=AUS_I&&from<AUS_I))SFX.ladFan();
     if(m.win>=totalBet(m)*50){fxBurst(m,239,RY+60,16,{cols:['#fff4a0','#ffd23a'],spd:90,w:60});}}
   else if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win);SFX.ladDown();}
   else{gm.idx=-1;m.msg='VERLOREN';m.win=0;m.disp=0;SFX.ladZero();}
@@ -754,7 +756,7 @@ function drawLadder(m,g,gm){
   const vg=g.createRadialGradient(240,RY+70,10,240,RY+70,150);vg.addColorStop(0,'rgba(255,190,60,.10)');vg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=vg;g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
   const run=m.state==='gambleNext'&&gm.run,result=m.state==='gambleNext'&&!run,cur=gm.idx,L=ladOf(m);
   const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
-  if(!result&&!run&&ph!==gm.ph){gm.ph=ph;if(!gm.preview&&!m.remote)SFX.gambleTick(ph);}
+  if(!result&&!run&&ph!==gm.ph)gm.ph=ph; // Blinken ist still (wie im Video), nur die Musik läuft
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k<F_I?k+1:k,yOf=p=>yb-rh*(p+2);
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
