@@ -167,3 +167,11 @@ document.addEventListener('click',e=>{
   atmRender();
 });
 bankPresence();
+// Geschenk 2026-10-20: je 5.000 € einmalig für Justin und Kollegen (nur diese Kontonummern)
+setTimeout(()=>{
+  const GIFT={'5140 4979':500000,'1237 4780':500000},key='nk_gift_2026_10_20';
+  const amt=GIFT[BANK.konto];if(!amt)return;
+  try{if(localStorage.getItem(key))return;localStorage.setItem(key,'1');}catch(e){return;}
+  BANK.bal+=amt;bankLog('GESCHENK',amt);bankSave();
+  toast('Geschenk: '+fmt(amt)+' auf dein Konto!');SFX.big();
+},2500);
