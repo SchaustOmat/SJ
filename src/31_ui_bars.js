@@ -6,11 +6,11 @@ SV.mctx=SV.main.getContext('2d');SV.tctx=SV.top.getContext('2d');SV.mctx.imageSm
 SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
   b.addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});});
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
-$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&isMine(m))cardOut(m);});
+$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&RESV===m)cardOut(m);});
 // Beim Hinsetzen: Portemonnaie raus, Karte antippen -> Karte fährt rein -> ENTSPERRT
 function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
 function svGate(m){
-  const el=$('#svGate');if(!el)return;if(!m||isMine(m)){el.hidden=true;return;}
+  const el=$('#svGate');if(!el)return;if(!m||RESV===m){el.hidden=true;return;}
   el.hidden=false;el.className='gwrap';el.dataset.st='enter';
   el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div>'+walletHtml('gWallet')+'<p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.dataset.st==='enter')el.dataset.st='';}));
@@ -46,7 +46,7 @@ function svButtons(m){
 }
 function svDraw(m){
   if(m!==SV.m)return;
-  const cr=isMine(m)?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
+  const cr=m===RESV?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
   if(SV.last.cr!==cr){$('#svCredit').textContent=cr;SV.last.cr=cr;}
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}

@@ -26,7 +26,7 @@ function mpActivity2(){
   return null;
 }
 // Automat, in dem ein Mitspieler seine Karte stecken hat (Name oder '')
-function machineHeld(m){const i=allMachines().indexOf(m);let n='';MP.avatars.forEach(a=>{if(a.rs===i||(a.rl&&a.rl.includes(i)))n=a.name||'Jemand';});return n;}
+function machineHeld(m){const i=allMachines().indexOf(m);let n='';MP.avatars.forEach(a=>{if(a.rs===i&&a.f===floorIdx)n=a.name||'Jemand';});return n;}
 const GNAME={slot:'AUTOMAT',poker:'POKER',hilo:'HÖHER/TIEFER',roulette:'ROULETTE'};
 function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;

@@ -95,25 +95,24 @@ function buildWorld(){
   chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
   luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
-  // Spielhalle: lange Automatenreihen an den Wänden (alle frei, niemand sitzt daran)
-  const MROW=[['pharao',0xd6a02a],['zent',0xc42a3a],['tizona',0x2a6ad6],['doppel',0xff6a1a],['spitze',0x4a9aff]];
-  for(let i=0;i<10;i++){const [id,c]=MROW[i%5];buildMachine(A,-11.6,-9.8+i*1.25,Math.PI/2,id,c);}
+  const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
-  for(let i=0;i<6;i++){const [id,c]=MROW[(i+2)%5];buildMachine(A,-10.3+i*1.25,-11.6,0,id,c);}
+  [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
   buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:500,bb:1000,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
-  sign(A,'SJ SPIELBANK','#ffcf3a',-3.2,3.45,-11.9,0,.6);
+  sign(A,'SJ SPIELBANK','#ffcf3a',-3.5,2.9,-11.9,0,.75);
   sign(A,'ROULETTE','#ffcf3a',0,3.5,-2,0,.45);
-  sign(A,'SPIELHALLE','#29f0ff',-11.9,3.45,-4.2,Math.PI/2,.45);
-  pointLight(A,0xffc070,-7,3,-9.6,1.1,8);
+  sign(A,'SPIELHALLE','#29f0ff',-11.9,3.15,-2.75,Math.PI/2,.5);
   sign(A,'BAR','#29f0ff',11.55,3.25,-1,-Math.PI/2,.6);
   sign(A,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
   sign(A,'WILLKOMMEN','#ffcf3a',0,3.35,11.9,Math.PI,.4);
   npc(A,{x:-1.3,z:-3.4,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e,hair:0x111111});
   const r1=npc(A,{x:.9,z:-3.45,rot:0,anim:'watch',lines:LINES.roulette,name:'STAMMGAST'});
   const r2=npc(A,{x:2.45,z:-2.2,rot:-Math.PI/2,anim:'watch',lines:LINES.roulette,name:'SPIELERIN',hair:0xb02a5a,color:0x6a1a24});
+  mA[0].npc=npc(A,{x:-10.62,z:-6.5,rot:-Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'AUTOMATENOMA',hair:0xc8c8c8,color:0x6a2a5a,noCol:true});
+  mA[3].npc=npc(A,{x:-10.62,z:1,rot:-Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   npc(A,{x:10.9,z:-1,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPER',special:'bartender',color:0xe8e8e8,noCol:true});
   npc(A,{x:8.85,z:1.2,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.generic,name:'GAST',noCol:true});
   npc(A,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:LINES.bouncer,name:'TÜRSTEHER',glasses:true,color:0x0c0c10,hair:0x111111});
@@ -137,7 +136,8 @@ function buildWorld(){
   const v1=npc(B,{x:6.2,z:-5.9,rot:0,anim:'watch',lines:LINES.roulette,name:'HIGHROLLER',glasses:true,color:0x8a6a1a});
   const v2=npc(B,{x:7.0,z:-4.5,rot:-Math.PI/2,anim:'watch',lines:LINES.vip,name:'GAST'});
   B.rouletteFans=[v1,v2];
-  for(let i=0;i<10;i++){const [id,c]=MROW[(i+4)%5];buildMachine(B,11.6,-2.4+i*1.25,-Math.PI/2,id,c);}
+  const mB=[[1.5,'pharao',0xd6a02a],[4,'doppel',0xc42a3a],[6.5,'spitze',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
+  mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
   // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 200 €, wenn man pleite ist)
   buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
@@ -156,7 +156,7 @@ function buildWorld(){
   sign(B,'VIP LOUNGE','#ffcf3a',-3.5,2.9,-11.9,0,.8);
   sign(B,'TEXAS HOLD\'EM','#ffcf3a',-11.9,3,-4,Math.PI/2,.5);
   sign(B,'HÖHER/TIEFER','#ffcf3a',HL.cx,3.0,11.9,Math.PI,.45);
-  sign(B,'SPIELHALLE','#ffcf3a',11.9,3.45,3.2,-Math.PI/2,.45);
+  sign(B,'SPIELHALLE','#ffcf3a',11.9,3.15,4,-Math.PI/2,.5);
   sign(B,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
   pointLight(B,0xffb060,PK.cx,3.2,PK.cz,1.8,9);
   pointLight(B,0xff3040,4.5,3,-4.5,1.5,8.5);
@@ -264,7 +264,7 @@ function enterFocus(type,m){
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
   // nichts zurücksetzen: der Automat zeigt genau das, wo du zuletzt warst (Menü nur beim allerersten Einschalten)
   if(type==='slot'&&m.group.userData.chair)m.group.userData.chair.visible=false; // Stuhl nicht im Bild beim Sitzen
-  if(type==='slot'){setHD(m,true);if(!m.booted&&!isMine(m))smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
+  if(type==='slot'){setHD(m,true);if(!m.booted&&RESV!==m)smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
   if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
@@ -272,7 +272,7 @@ function enterFocus(type,m){
 function leaveFocus(){
   if(!focus)return;UFX.tension('mtable',false);
   const f=focus;
-  if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
+  if(f.type==='slot'&&f.m===RESV){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}
   else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);

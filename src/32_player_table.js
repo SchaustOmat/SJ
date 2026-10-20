@@ -25,7 +25,7 @@ function buildMTable(F,o){
   mesh(new THREE.CylinderGeometry(1.25,1.25,.12,56),lam({color:0x2a1408}),0,.82,0,g);
   mesh(new THREE.CylinderGeometry(.3,.55,.76,24),lam({color:0x120c18}),0,.38,0,g);
   box(1.6,.08,.6,bas({color:o.color}),0,3.2,0,g);
-  const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+(T.sb/100)+'/'+(T.bb/100)+' €',pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
+  const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+T.sb+'/'+T.bb,pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
   tagAct(F,g,act);col(F,T.cx,T.cz,2.5,2.5);
   for(let i=0;i<MT_N;i++){
     const p=mtSeatPos(T,i,T.R);
@@ -76,7 +76,7 @@ function mtRender(T,V){
   c.fillStyle='rgba(10,6,16,.85)';c.fillRect(0,0,256,64);c.strokeStyle='#'+T.color.toString(16).padStart(6,'0');c.lineWidth=2;c.strokeRect(1,1,254,62);
   c.textAlign='center';c.textBaseline='middle';px(c,11);c.fillStyle='#ffcf3a';
   c.fillText(isBetting(V)?'POT '+fmt(potOf(V)):V&&V.stage==='show'?'SHOWDOWN':T.name,128,18);
-  fitText(c,V?V.msg||'':'NUR ECHTE SPIELER · '+(T.sb/100)+'/'+(T.bb/100)+' €',128,44,248,8);
+  fitText(c,V?V.msg||'':'NUR ECHTE SPIELER · '+T.sb+'/'+T.bb,128,44,248,8);
   t.needsUpdate=true;
 }
 
