@@ -98,7 +98,10 @@ const BTN_DEF=[['INFO',-.345,.095],['RISIKO',-.225,.115],['LINIEN',-.09,.115],['
 function buildMachine(F,x,z,rotY,gameId,accent){
   const G=SlotEngine.GAMES[gameId];
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotY;F.group.add(g);
-  const body=lam({map:T.metal,color:0x2a2a34}),trim=lam({map:T.metal,color:accent}),dark=lam({color:0x0c0a10}),chrome=lam({map:T.metal,color:0xd0d4e0});
+  // Lack, Chrom und Zierleisten glänzen im Hallenlicht
+  const phong=(o)=>new THREE.MeshPhongMaterial(o);
+  const body=phong({map:T.metal,color:0x24242c,shininess:60,specular:0x4a4a58}),trim=phong({map:T.metal,color:accent,shininess:80,specular:0x888888,emissive:new THREE.Color(accent).multiplyScalar(.12)}),
+    dark=lam({color:0x0c0a10}),chrome=phong({map:T.metal,color:0xd0d4e0,shininess:140,specular:0xffffff});
   box(.9,.95,.75,body,0,.475,0,g);
   box(.92,.05,.77,chrome,0,.96,0,g);
   box(.5,.07,.12,dark,0,.52,.39,g);
@@ -113,7 +116,10 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   box(.9,.52,.44,body,0,2.13,-.13,g);
   const topTex=canvasTex(256,128,null);
   mesh(new THREE.PlaneGeometry(.74,.37),bas({map:topTex}),0,2.13,.093,g);
-  const crown=bas({color:accent});box(.94,.09,.48,crown,0,2.44,-.13,g);
+  // gewölbte, leuchtende Krone mit Chromkante
+  const crown=bas({color:accent});box(.94,.04,.48,chrome,0,2.405,-.13,g);
+  const dome=mesh(new THREE.CylinderGeometry(.47,.47,.46,28),crown,0,2.4,-.13,g);dome.rotation.x=Math.PI/2;dome.scale.set(1,1,.3);
+  const rim=mesh(new THREE.TorusGeometry(.47,.014,6,32,Math.PI),chrome,0,2.4,.1,g);rim.scale.set(1,.3,1);
   const brand=canvasTex(640,80,(c,w,h)=>{const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#1a1014');bg.addColorStop(1,'#060406');c.fillStyle=bg;c.fillRect(0,0,w,h);
     c.strokeStyle='rgba(214,160,42,.7)';c.lineWidth=3;c.strokeRect(4,4,w-8,h-8);c.textAlign='center';c.textBaseline='middle';px(c,30,800);
     const tg=c.createLinearGradient(0,14,0,h-14);tg.addColorStop(0,'#fff4c8');tg.addColorStop(.5,'#e8b840');tg.addColorStop(1,'#9a6a10');c.fillStyle=tg;c.shadowColor='rgba(255,200,80,.6)';c.shadowBlur=10;

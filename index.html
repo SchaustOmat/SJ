@@ -223,6 +223,8 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 #start .go{font-family:var(--f-title);font-size:13px;color:#d8c8a0;letter-spacing:.3em}
 #start .lic{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);left:0;right:0;font-family:var(--f-title);font-size:10px;color:#7a6440;letter-spacing:.3em;line-height:1.8}
 @media (prefers-reduced-motion:reduce){#start h1,#start .go,#chipsTag.flash{animation:none}}
+/* niedrige Bildschirme (Handy quer): alles kompakter, Fußzeile nicht über HEREINSPAZIERT */
+@media (max-height:520px){#start{gap:10px;padding-bottom:30px}#start .crest{width:48px;height:48px}#start .crest b{font-size:18px}#start h1{font-size:clamp(26px,7vh,44px)}#start .sub{font-size:19px}#start .lic{bottom:calc(env(safe-area-inset-bottom,0px) + 6px)}}
 
 #standBtn{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
   background:rgba(7,5,12,.85);border:2px solid var(--cyan);box-shadow:0 0 0 2px #000,4px 4px 0 #000;font-family:var(--f-title);font-size:14px;letter-spacing:.06em;padding:12px 12px;color:var(--cyan)}
@@ -597,7 +599,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496163";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496339";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1669,7 +1671,10 @@ const BTN_DEF=[['INFO',-.345,.095],['RISIKO',-.225,.115],['LINIEN',-.09,.115],['
 function buildMachine(F,x,z,rotY,gameId,accent){
   const G=SlotEngine.GAMES[gameId];
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotY;F.group.add(g);
-  const body=lam({map:T.metal,color:0x2a2a34}),trim=lam({map:T.metal,color:accent}),dark=lam({color:0x0c0a10}),chrome=lam({map:T.metal,color:0xd0d4e0});
+  // Lack, Chrom und Zierleisten glänzen im Hallenlicht
+  const phong=(o)=>new THREE.MeshPhongMaterial(o);
+  const body=phong({map:T.metal,color:0x24242c,shininess:60,specular:0x4a4a58}),trim=phong({map:T.metal,color:accent,shininess:80,specular:0x888888,emissive:new THREE.Color(accent).multiplyScalar(.12)}),
+    dark=lam({color:0x0c0a10}),chrome=phong({map:T.metal,color:0xd0d4e0,shininess:140,specular:0xffffff});
   box(.9,.95,.75,body,0,.475,0,g);
   box(.92,.05,.77,chrome,0,.96,0,g);
   box(.5,.07,.12,dark,0,.52,.39,g);
@@ -1684,7 +1689,10 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   box(.9,.52,.44,body,0,2.13,-.13,g);
   const topTex=canvasTex(256,128,null);
   mesh(new THREE.PlaneGeometry(.74,.37),bas({map:topTex}),0,2.13,.093,g);
-  const crown=bas({color:accent});box(.94,.09,.48,crown,0,2.44,-.13,g);
+  // gewölbte, leuchtende Krone mit Chromkante
+  const crown=bas({color:accent});box(.94,.04,.48,chrome,0,2.405,-.13,g);
+  const dome=mesh(new THREE.CylinderGeometry(.47,.47,.46,28),crown,0,2.4,-.13,g);dome.rotation.x=Math.PI/2;dome.scale.set(1,1,.3);
+  const rim=mesh(new THREE.TorusGeometry(.47,.014,6,32,Math.PI),chrome,0,2.4,.1,g);rim.scale.set(1,.3,1);
   const brand=canvasTex(640,80,(c,w,h)=>{const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#1a1014');bg.addColorStop(1,'#060406');c.fillStyle=bg;c.fillRect(0,0,w,h);
     c.strokeStyle='rgba(214,160,42,.7)';c.lineWidth=3;c.strokeRect(4,4,w-8,h-8);c.textAlign='center';c.textBaseline='middle';px(c,30,800);
     const tg=c.createLinearGradient(0,14,0,h-14);tg.addColorStop(0,'#fff4c8');tg.addColorStop(.5,'#e8b840');tg.addColorStop(1,'#9a6a10');c.fillStyle=tg;c.shadowColor='rgba(255,200,80,.6)';c.shadowBlur=10;

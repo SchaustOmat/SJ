@@ -216,6 +216,8 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 #start .go{font-family:var(--f-title);font-size:13px;color:#d8c8a0;letter-spacing:.3em}
 #start .lic{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);left:0;right:0;font-family:var(--f-title);font-size:10px;color:#7a6440;letter-spacing:.3em;line-height:1.8}
 @media (prefers-reduced-motion:reduce){#start h1,#start .go,#chipsTag.flash{animation:none}}
+/* niedrige Bildschirme (Handy quer): alles kompakter, Fußzeile nicht über HEREINSPAZIERT */
+@media (max-height:520px){#start{gap:10px;padding-bottom:30px}#start .crest{width:48px;height:48px}#start .crest b{font-size:18px}#start h1{font-size:clamp(26px,7vh,44px)}#start .sub{font-size:19px}#start .lic{bottom:calc(env(safe-area-inset-bottom,0px) + 6px)}}
 
 #standBtn{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
   background:rgba(7,5,12,.85);border:2px solid var(--cyan);box-shadow:0 0 0 2px #000,4px 4px 0 #000;font-family:var(--f-title);font-size:14px;letter-spacing:.06em;padding:12px 12px;color:var(--cyan)}
