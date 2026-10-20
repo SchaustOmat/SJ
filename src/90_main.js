@@ -415,7 +415,7 @@ function chipSel(el,vals,init,onPick){
   return ()=>cur;
 }
 const R={bets:{},last:{},spinning:false,W:newWheel(),act:null,rid:0,ridx:0};
-const rChip=chipSel($('#rChips'),[10,50,100,500],10);
+const rChip=chipSel($('#rChips'),[10,50,100,500,1000,2500,5000,10000,50000],100); // 10 ct bis 500 €
 const rCan=$('#rCan'),rCtx=rCan.getContext('2d');
 const OUTS=[['red','ROT','r'],['black','SCHWARZ','b'],['even','GERADE',''],['odd','UNGERADE',''],['low','1–18',''],['high','19–36',''],['d1','1–12',''],['d2','13–24',''],['d3','25–36','']];
 const betBtns={};

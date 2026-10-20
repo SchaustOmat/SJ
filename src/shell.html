@@ -169,10 +169,11 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .sum{font-family:var(--f-body);font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums}
 .sum b{color:var(--gold);font-weight:normal}
 
-.chipsel{display:flex;gap:8px;align-items:center}
+.chipsel{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;flex:1;min-width:0}
 .chip{width:44px;height:44px;border-radius:50%;border:3px dashed rgba(255,255,255,.65);font-family:var(--f-title);font-size:12.6px;display:grid;place-items:center;box-shadow:0 0 0 2px #000;padding:0;color:#fff;text-shadow:1px 1px 0 #000}
 .chip[aria-pressed="true"]{outline:3px solid var(--gold);outline-offset:2px}
 .c10{background:#3a6ad6}.c25{background:#2a9a5a}.c50{background:#c42a3a}.c100{background:#1a1a1a}.c500{background:#7a3ad6}
+.c1000{background:#e07a10}.c2500{background:#d6409a}.c5000{background:#1a8a9a}.c10000{background:radial-gradient(circle at 40% 35%,#4a4a4a,#050505);border-color:#d6a02a!important;color:#ffd870}.c50000{background:radial-gradient(circle at 40% 35%,#b01828,#4a0008);border-color:#ffd870!important;color:#ffe8a0}
 
 .rwrap{display:flex;gap:12px;align-items:center}
 .rwrap canvas{width:170px;height:auto;flex:none;max-width:45%;aspect-ratio:1;transition:width .35s,max-width .35s}
