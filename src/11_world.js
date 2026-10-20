@@ -108,7 +108,7 @@ function speaker(F,x,z,rot){
   box(.9,1.7,.7,lam({color:0x0c0a10}),0,.85,0,g);
   const cone=mesh(new THREE.CylinderGeometry(.3,.3,.04,10),lam({color:0x2a2a34}),0,.6,.36,g);cone.rotation.x=Math.PI/2;
   const tw=mesh(new THREE.CylinderGeometry(.12,.12,.04,8),lam({color:0x2a2a34}),0,1.3,.36,g);tw.rotation.x=Math.PI/2;
-  box(.92,.04,.72,bas({color:0xff2e88}),0,1.72,0,g);
+  box(.92,.04,.72,lam({color:0xd6a02a,emissive:0x3a2400}),0,1.72,0,g);
   F.speakers.push(cone,tw);col(F,x,z,1,1);g.traverse(o=>{if(o.isMesh)blocker(F,o);});
 }
 

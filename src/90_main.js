@@ -99,7 +99,7 @@ function buildWorld(){
   // vier Freispiel-Automaten um die Ecke an der Nordwand
   [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
   buildBar(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
-  buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0x29f0ff,stool:0x0a5a7a});
+  buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
   sign(A,'SJ SPIELBANK','#ffcf3a',-3.5,2.9,-11.9,0,.75);
@@ -148,7 +148,7 @@ function buildWorld(){
   buildHall(B,'2');
   npc(B,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:["Willkommen oben.","Hier wird nicht gedrängelt."],name:'TÜRSTEHERIN',glasses:true,color:0x0c0c10,hair:0x111111});
   sign(B,'VIP LOUNGE','#ffcf3a',-3.5,2.9,-11.9,0,.8);
-  sign(B,'TEXAS HOLD\'EM','#ff2e88',-11.9,3,-4,Math.PI/2,.5);
+  sign(B,'TEXAS HOLD\'EM','#ffcf3a',-11.9,3,-4,Math.PI/2,.5);
   sign(B,'HÖHER/TIEFER','#ffcf3a',HL.cx,3.0,11.9,Math.PI,.45);
   sign(B,'SPIELHALLE','#ffcf3a',11.9,3.15,4,-Math.PI/2,.5);
   sign(B,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
@@ -156,13 +156,13 @@ function buildWorld(){
   pointLight(B,0xff3040,4.5,3,-4.5,1.5,8.5);
   pointLight(B,0xffcf3a,9.3,3,4,1.3,9);
   pointLight(B,0x6dff8a,DOOR_X,3,-10,1.0,7);
-  pointLight(B,0xff2e88,HL.cx-2,3,HL.cz,1.4,9,true);
+  pointLight(B,0xffb070,HL.cx-2,3,HL.cz,1.3,9,true);
   B.ambient=0x5a4838;
   buildMTable(B,{id:'vip',name:'HIGH ROLLER',floor:1,x:-3.6,z:5.2,sb:250,bb:500,buy:25000,color:0xffcf3a,stool:0x6a4a10});
   buildCabin();
   // warmes Grundlicht wie in einer Spielbank, Kronleuchter machen die Lichtinseln
   ambient=new THREE.AmbientLight(0x6a5040,.9);scene.add(ambient);scene.add(new THREE.HemisphereLight(0xffe0b0,0x3a1a10,.5));
-  marker=mesh(new THREE.RingGeometry(.22,.32,8),bas({color:0x29f0ff,side:THREE.DoubleSide}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
+  marker=mesh(new THREE.RingGeometry(.22,.32,24),bas({color:0xffd870,side:THREE.DoubleSide,transparent:true,opacity:.85}),0,.03,0,scene);marker.rotation.x=-Math.PI/2;marker.visible=false;
 }
 
 /* =========================================================

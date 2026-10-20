@@ -226,15 +226,13 @@ function cardFaceTex(c){
   const t=canvasTex(128,180,(g,w,h)=>{
     g.fillStyle='#f6f0de';g.fillRect(0,0,w,h);g.strokeStyle='#b8ae90';g.lineWidth=4;g.strokeRect(2,2,w-4,h-4);
     g.fillStyle=red?'#d0102a':'#101018';
-    g.font='bold 54px "Arial Black",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(RANKN[r],w/2,52);
+    g.font='800 64px '+SCR_FONT;g.textAlign='center';g.textBaseline='middle';g.fillText(RANKN[r],w/2,52);
     g.font='bold 72px "DejaVu Sans","Segoe UI Symbol",Arial,sans-serif';g.fillText(SUITS[s],w/2,124);
   },0,0,true);
   cardTexCache[c]=t;return t;
 }
 let backTex=null;
-function cardBackTex(){if(backTex)return backTex;backTex=canvasTex(64,90,(g,w,h)=>{g.fillStyle='#f4eedc';g.fillRect(0,0,w,h);
-  for(let y=4;y<h-4;y++)for(let x=4;x<w-4;x++){g.fillStyle=((x+y)>>2)%2?'#7a1426':'#3a0812';g.fillRect(x,y,1,1);}
-  g.fillStyle='#ffcf3a';px(g,10);g.textAlign='center';g.textBaseline='middle';g.fillText('SK',w/2,h/2);},0,0,true);return backTex;}
+function cardBackTex(){if(backTex)return backTex;backTex=canvasTex(240,336,(g,w,h)=>{g.fillStyle='#f6f0e0';g.fillRect(0,0,w,h);g.drawImage(cardBackImg(),0,0,w,h);},0,0,true);return backTex;} // gleiche Rückseite wie am Automaten
 const cardEdge=new THREE.MeshLambertMaterial({color:0xe8e0c8});
 const CARD_W=.27,CARD_H=.38;
 function makeCard(parent){
@@ -254,7 +252,8 @@ function flipTo(obj,faceUp,dur,done){const a=obj.rotation.z,b=faceUp?0:Math.PI;c
 
 /* ---------- sprite label ---------- */
 function spriteLabel(w,h,scale){
-  const t=canvasTex(w,h,null,0,0,false);
+  // Namensschild über Figuren/Tischen: dreifach aufgelöst und weich gefiltert (gezeichnet wird weiter in w×h)
+  const t=canvasTex(w*3,h*3,null,0,0,true);t.userData.ctx.scale(3,3);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:true,fog:false}));
   s.scale.set(scale*w/h,scale,1);s.userData.tex=t;return s;
 }

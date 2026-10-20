@@ -1037,23 +1037,36 @@ function drawFsIntro(m,g){if(!m.fs)return;
   g.fillStyle='#ffd23a';px(g,12);g.textAlign='center';g.textBaseline='middle';g.fillText(m.fs.total+' FREISPIELE',cx,RY+10);
   if(t>2.6){g.fillStyle=Math.floor(now*4)%2?'#fff':'#ffd23a';fitL(g,(SPs.length>1?'SONDERSYMBOLE: ':'SONDERSYMBOL: ')+SPs.map(x=>SYMNAME[x]).join(' + '),RX+4,RY+CH*3-8,CW*5-8,8);}
 }
+// edle Spielkarte: abgerundet, Schatten, Vorderseite mit Wert + Farbe, Rückseite Bordeaux mit Goldgitter und SJ
+function cardBackImg(){if(cardBackImg.c)return cardBackImg.c;const c=document.createElement('canvas');c.width=240;c.height=336;const x=c.getContext('2d');x.scale(2,2);
+  x.fillStyle='#f6f0e0';lRR(x,0,0,120,168,10);x.fill();const bg=x.createLinearGradient(0,0,120,168);bg.addColorStop(0,'#7a1022');bg.addColorStop(1,'#3a0610');x.fillStyle=bg;lRR(x,7,7,106,154,6);x.fill();
+  x.save();lRR(x,7,7,106,154,6);x.clip();x.strokeStyle='rgba(232,184,64,.45)';x.lineWidth=1.4;for(let k=-180;k<300;k+=14){x.beginPath();x.moveTo(k,0);x.lineTo(k+168,168);x.stroke();x.beginPath();x.moveTo(k+168,0);x.lineTo(k,168);x.stroke();}x.restore();
+  x.strokeStyle='#e8b840';x.lineWidth=2;lRR(x,12,12,96,144,5);x.stroke();x.fillStyle='#2a040a';x.beginPath();x.ellipse(60,84,26,20,0,0,TAU);x.fill();x.strokeStyle='#e8b840';x.stroke();
+  x.fillStyle='#ffd870';x.font='800 24px '+SCR_FONT;x.textAlign='center';x.textBaseline='middle';x.fillText('SJ',60,86);return cardBackImg.c=c;}
+function drawNiceCard(g,c,x,y,w,h,faceUp,hi){
+  g.save();g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=w*.15;g.shadowOffsetY=w*.05;g.fillStyle='#f6f0e0';lRR(g,x,y,w,h,w*.09);g.fill();g.restore();
+  if(faceUp){const r=c%13,s=c/13|0,red=s===1||s===2;g.fillStyle=red?'#c8182c':'#141018';g.textAlign='center';g.textBaseline='middle';
+    px(g,w*.2,800);g.fillText(RANKN[r],x+w*.22,y+h*.15);g.font='bold '+(w*.2|0)+'px "Segoe UI Symbol","DejaVu Sans",Arial,sans-serif';g.fillText(SUITS[s],x+w*.22,y+h*.3);
+    g.font='bold '+(w*.6|0)+'px "Segoe UI Symbol","DejaVu Sans",Arial,sans-serif';g.fillText(SUITS[s],x+w*.56,y+h*.62);}
+  else g.drawImage(cardBackImg(),x,y,w,h);
+  if(hi){g.save();g.shadowColor=hi;g.shadowBlur=12;g.lineWidth=3;g.strokeStyle=hi;lRR(g,x-1.5,y-1.5,w+3,h+3,w*.1);g.stroke();g.restore();}}
 function drawGamble(m,g){
   const gm=m.gamble;
-  if(gm.kind!=='ladder'){g.fillStyle='rgba(6,10,20,.95)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);}
-  const drawCard=(c,x,y,w,h,faceUp,hi)=>{g.fillStyle='#f4eedc';g.fillRect(x,y,w,h);
-    if(faceUp){const r=c%13,s=c/13|0,red=s===1||s===2;g.fillStyle=red?'#c8182c':'#141018';px(g,w>40?12:8);g.textAlign='left';g.textBaseline='top';g.fillText(RANKN[r],x+4,y+4);
-      g.font='bold '+(w*.55|0)+'px "DejaVu Sans",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(SUITS[s],x+w/2,y+h*.6);}
-    else{for(let yy=y+3;yy<y+h-3;yy+=3)for(let xx=x+3;xx<x+w-3;xx+=3){g.fillStyle=((xx+yy)/3|0)%2?'#7a1426':'#3a0812';g.fillRect(xx,yy,3,3);}}
-    if(hi){g.strokeStyle=hi;g.lineWidth=3;g.strokeRect(x-1,y-1,w+2,h+2);}};
-  px(g,8);g.fillStyle='#ffd23a';g.textAlign='center';g.textBaseline='middle';
+  if(gm.kind!=='ladder'){const bg=g.createRadialGradient(160,RY+CH*1.5,10,160,RY+CH*1.5,190);bg.addColorStop(0,'#0e3a26');bg.addColorStop(1,'#03100a');g.fillStyle=bg;g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+    g.strokeStyle='rgba(232,184,64,.35)';g.lineWidth=1;g.strokeRect(RX+3.5,RY+3.5,CW*5-7,CH*3-7);}
   if(gm.kind==='ladder'){drawLadder(m,g,gm);return;}
   if(gm.kind==='rb'){
-    g.fillText('RISIKO  '+fmt(m.win)+' AUF '+fmt(m.win*2),160,RY+10);
-    m.history.slice(0,6).forEach((c,i)=>drawCard(c,RX+8+i*30,RY+24,24,34,true));
-    const blinkRed=Math.floor(now*3)%2===0;
-    if(m.state==='gambleNext'&&gm.card!==null)drawCard(gm.card,160-30,RY+66,60,84,true,'#fff');
-    else{drawCard(0,160-30,RY+66,60,84,false,blinkRed?'#ff3a3a':'#888');if(!m.remote&&Math.floor(now*3)!==Math.floor((now-.02)*3))SFX.gambleTick(blinkRed);}
-    px(g,7);g.fillStyle='#ff3a3a';g.fillText('◄ ROT',70,RY+110);g.fillStyle='#e8e8e8';g.fillText('SCHWARZ ►',250,RY+110);
+    g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ffd23a';pxFit(g,'RISIKO  '+fmt(m.win)+'  AUF  '+fmt(m.win*2),CW*5-20,9,5,800);g.fillText('RISIKO  '+fmt(m.win)+'  AUF  '+fmt(m.win*2),160,RY+11);
+    // die letzten 6 gezogenen Karten
+    const hs=m.history.slice(0,6);px(g,5);g.fillStyle='rgba(232,220,192,.6)';if(hs.length)g.fillText('LETZTE KARTEN',160,RY+22);
+    hs.forEach((c,i)=>drawNiceCard(g,c,160-hs.length*15+i*30+3,RY+27,24,34,true));
+    const blinkRed=Math.floor(now*3)%2===0,cy=RY+(hs.length?66:44),ch=hs.length?84:100,cw=ch*.71;
+    if(m.state==='gambleNext'&&gm.card!==null)drawNiceCard(g,gm.card,160-cw/2,cy,cw,ch,true,'#ffffff');
+    else{drawNiceCard(g,0,160-cw/2,cy,cw,ch,false,blinkRed?'#ff3a3a':'#e8e8f0');if(!m.remote&&Math.floor(now*3)!==Math.floor((now-.02)*3))SFX.gambleTick(blinkRed);}
+    // Rot / Schwarz als Schilder links und rechts
+    const pill=(x,t,bgc,fg,on)=>{px(g,8,800);const w=g.measureText(t).width+18;g.save();if(on){g.shadowColor=bgc;g.shadowBlur=10;}g.fillStyle=bgc;lRR(g,x-w/2,cy+ch/2-10,w,20,10);g.fill();g.restore();
+      g.lineWidth=1;g.strokeStyle='rgba(232,184,64,.7)';lRR(g,x-w/2+.5,cy+ch/2-9.5,w-1,19,9.5);g.stroke();g.fillStyle=fg;g.fillText(t,x,cy+ch/2+1);};
+    pill(70,'◄ ROT','#b0101e','#fff',blinkRed);pill(250,'SCHWARZ ►','#141018','#f4f0e8',!blinkRed);
   }
 }
 function drawScreen(m){

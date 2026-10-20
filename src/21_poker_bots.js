@@ -29,7 +29,7 @@ function buildPoker(F){
   BOT_DEF.forEach(d=>{
     const wx=cx+d.pos[0],wz=cz+d.pos[1];
     const n=npc(F,{x:wx,z:wz,rot:faceTo(wx,wz,cx,cz),sit:true,anim:'cards',lines:LINES.poker,name:d.name,glasses:d.glasses,color:d.color,hair:d.hair,noCol:true});
-    mesh(new THREE.BoxGeometry(.45,.06,.45),lam({color:0x6a1020}),wx,.6,wz,F.group);col(F,wx,wz,.55,.55);
+    mesh(new THREE.CylinderGeometry(.24,.22,.08,20),lam({color:0x6a1020}),wx,.6,wz,F.group);col(F,wx,wz,.55,.55);
     const lab=spriteLabel(192,56,.2);lab.position.set(wx,1.78,wz);F.group.add(lab);
     PK.seats.push({name:d.name,pos:d.pos,agg:d.agg,loose:d.loose,npc:n,label:lab,stack:20000,hole:[],bet:0,total:0,folded:false,allin:false,out:false,last:''});
   });
@@ -69,7 +69,7 @@ function potTotal(){return PK.seats.reduce((a,s)=>a+s.total,0);}
 function drawPot(){
   const t=PK.potSprite.userData.tex,c=t.userData.ctx;c.clearRect(0,0,256,64);
   if(PK.stage==='off'&&!PK.msg){return t.needsUpdate=true;}
-  c.fillStyle='rgba(10,6,16,.85)';c.fillRect(0,0,256,64);c.strokeStyle='#ff2e88';c.lineWidth=2;c.strokeRect(1,1,254,62);
+  c.fillStyle='rgba(10,6,16,.85)';c.fillRect(0,0,256,64);c.strokeStyle='#d6a02a';c.lineWidth=2;c.strokeRect(1,1,254,62);
   c.textAlign='center';c.textBaseline='middle';px(c,11);c.fillStyle='#ffcf3a';c.fillText('POT '+fmt(potTotal()),128,18);
   fitText(c,PK.msg||'',128,44,248,8);t.needsUpdate=true;
 }
@@ -78,7 +78,7 @@ const PBTN=[['FOLD',.21,'red'],['CALL',.23,'green'],['MINUS',.1,'white'],['RAISE
 function buildConsole(F){
   const g=new THREE.Group();g.position.set(PK.cx,1.0,PK.cz+2.12);g.rotation.x=.55;F.group.add(g);PK.console=g;
   box(1.36,.04,.42,lam({color:0x120c18}),0,0,0,g);
-  box(1.38,.02,.02,bas({color:0xff2e88}),0,.025,.21,g);
+  box(1.38,.02,.02,lam({color:0xd6a02a,emissive:0x3a2400}),0,.025,.21,g);
   PK.consoleTex=canvasTex(320,64,null);
   const d=mesh(new THREE.PlaneGeometry(1.24,.24),bas({map:PK.consoleTex}),0,.022,-.07,g);d.rotation.x=-Math.PI/2;
   let x=-((PBTN.reduce((a,b)=>a+b[1],0)+.03*(PBTN.length-1))/2);
