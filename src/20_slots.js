@@ -678,9 +678,9 @@ const PLUS_I=14; // erste Stufe der Risiko+-Spalte (180 €)
 const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
 function ladOf(m){return LAD_REAL;}
-// Echte Leiter (merkur.com): normal fällt man Stufe für Stufe „irgendwann zurück auf Null“ (hier: 2 Stufen runter),
-// in RISIKO+ (ab 140 €) nur auf mindestens 100 €. Von 100 € geht es hoch auf 140 € oder runter auf 52 €. Fair mit 2 % Vorteil.
-const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i>=2?i-2:-1;
+// Bis einschließlich 4 € (Ausspielung) gilt klassisch „hoch oder 0“: so geht jeder Druck ~50 % hoch (Wunsch: nicht ständig runter).
+// Ab 8 € fällt man bei Verlust 2 Stufen, in RISIKO+ (ab 140 €) nur auf mindestens 100 €. Von 100 € hoch auf 140 € oder runter auf 52 €. Fair mit 2 % Vorteil.
+const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i>AUS_I?i-2:-1;
 const ladNext=i=>i===TOP_I-2?TOP_I:i+1; // 84 € → 140 € (100 € liegt nur in der RISIKO+-Spalte)
 // Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
 const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05],AUS_IDX=[5,6,7,8,9,10,11,TOP_I]; // 4 8 12 20 32 52 84 140 €
