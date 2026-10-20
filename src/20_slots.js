@@ -4,7 +4,7 @@
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
 (function(){
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
-  SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:180,KLEE:95,PFEN:38,KAEF:10,KOEN:4,TEUF:50})),501);
+  SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:212,KLEE:95,PFEN:38,KAEF:10,KOEN:4,TEUF:18})),501);
   const TIZ_ROWS=[[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3]];
   const ZK=['9','10','J','Q','K','A','FUELL','VASE','HARFE','OLYMP','ZENT','MUENZE'],TK=['10','J','Q','K','A','TRUHE','HANDS','BURG','ROSS','RITTER','SCHWERT','SCHILD'],DK=['10','J','Q','K','A','SKARAB','GREIF','MASKE','FORSCH','BUCH'];
   SlotEngine.setup('zent',[[22,17,22,24,16,12,14,1,1,1,1,3],[18,15,17,19,13,12,12,22,1,1,1,3],[13,14,2,24,5,9,1,1,11,2,1,3],[13,10,12,0,0,0,13,9,8,8,1,3],[8,9,3,12,5,6,5,10,10,14,1,3]].map(a=>R_(a,ZK)),704);
@@ -118,8 +118,8 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   mesh(new THREE.PlaneGeometry(.74,.37),bas({map:topTex}),0,2.13,.093,g);
   // gewölbte, leuchtende Krone mit Chromkante
   const crown=bas({color:accent});box(.94,.04,.48,chrome,0,2.405,-.13,g);
-  const dome=mesh(new THREE.CylinderGeometry(.47,.47,.46,28),crown,0,2.4,-.13,g);dome.rotation.x=Math.PI/2;dome.scale.set(1,1,.3);
-  const rim=mesh(new THREE.TorusGeometry(.47,.014,6,32,Math.PI),chrome,0,2.4,.1,g);rim.scale.set(1,.3,1);
+  const dome=mesh(new THREE.CylinderGeometry(.47,.47,.46,28),crown,0,2.4,-.15,g);dome.rotation.x=Math.PI/2;dome.scale.set(1,1,.3); // Vorderkante hinter dem Aufsatz-Bild
+  const rim=mesh(new THREE.TorusGeometry(.47,.014,6,32,Math.PI),chrome,0,2.4,.08,g);rim.scale.set(1,.3,1);
   const brand=canvasTex(640,80,(c,w,h)=>{const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#1a1014');bg.addColorStop(1,'#060406');c.fillStyle=bg;c.fillRect(0,0,w,h);
     c.strokeStyle='rgba(214,160,42,.7)';c.lineWidth=3;c.strokeRect(4,4,w-8,h-8);c.textAlign='center';c.textBaseline='middle';px(c,30,800);
     const tg=c.createLinearGradient(0,14,0,h-14);tg.addColorStop(0,'#fff4c8');tg.addColorStop(.5,'#e8b840');tg.addColorStop(1,'#9a6a10');c.fillStyle=tg;c.shadowColor='rgba(255,200,80,.6)';c.shadowBlur=10;
@@ -194,7 +194,7 @@ function btnModel(m){
   B('INFO','INFO','white',idle||show);
   const canPower=G.power&&(show||(s==='count'&&!m.pendingFs))&&m.win>=4*totalBet(m);
   if(canPower)B('LINIEN','POWER SPINS','green',true,!m.auto);
-  else if(G.special){const pot=idle&&m.sp&&m.sp.pot>0;B('LINIEN','CASHPOT','green',pot,pot);}
+  else if(G.special){const pot=idle&&m.sp&&m.sp.pot>0;B('LINIEN','ANNAHME','green',pot,pot);}
   else if(G.doppel)B('LINIEN',m.dbl?'DOPPELBUCH':'EINZELBUCH','amber',idle,false);
   else B('LINIEN','LINIEN','amber',idle&&G.lineOpts.length>1);
   B('EINSATZ','EINSATZ','amber',idle&&!wwPend(m));
@@ -837,6 +837,7 @@ function drawMystCell(m,g,x,y,w,h,r,c){
 /* ---------- screen rendering ---------- */
 const RX=22,RY=27,CW=55.2,CH=51;
 function bgFor(m,g){
+  if(m.G.special){spBg(m,g);return;}
   if(typeof MK_BG!=='undefined'&&MK_BG[m.G.id]){g.drawImage(MK_BG[m.G.id](m),0,0);return;}
   const BGC={pharao:['#4a0808','#140202'],spitze:['#0a1030','#02040e'],zent:['#0a2a4a','#04101e'],tizona:['#2a1a0a','#0a0604'],doppel:['#3a2208','#120802']}[m.G.id];
   if(BGC){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,BGC[0]);gr.addColorStop(1,BGC[1]);g.fillStyle=gr;g.fillRect(0,0,320,240);return;}
@@ -1102,6 +1103,7 @@ function drawScreen(m){
 }
 function drawTop(m){
   const g=m.top.userData.ctx,G=m.G;SYMSET=G.id;
+  if(G.special&&!m.power&&!m.fs){spDrawTop(m,g);m.top.needsUpdate=true;m.topDirty=false;m.topVer=(m.topVer||0)+1;return;}
   const gr=g.createLinearGradient(0,0,0,128);
   const TOPC={pharao:['#2a0000','#8a1010'],spitze:['#0a1a40','#1a4a1a'],zent:['#0a2a5a','#3a6a2a'],tizona:['#2a1a0a','#6a3a10'],doppel:['#1a0a30','#3a1a04']}[G.id];
   gr.addColorStop(0,TOPC[0]);gr.addColorStop(1,TOPC[1]);
@@ -1169,6 +1171,7 @@ function updMachines(dt,F,focusM){
     }
     // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
     if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
+    if(m.G.special&&m.topAnim&&d<9){const f=Math.floor(now*6);if(f!==m.topFr){m.topFr=f;m.topDirty=true;}} // Alles Spitze: volle Leitern blinken im Aufsatz
     if(m.topDirty)drawTop(m);
     if(m===RESV)resvSave();
     {const un=m.unlockT&&now-m.unlockT<2.2,held=m.remote||(typeof machineHeld==='function'&&machineHeld(m));

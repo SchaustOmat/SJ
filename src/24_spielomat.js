@@ -36,6 +36,7 @@ function smPress(m,key){
 function smTap(m,uv){
   if(m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&uv){const x=uv.x*320,y=(1-uv.y)*240;if(Math.abs(x-LAD_TEILEN.x)<28&&Math.abs(y-LAD_TEILEN.y)<14){pressButton(m,'KARTE');return true;}}
   if(typeof tzBuyTap==='function'&&tzBuyTap(m,uv))return true;
+  if(typeof spitzeTap==='function'&&m.state!=='menu'&&spitzeTap(m,uv))return true;
   if(m.state==='poffer')return offerTap(m,uv);
   if(m.state!=='menu'||!uv)return false;
   const x=uv.x*320,y=(1-uv.y)*240,T=SM_TILE;

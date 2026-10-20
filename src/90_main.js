@@ -219,10 +219,11 @@ function focusPose(){
     const g=f.m.group,deck=$('.sv-side'),bh=deck&&!SV.el.hidden?deck.offsetHeight+16:120,top=asp<1?64:12,LHv=LH();
     const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
     const v=asp<1?60:50,tv=Math.tan(v*Math.PI/360),th=tv*asp;
-    const H=asp<1?.74:.68,W=.86;
+    const sp=f.m.G.special&&asp>=1; // Alles Spitze quer: Aufsatz mit den Leitern muss mit ins Bild
+    const H=sp?1.2:asp<1?.74:.68,W=.86;
     const d=Math.max(H/(2*tv*free),W/(2*th))+.02,vis=2*d*tv;
     // Hochformat mit Platz: Aufsatz (Spielname) ganz unter die Knöpfe oben schieben, Bildschirm bleibt ganz über der Knopfleiste
-    let cy=1.47+shift*vis;const cyTop=2.47-vis*(.5-top/LHv);
+    let cy=(sp?1.76:1.47)+shift*vis;const cyTop=2.47-vis*(.5-top/LHv);
     if(asp<1&&cyTop+vis*(.5-(LHv-bh)/LHv)<=1.17)cy=cyTop;
     g.localToWorld(out.pos.set(0,cy,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
   } else if(f.type==='poker'||f.type==='hilo'||f.type==='mtable'){
