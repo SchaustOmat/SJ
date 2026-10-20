@@ -10,7 +10,7 @@ function smTileXY(i){const T=SM_TILE,n=SPIELOMAT.games.length,c=i%T.cols,r=i/T.c
 function setMachineGame(m,id){
   if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
-  if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
+  if(m.sp&&m.sp.pot>0&&!m.remote){setChips(chips+m.sp.pot,true);m.sp.pot=0;}m.sp=null;if(typeof slotPendSave==='function')slotPendSave();
   m.G=G;m.power=null;m.myst=null;m.fx=null;if(/^(fs|expand|ssSpin)/.test(m.state))m.state='idle';m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
   m.reels.forEach((r,i)=>{r.spin=false;r.bounce=0;r.pos=Math.floor(Math.random()*G.strips[i].length);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);m.ev=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;
@@ -62,7 +62,7 @@ function smDraw(m,g){
     return;
   }
   px(g,12,800);g.fillStyle=gold(8,24);g.textAlign='left';g.fillText('SPIELOMAT',14,17);const tw=g.measureText('SPIELOMAT').width;px(g,6);g.fillStyle='#b8a888';g.fillText(SPIELOMAT.ver,20+tw,18);
-  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(m===RESV?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
+  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(isMine(m)?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
   g.textAlign='center';px(g,7);g.fillStyle='#e8dcc0';g.fillText('WÄHLE DEIN SPIEL',160,33);
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{

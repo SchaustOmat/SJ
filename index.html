@@ -600,7 +600,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792510250";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792510342";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1747,6 +1747,8 @@ function buildMachine(F,x,z,rotY,gameId,accent){
     m.btns[key]={mesh:b,tex,mat:top,label:'',color:'',lit:false,blink:false,press:0};
   });
   bakeGroup(g,true); // feste Gehäuseteile zusammenfassen (Tasten, Bildschirm, Stuhl bleiben einzeln)
+  const bt=canvasTex(512,96,null,0,0,true),bs=new THREE.Sprite(new THREE.SpriteMaterial({map:bt,transparent:true,depthWrite:false,fog:false}));
+  bs.position.set(0,3.02,0);bs.scale.set(2.1,.39,1);bs.visible=false;bs.renderOrder=5;g.add(bs);m.beacon={s:bs,t:bt,key:''};
   const fx=Math.sin(rotY),fz=Math.cos(rotY);
   const act={type:'machine',m,label:G.title,sub:'Hinsetzen und spielen',pos:new THREE.Vector3(x+fx*.6,1.2,z+fz*.6),reach:2.2};
   const hitList=[];g.traverse(o=>{if(o.isMesh&&!o.userData.act){o.userData.act=act;F.hits.push(o);}});F.acts.push(act);
@@ -2036,7 +2038,7 @@ function updReels(m,dt){
   if(!any&&m.state==='spin'){
     if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=MY_T0+m.myst.cells.length*MY_DT+.45;m.msg='ZUFALLSSYMBOLE!';SFX.tease(3);SFX.whoosh();updateButtons(m);}
     else onResult(m);}
-  if(any){m.dirty=true;if(!m.demo&&((focus&&focus.m===m)||m===RESV)&&now-(m.spinTk||0)>.075){m.spinTk=now;SFX.spinTick();}}
+  if(any){m.dirty=true;if(!m.demo&&((focus&&focus.m===m))&&now-(m.spinTk||0)>.075){m.spinTk=now;SFX.spinTick();}}
 }
 function onResult(m){
   if(m.G.special==='spitze'){if(m.demo){m.state='idle';m.demo=false;m.dirty=true;return;}spitzeResult(m);return;}
@@ -2062,9 +2064,8 @@ function onResult(m){
 }
 function describeWin(m,it){if(!it)return '';if(it.scatter)return it.count+'× '+SYMNAME[m.G.scatter]+' = '+fmt(it.amount);return 'LINIE '+(it.line+1)+': '+it.count+'× '+SYMNAME[it.sym]+' = '+fmt(it.amount);}
 function collect(m){
-  store('nk_slotpend',null);m.savedWin=0;
   if(m.win>0){setChips(chips+m.win,true);startFly(m,m.win);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
-  m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);
+  m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);slotPendSave();
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
@@ -2528,7 +2529,7 @@ function drawBar(m,g){
   const y=RY+CH*3+5;
   g.fillStyle='rgba(0,0,0,.75)';g.fillRect(0,y,320,240-y);
   const F=m.remote?null:m.fly,wv=m.disp>0?m.disp:(F?F.unl:0),pop=F?Math.max(0,1-(now-F.lastHit)/.22):0;
-  const own=m===RESV; // dein Guthaben steht nur auf dem Automaten, in dem deine Karte steckt
+  const own=isMine(m); // dein Guthaben steht auf jedem Automaten, in dem deine Karte steckt
   const fields=[[m.remote?cleanText(m.remote.name,10):own?'GUTHABEN':'KARTE',m.remote?fmt(m.remote.credit):own?fmt(chips-(F?F.pending:0)):'STECKEN'],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
   fields.forEach(([l,v],i)=>{const x=4+i*105,hot=(i===2&&wv>0)||(i===0&&F);if(i===0&&pop>0){g.fillStyle='rgba(255,210,58,'+(.12+pop*.3).toFixed(2)+')';}else{const fg=g.createLinearGradient(0,y+3,0,y+33);fg.addColorStop(0,'#16120c');fg.addColorStop(1,'#060504');g.fillStyle=fg;}g.fillRect(x,y+3,101,30);
     g.lineWidth=1;g.strokeStyle=hot?'#ffd23a':'#5a4626';g.strokeRect(x+.5,y+3.5,100,29);
@@ -2598,7 +2599,7 @@ function drawHeader(m,g){
   if(tzBuyable(m)){const B=TZ_BUY,armed=m.buyArm&&now-m.buyArm<3,bl=Math.floor(now*3)%2;
     const bg=g.createLinearGradient(0,B.y,0,B.y+B.h);bg.addColorStop(0,armed&&bl?'#fff4a0':'#ffd23a');bg.addColorStop(1,'#a06a00');g.fillStyle='#000';g.fillRect(B.x-1,B.y-1,B.w+2,B.h+2);g.fillStyle=bg;g.fillRect(B.x,B.y,B.w,B.h);
     g.fillStyle='#2a1400';g.textAlign='center';g.textBaseline='middle';fitC2(g,armed?'SICHER?':'FS KAUFEN '+fmt(100*totalBet(m)).replace(' €','€'),B.x+B.w/2,B.y+B.h/2+1,B.w-6,5);if(armed)m.dirty=true;}
-  if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=g.measureText(t).width+20;g.fillStyle='rgba(0,0,0,.7)';lRR(g,160-w/2,4,w,15,7.5);g.fill();
+  if(isMine(m)){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=g.measureText(t).width+20;g.fillStyle='rgba(0,0,0,.7)';lRR(g,160-w/2,4,w,15,7.5);g.fill();
     g.lineWidth=1;g.strokeStyle='#d6a02a';lRR(g,160-w/2+.5,4.5,w-1,14,7);g.stroke();g.fillStyle='#3adf5a';g.beginPath();g.arc(160-w/2+7,11.5,2.2,0,TAU);g.fill();
     g.fillStyle='#ffd870';g.textAlign='center';g.fillText(t,163,12);}
 }
@@ -2738,20 +2739,38 @@ function drawTop(m){
 /* ---------- KARTE: Automat besetzen ----------
    Mit gesteckter Karte gehört der Automat dir: Aufstehen geht in jedem Zustand (Leiter, Power Spins …),
    alles bleibt stehen wie es ist. Läuft AUTO, spielt er weiter und hält bei Angeboten/Risiko von selbst an. */
-let RESV=null;
+// Mehrere Karten: jeder Automat mit deiner Karte gehört dir und spielt (mit AUTO) weiter, auch wenn du woanders sitzt.
+// RESV = zuletzt besetzter Automat (für Zuschauer), RESVS = alle deine Automaten.
+let RESV=null;const RESVS=new Set();
+function isMine(m){return RESVS.has(m);}
 function cardIn(m,quiet){
-  if(RESV&&RESV!==m){const o=RESV;RESV=null;if(o.win>0||o.power||o.gamble){o.auto=false;if(o.power){o.win+=o.power.left*o.power.cost;o.power=null;}collect(o);}o.dirty=true;}
-  RESV=m;m.dirty=true;svCardSync();if(!quiet)toast('Karte steckt. Der Automat bleibt für dich frei, auch wenn du aufstehst.');MP.dirty=true;}
-function cardOut(m){if(RESV!==m)return;if(m.win>0||m.power||m.gamble){toast('Erst den Gewinn nehmen, dann die Karte ziehen.');return;}
-  RESV=null;resvSave();m.auto=false;SFX.card();m.dirty=true;svCardSync();toast('Karte gezogen.');MP.dirty=true;if(SV.m===m)svGate(m);}
-// Karte, Spiel und Einsatz überstehen ein Neuladen (offener Gewinn wird wie immer gutgeschrieben)
-function resvKey(){return RESV?allMachines().indexOf(RESV)+'|'+RESV.G.id+'|'+RESV.betIdx:'';}
+  RESVS.add(m);RESV=m;m.dirty=true;svCardSync();resvSave();
+  if(!quiet)toast(RESVS.size>1?'Karte steckt. Du hast jetzt '+RESVS.size+' Automaten besetzt.':'Karte steckt. Der Automat bleibt für dich frei, auch wenn du aufstehst.');MP.dirty=true;}
+function cardOut(m){if(!isMine(m))return;if(m.win>0||m.power||m.gamble){toast('Erst den Gewinn nehmen, dann die Karte ziehen.');return;}
+  if(m.sp&&m.sp.pot>0){toast('Erst den Cashpot annehmen, dann die Karte ziehen.');return;}
+  RESVS.delete(m);RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;resvSave();m.auto=false;SFX.card();m.dirty=true;svCardSync();toast('Karte gezogen.');MP.dirty=true;if(SV.m===m)svGate(m);}
+// Karten, Spiele und Einsätze überstehen ein Neuladen (offene Gewinne werden wie immer gutgeschrieben)
+function resvKey(){return [...RESVS].map(m=>allMachines().indexOf(m)+'|'+m.G.id+'|'+m.betIdx).join(';');}
 let resvSaved=null;
 function resvSave(){const k=resvKey();if(k===resvSaved)return;resvSaved=k;store('nk_resv',k||null);}
 function resvRestore(){let k='';try{k=localStorage.getItem('nk_resv')||'';}catch(e){}if(!k)return;
-  const [i,g,b]=k.split('|'),m=allMachines()[+i];if(!m||m.npc||!SlotEngine.GAMES[g])return;
-  setMachineGame(m,g);m.betIdx=clamp(+b||0,0,m.G.betOpts.length-1);m.booted=true;m.state='idle';slotIdleMsg(m);RESV=m;resvSaved=k;m.dirty=true;m.topDirty=true;updateButtons(m);}
-function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=RESV!==SV.m;b.textContent='KARTE ZIEHEN';b.classList.add('on');}
+  k.split(';').forEach(e=>{const [i,g,b]=e.split('|'),m=allMachines()[+i];if(!m||m.npc||!SlotEngine.GAMES[g])return;
+    setMachineGame(m,g);m.betIdx=clamp(+b||0,0,m.G.betOpts.length-1);m.booted=true;m.state='idle';slotIdleMsg(m);RESVS.add(m);RESV=m;m.dirty=true;m.topDirty=true;updateButtons(m);});
+  resvSaved=resvKey();}
+function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=!isMine(SV.m);b.textContent='KARTE ZIEHEN';b.classList.add('on');}
+// Offene Gewinne aller eigenen Automaten (plus dem, an dem du sitzt) zusammen merken: nach einem Neuladen werden sie gutgeschrieben.
+let slotPendLast=-1;
+function slotPendSave(){const fm=typeof focus!=='undefined'&&focus&&focus.type==='slot'?focus.m:null;let s=0;
+  allMachines().forEach(m=>{if(m===fm||isMine(m))s+=m.win+(m.power?m.power.left*m.power.cost:0)+(m.sp?m.sp.pot:0);});
+  if(s!==slotPendLast){slotPendLast=s;store('nk_slotpend',s>0?s:null);}}
+// Schild über dem Automaten: grün = deiner, rot = von jemand anderem besetzt (sieht man durch die ganze Halle)
+function beaconDraw(m,key){const B=m.beacon,c=B.t.userData.ctx,w=512,h=96;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);if(!key){B.s.visible=false;return;}
+  B.s.visible=true;const mine=key[0]==='M',col=mine?['#7aff8a','#0a8a1a','#002a06']:['#ff8a7a','#c01818','#3a0000'];
+  c.shadowColor=col[0];c.shadowBlur=18;const g=c.createLinearGradient(0,10,0,h-10);g.addColorStop(0,col[0]);g.addColorStop(.5,col[1]);g.addColorStop(1,col[2]);c.fillStyle=g;lRR(c,14,12,w-28,h-24,(h-24)/2);c.fill();c.shadowBlur=0;
+  c.lineWidth=4;c.strokeStyle='rgba(255,255,255,.85)';lRR(c,14,12,w-28,h-24,(h-24)/2);c.stroke();
+  const t=mine?(key[1]==='A'?'DEIN AUTOMAT · AUTO':'DEIN AUTOMAT'):'BESETZT · '+key.slice(1);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';
+  let fz=46;c.font='800 '+fz+'px '+SCR_FONT;while(fz>20&&c.measureText(t).width>w-80){fz-=2;c.font='800 '+fz+'px '+SCR_FONT;}c.lineWidth=6;c.strokeStyle='rgba(0,0,0,.55)';c.strokeText(t,w/2,h/2+2);c.fillText(t,w/2,h/2+2);
+  B.t.needsUpdate=true;}
 /* ---------- HD-Bildschirm: beim Spielen werden Bildschirm und Kopf-Display dreifach scharf ---------- */
 const HDS=3;
 function setHD(m,on){
@@ -2766,7 +2785,7 @@ function updMachines(dt,F,focusM){
   F.machines.forEach(m=>{
     const d=Math.hypot(m.group.position.x-camera.position.x,m.group.position.z-camera.position.z);
     if(m===focusM){slotStep(m,dt);}
-    else if(m===RESV){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}}
+    else if(isMine(m)){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}}
     else if(m.npc){ // demo play
       if(m.state==='idle'&&now>m.demoNext){startSpin(m,true);m.demoNext=now+4+Math.random()*5;}
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
@@ -2775,15 +2794,18 @@ function updMachines(dt,F,focusM){
     if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
     if(m.G.special&&m.topAnim&&d<9){const f=Math.floor(now*6);if(f!==m.topFr){m.topFr=f;m.topDirty=true;}} // Alles Spitze: volle Leitern blinken im Aufsatz
     if(m.topDirty)drawTop(m);
-    if(m===RESV)resvSave();
-    {const un=m.unlockT&&now-m.unlockT<2.2,held=m.remote||(typeof machineHeld==='function'&&machineHeld(m));
-      m.cardLed.color.setHex(un?(Math.floor(now*12)%2?0x7aff7a:0x0a6a1a):m===RESV?0x3adf5a:held?0xff2020:0x3a0606);}
-    if(m===focusM||m===RESV){const pw=m.win+(m.power?m.power.left*m.power.cost:0)+(m.sp?m.sp.pot:0);if(pw!==m.savedWin){m.savedWin=pw;store('nk_slotpend',pw>0?pw:null);}}
+    {const un=m.unlockT&&now-m.unlockT<2.2,hn=(typeof machineHeld==='function'&&machineHeld(m))||(m.remote&&m.remote.name)||'',mine=isMine(m);
+      m.cardLed.color.setHex(un?(Math.floor(now*12)%2?0x7aff7a:0x0a6a1a):mine?0x3adf5a:hn?0xff2020:0x3a0606);
+      const bk=mine?'M'+(m.auto?'A':''):hn?'H'+cleanText(hn,14):'';if(bk!==m.beacon.key){m.beacon.key=bk;beaconDraw(m,bk);}
+      if(bk){m.beacon.s.visible=m!==focusM;m.beacon.s.material.opacity=.78+.22*Math.sin(now*3+m.group.position.x);}}
     if(m.dirty&&(m===focusM||d<9))drawScreen(m);
     if(m===focusM)svDraw(m);
-    if(m===RESV&&m!==focusM){m.fly=null;}
+    if(isMine(m)&&m!==focusM){m.fly=null;}
     else if(m!==focusM){m.fly=null;m.ledMat.color.setHex(m.accent);m.ledMat.color.multiplyScalar(.55+.45*Math.abs(Math.sin(now*2.2+m.group.position.x*.7+m.group.position.z)));}
   });
+  // eigene Automaten auf der anderen Etage spielen (stumm) weiter
+  RESVS.forEach(m=>{if(m.F!==F){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}m.fly=null;}});
+  resvSave();slotPendSave();
 }
 
 
@@ -3319,7 +3341,7 @@ function smTileXY(i){const T=SM_TILE,n=SPIELOMAT.games.length,c=i%T.cols,r=i/T.c
 function setMachineGame(m,id){
   if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
-  if(m.sp&&m.sp.pot>0&&!m.remote)setChips(chips+m.sp.pot,true);m.sp=null;
+  if(m.sp&&m.sp.pot>0&&!m.remote){setChips(chips+m.sp.pot,true);m.sp.pot=0;}m.sp=null;if(typeof slotPendSave==='function')slotPendSave();
   m.G=G;m.power=null;m.myst=null;m.fx=null;if(/^(fs|expand|ssSpin)/.test(m.state))m.state='idle';m.lines=G.lineOpts[G.lineOpts.length-1];m.betIdx=0;m.fs=null;m.useFs=false;m.info=false;m.present=null;m.expand=null;m.win=0;m.disp=0;
   m.reels.forEach((r,i)=>{r.spin=false;r.bounce=0;r.pos=Math.floor(Math.random()*G.strips[i].length);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);m.ev=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;
@@ -3371,7 +3393,7 @@ function smDraw(m,g){
     return;
   }
   px(g,12,800);g.fillStyle=gold(8,24);g.textAlign='left';g.fillText('SPIELOMAT',14,17);const tw=g.measureText('SPIELOMAT').width;px(g,6);g.fillStyle='#b8a888';g.fillText(SPIELOMAT.ver,20+tw,18);
-  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(m===RESV?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
+  g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(isMine(m)?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
   g.textAlign='center';px(g,7);g.fillStyle='#e8dcc0';g.fillText('WÄHLE DEIN SPIEL',160,33);
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{
@@ -4325,7 +4347,7 @@ function mpSync(peers){
       if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
-    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);
+    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;a.rl=Array.isArray(pr.rl)?pr.rl.map(Number).filter(Number.isFinite).slice(0,40):[];if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);
     a.ms=Number.isInteger(pr.ms)&&pr.ms>=0&&pr.ms<6?pr.ms:-1;a.mt=typeof pr.mt==='string'&&TABLES[pr.mt]?pr.mt:'';
     const sitting=a.act==='slot'||a.act==='poker'||a.act==='hilo'||a.act==='mtable';avPose(a,sitting);
     a.n.anim=a.act==='slot'?'slot':sitting?'cards':'idle';
@@ -4345,7 +4367,7 @@ function mpLocalState(){
     else if(focus.type==='mtable'){const T=focus.m,si=mtMySeat(T);mt=T.id;if(si>=0){const p=mtSeatPos(T,si,T.R);x=p.x;z=p.z;y=Math.atan2(T.cx-p.x,T.cz-p.z);a='mtable';ms=si;}else{const p=mtSeatPos(T,0,T.R+.9);x=p.x;z=p.z;y=Math.PI;a='mwatch';}}
   } else if(openId==='pRoulette')a='roulette';
   else if(EL.phase==='moving')a='elev';
-  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,gx:mpActivity(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
+  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,rl:[...RESVS].map(m=>allMachines().indexOf(m)),gx:mpActivity(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
 }
 const EXTRA_SEATS={poker:[[-1.3,-1.95],[1.3,-1.95],[-1.95,-.05],[1.95,-.05]],hilo:[[-1.55,.1],[1.55,.1],[-1.3,-.65],[1.3,-.65]]};
 function seatAvatars(){
@@ -4507,11 +4529,11 @@ SV.mctx=SV.main.getContext('2d');SV.tctx=SV.top.getContext('2d');SV.mctx.imageSm
 SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
   b.addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});});
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
-$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&RESV===m)cardOut(m);});
+$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&isMine(m))cardOut(m);});
 // Beim Hinsetzen: Portemonnaie raus, Karte antippen -> Karte fährt rein -> ENTSPERRT
 function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
 function svGate(m){
-  const el=$('#svGate');if(!el)return;if(!m||RESV===m){el.hidden=true;return;}
+  const el=$('#svGate');if(!el)return;if(!m||isMine(m)){el.hidden=true;return;}
   el.hidden=false;el.className='gwrap';el.dataset.st='enter';
   el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div>'+walletHtml('gWallet')+'<p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.dataset.st==='enter')el.dataset.st='';}));
@@ -4547,7 +4569,7 @@ function svButtons(m){
 }
 function svDraw(m){
   if(m!==SV.m)return;
-  const cr=m===RESV?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
+  const cr=isMine(m)?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
   if(SV.last.cr!==cr){$('#svCredit').textContent=cr;SV.last.cr=cr;}
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}
@@ -4632,7 +4654,7 @@ function buildMTable(F,o){
   mesh(new THREE.CylinderGeometry(1.25,1.25,.12,56),lam({color:0x2a1408}),0,.82,0,g);
   mesh(new THREE.CylinderGeometry(.3,.55,.76,24),lam({color:0x120c18}),0,.38,0,g);
   box(1.6,.08,.6,bas({color:o.color}),0,3.2,0,g);
-  const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+T.sb+'/'+T.bb,pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
+  const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+(T.sb/100)+'/'+(T.bb/100)+' €',pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
   tagAct(F,g,act);col(F,T.cx,T.cz,2.5,2.5);
   for(let i=0;i<MT_N;i++){
     const p=mtSeatPos(T,i,T.R);
@@ -4683,7 +4705,7 @@ function mtRender(T,V){
   c.fillStyle='rgba(10,6,16,.85)';c.fillRect(0,0,256,64);c.strokeStyle='#'+T.color.toString(16).padStart(6,'0');c.lineWidth=2;c.strokeRect(1,1,254,62);
   c.textAlign='center';c.textBaseline='middle';px(c,11);c.fillStyle='#ffcf3a';
   c.fillText(isBetting(V)?'POT '+fmt(potOf(V)):V&&V.stage==='show'?'SHOWDOWN':T.name,128,18);
-  fitText(c,V?V.msg||'':'NUR ECHTE SPIELER · '+T.sb+'/'+T.bb,128,44,248,8);
+  fitText(c,V?V.msg||'':'NUR ECHTE SPIELER · '+(T.sb/100)+'/'+(T.bb/100)+' €',128,44,248,8);
   t.needsUpdate=true;
 }
 
@@ -4966,7 +4988,7 @@ function mpActivity2(){
   return null;
 }
 // Automat, in dem ein Mitspieler seine Karte stecken hat (Name oder '')
-function machineHeld(m){const i=allMachines().indexOf(m);let n='';MP.avatars.forEach(a=>{if(a.rs===i&&a.f===floorIdx)n=a.name||'Jemand';});return n;}
+function machineHeld(m){const i=allMachines().indexOf(m);let n='';MP.avatars.forEach(a=>{if(a.rs===i||(a.rl&&a.rl.includes(i)))n=a.name||'Jemand';});return n;}
 const GNAME={slot:'AUTOMAT',poker:'POKER',hilo:'HÖHER/TIEFER',roulette:'ROULETTE'};
 function cleanGx(gx){
   if(!gx||typeof gx!=='object'||!GNAME[gx.g])return null;
@@ -5569,24 +5591,25 @@ function buildWorld(){
   chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
   luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
-  const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
+  // Spielhalle: lange Automatenreihen an den Wänden (alle frei, niemand sitzt daran)
+  const MROW=[['pharao',0xd6a02a],['zent',0xc42a3a],['tizona',0x2a6ad6],['doppel',0xff6a1a],['spitze',0x4a9aff]];
+  for(let i=0;i<10;i++){const [id,c]=MROW[i%5];buildMachine(A,-11.6,-9.8+i*1.25,Math.PI/2,id,c);}
   // vier Freispiel-Automaten um die Ecke an der Nordwand
-  [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
+  for(let i=0;i<6;i++){const [id,c]=MROW[(i+2)%5];buildMachine(A,-10.3+i*1.25,-11.6,0,id,c);}
   buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:500,bb:1000,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
-  sign(A,'SJ SPIELBANK','#ffcf3a',-3.5,2.9,-11.9,0,.75);
+  sign(A,'SJ SPIELBANK','#ffcf3a',-3.2,3.45,-11.9,0,.6);
   sign(A,'ROULETTE','#ffcf3a',0,3.5,-2,0,.45);
-  sign(A,'SPIELHALLE','#29f0ff',-11.9,3.15,-2.75,Math.PI/2,.5);
+  sign(A,'SPIELHALLE','#29f0ff',-11.9,3.45,-4.2,Math.PI/2,.45);
+  pointLight(A,0xffc070,-7,3,-9.6,1.1,8);
   sign(A,'BAR','#29f0ff',11.55,3.25,-1,-Math.PI/2,.6);
   sign(A,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
   sign(A,'WILLKOMMEN','#ffcf3a',0,3.35,11.9,Math.PI,.4);
   npc(A,{x:-1.3,z:-3.4,rot:0,anim:'dealer',lines:LINES.dealer,name:'CROUPIER',color:0x1a1a1e,hair:0x111111});
   const r1=npc(A,{x:.9,z:-3.45,rot:0,anim:'watch',lines:LINES.roulette,name:'STAMMGAST'});
   const r2=npc(A,{x:2.45,z:-2.2,rot:-Math.PI/2,anim:'watch',lines:LINES.roulette,name:'SPIELERIN',hair:0xb02a5a,color:0x6a1a24});
-  mA[0].npc=npc(A,{x:-10.62,z:-6.5,rot:-Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'AUTOMATENOMA',hair:0xc8c8c8,color:0x6a2a5a,noCol:true});
-  mA[3].npc=npc(A,{x:-10.62,z:1,rot:-Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   npc(A,{x:10.9,z:-1,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPER',special:'bartender',color:0xe8e8e8,noCol:true});
   npc(A,{x:8.85,z:1.2,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.generic,name:'GAST',noCol:true});
   npc(A,{x:3.9,z:-10.6,rot:.4,anim:'idle',lines:LINES.bouncer,name:'TÜRSTEHER',glasses:true,color:0x0c0c10,hair:0x111111});
@@ -5610,8 +5633,7 @@ function buildWorld(){
   const v1=npc(B,{x:6.2,z:-5.9,rot:0,anim:'watch',lines:LINES.roulette,name:'HIGHROLLER',glasses:true,color:0x8a6a1a});
   const v2=npc(B,{x:7.0,z:-4.5,rot:-Math.PI/2,anim:'watch',lines:LINES.vip,name:'GAST'});
   B.rouletteFans=[v1,v2];
-  const mB=[[1.5,'pharao',0xd6a02a],[4,'doppel',0xc42a3a],[6.5,'spitze',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
-  mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
+  for(let i=0;i<10;i++){const [id,c]=MROW[(i+4)%5];buildMachine(B,11.6,-2.4+i*1.25,-Math.PI/2,id,c);}
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
   // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 200 €, wenn man pleite ist)
   buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
@@ -5630,7 +5652,7 @@ function buildWorld(){
   sign(B,'VIP LOUNGE','#ffcf3a',-3.5,2.9,-11.9,0,.8);
   sign(B,'TEXAS HOLD\'EM','#ffcf3a',-11.9,3,-4,Math.PI/2,.5);
   sign(B,'HÖHER/TIEFER','#ffcf3a',HL.cx,3.0,11.9,Math.PI,.45);
-  sign(B,'SPIELHALLE','#ffcf3a',11.9,3.15,4,-Math.PI/2,.5);
+  sign(B,'SPIELHALLE','#ffcf3a',11.9,3.45,3.2,-Math.PI/2,.45);
   sign(B,'AUFZUG','#6dff8a',DOOR_X,3.62,-11.95,0,.32);
   pointLight(B,0xffb060,PK.cx,3.2,PK.cz,1.8,9);
   pointLight(B,0xff3040,4.5,3,-4.5,1.5,8.5);
@@ -5738,7 +5760,7 @@ function enterFocus(type,m){
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
   // nichts zurücksetzen: der Automat zeigt genau das, wo du zuletzt warst (Menü nur beim allerersten Einschalten)
   if(type==='slot'&&m.group.userData.chair)m.group.userData.chair.visible=false; // Stuhl nicht im Bild beim Sitzen
-  if(type==='slot'){setHD(m,true);if(!m.booted&&RESV!==m)smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
+  if(type==='slot'){setHD(m,true);if(!m.booted&&!isMine(m))smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
   if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
@@ -5746,7 +5768,7 @@ function enterFocus(type,m){
 function leaveFocus(){
   if(!focus)return;UFX.tension('mtable',false);
   const f=focus;
-  if(f.type==='slot'&&f.m===RESV){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
+  if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}
   else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
