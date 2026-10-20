@@ -244,6 +244,12 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 #start .bar i{display:block;height:100%;width:40%;background:linear-gradient(90deg,transparent,#f0d898,transparent);animation:sweep 1.4s ease-in-out infinite}
 @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
 #start .go{font-family:var(--f-title);font-size:13px;color:#d8c8a0;letter-spacing:.3em}
+#start .pw{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:min(320px,86vw)}
+#start .pw input{flex:1;min-width:0;background:rgba(0,0,0,.55);color:var(--gold);border:2px solid #d4a849;font-family:var(--f-title);font-size:20px;letter-spacing:.2em;text-align:center;padding:10px;user-select:text;-webkit-user-select:text}
+#start .pw .btn{padding:10px 14px}
+#start .pw p{width:100%;margin:0;min-height:1.2em;font-family:var(--f-body);font-size:18px;color:#ff8a7a}
+#start .pw.bad{animation:pwShake .35s}
+@keyframes pwShake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 #start .lic{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);left:0;right:0;font-family:var(--f-title);font-size:10px;color:#7a6440;letter-spacing:.3em;line-height:1.8}
 @media (prefers-reduced-motion:reduce){#start h1,#start .go,#chipsTag.flash{animation:none}}
 /* niedrige Bildschirme (Handy quer): alles kompakter, Fußzeile nicht über HEREINSPAZIERT */
@@ -632,12 +638,13 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="sub">Willkommen, verehrter Gast. Ihr Tisch ist bereit.</div>
   <div class="bar"><i></i></div>
   <div class="go" id="startGo" data-loading="true">WIRD VORBEREITET</div>
+  <form class="pw" id="pwBox" hidden autocomplete="on" onsubmit="return false"><input id="pwIn" type="password" autocomplete="current-password" placeholder="PASSWORT" aria-label="Passwort"><button class="btn gold" id="pwGo" type="submit">EINTRETEN</button><p id="pwMsg"></p></form>
   <div class="lic">SJ SPIELBANK · SEIT 2026 · NUR SPIELGELD</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792513573";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792514220";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -6261,15 +6268,26 @@ fontWait.then(()=>{
   // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
   const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
-  setTimeout(()=>{
+  const enterGame=()=>{
     MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();
     $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
     $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
     if(!seen)openPanel('pHelp');
     try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
-  },700);
+  };
+  if(pwOk())setTimeout(enterGame,700);else pwAsk(enterGame);
 });
+// Passwort beim ersten Mal (danach merkt sich das Gerät den Zugang). Hinweis: nur ein Schutz gegen zufällige Besucher.
+const PW_KEY='nk_pw',PW_TOKEN='sjs1';
+function pwOk(){try{return localStorage.getItem(PW_KEY)===PW_TOKEN;}catch(e){return false;}}
+function pwCheck(v){return String(v||'').trim().toUpperCase()==='SJS';}
+function pwAsk(then){const box=$('#pwBox'),inp=$('#pwIn'),msg=$('#pwMsg'),go=$('#startGo');
+  go.textContent='PASSWORT EINGEBEN';box.hidden=false;setTimeout(()=>{try{inp.focus();}catch(e){}},300);
+  inp.addEventListener('keydown',e=>e.stopPropagation());
+  const tryIt=()=>{if(pwCheck(inp.value)){try{localStorage.setItem(PW_KEY,PW_TOKEN);}catch(e){}box.hidden=true;go.textContent='HEREINSPAZIERT';inp.blur();setTimeout(then,300);}
+    else{msg.textContent=inp.value?'Falsches Passwort.':'Bitte Passwort eingeben.';box.classList.remove('bad');void box.offsetWidth;box.classList.add('bad');inp.select();}};
+  box.addEventListener('submit',e=>{e.preventDefault();tryIt();});}
 
 })();
 </script>

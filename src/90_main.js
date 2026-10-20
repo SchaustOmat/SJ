@@ -578,12 +578,23 @@ fontWait.then(()=>{
   // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
   const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
-  setTimeout(()=>{
+  const enterGame=()=>{
     MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();
     $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
     $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
     if(!seen)openPanel('pHelp');
     try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
-  },700);
+  };
+  if(pwOk())setTimeout(enterGame,700);else pwAsk(enterGame);
 });
+// Passwort beim ersten Mal (danach merkt sich das Gerät den Zugang). Hinweis: nur ein Schutz gegen zufällige Besucher.
+const PW_KEY='nk_pw',PW_TOKEN='sjs1';
+function pwOk(){try{return localStorage.getItem(PW_KEY)===PW_TOKEN;}catch(e){return false;}}
+function pwCheck(v){return String(v||'').trim().toUpperCase()==='SJS';}
+function pwAsk(then){const box=$('#pwBox'),inp=$('#pwIn'),msg=$('#pwMsg'),go=$('#startGo');
+  go.textContent='PASSWORT EINGEBEN';box.hidden=false;setTimeout(()=>{try{inp.focus();}catch(e){}},300);
+  inp.addEventListener('keydown',e=>e.stopPropagation());
+  const tryIt=()=>{if(pwCheck(inp.value)){try{localStorage.setItem(PW_KEY,PW_TOKEN);}catch(e){}box.hidden=true;go.textContent='HEREINSPAZIERT';inp.blur();setTimeout(then,300);}
+    else{msg.textContent=inp.value?'Falsches Passwort.':'Bitte Passwort eingeben.';box.classList.remove('bad');void box.offsetWidth;box.classList.add('bad');inp.select();}};
+  box.addEventListener('submit',e=>{e.preventDefault();tryIt();});}
