@@ -31,17 +31,34 @@ function setChips(v,flash){
 function store(k,v){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,String(v));}catch(e){}}
 
 /* ---------- audio ---------- */
-let AC=null,master=null,muted=false;
+let AC=null,master=null,muted=false,verb=null,amb=null;
 function initAudio(){
   try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
-    master=AC.createGain();master.gain.value=.5;master.connect(AC.destination);
-    const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=260;
-    const g=AC.createGain();g.gain.value=.045;f.connect(g);g.connect(master);
-    [55,55.6,82.4].forEach(fr=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.connect(f);o.start();});
-    const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=.07;lg.gain.value=120;l.connect(lg);lg.connect(f.frequency);l.start();
+    // Kompressor hält alles zusammen (laute Gewinne übersteuern nicht, leise Töne bleiben hörbar)
+    master=AC.createGain();master.gain.value=.5;const comp=AC.createDynamicsCompressor();
+    comp.threshold.value=-18;comp.knee.value=14;comp.ratio.value=3.5;comp.attack.value=.004;comp.release.value=.2;master.connect(comp);comp.connect(AC.destination);
+    // Raumhall der Spielhalle (selbst erzeugte Hallfahne), Glocken und Melodien bekommen etwas davon ab
+    const sr=AC.sampleRate,len=sr*1.9|0,ir=AC.createBuffer(2,len,sr);
+    for(let ch=0;ch<2;ch++){const a=ir.getChannelData(ch);for(let i=0;i<len;i++){const t=i/len;a[i]=i<sr*.015?0:(Math.random()*2-1)*Math.pow(1-t,3.4)*(1+.3*Math.sin(i*.0007*(ch+1)));}}
+    const cv=AC.createConvolver();cv.buffer=ir;verb=AC.createGain();verb.gain.value=.25;
+    const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=300;verb.connect(hp);hp.connect(cv);cv.connect(master);
+    // Atmosphäre: leises Stimmengemurmel (gefiltertes rosa Rauschen) statt Brummen
+    const nb=AC.createBuffer(1,sr*4,sr),d=nb.getChannelData(0);let b0=0,b1=0,b2=0;
+    for(let i=0;i<d.length;i++){const w=Math.random()*2-1;b0=.997*b0+w*.03;b1=.985*b1+w*.06;b2=.95*b2+w*.1;d[i]=(b0+b1+b2)*.35;}
+    const src=AC.createBufferSource();src.buffer=nb;src.loop=true;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=520;bp.Q.value=.8;
+    amb=AC.createGain();amb.gain.value=.03;src.connect(bp);bp.connect(amb);amb.connect(master);src.start();
+    const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=.11;lg.gain.value=170;l.connect(lg);lg.connect(bp.frequency);l.start();
+    setInterval(ambTick,1300);
   }catch(e){AC=null;}
 }
+// Ferne Automaten in der Halle: ab und zu leise Gewinnglöckchen mit viel Hall; am Automaten wird es ruhiger
+function ambTick(){if(!AC||muted)return;const sit=typeof focus!=='undefined'&&focus;
+  if(amb)amb.gain.setTargetAtTime(sit?.012:.03,AC.currentTime,.6);
+  if(sit||Math.random()>.28)return;const base=[79,81,84,86][Math.random()*4|0],n=3+(Math.random()*4|0);
+  for(let k=0;k<n;k++)farBell(NOTE(base+[0,4,7,12,7,12,16][k]),.5,.018,k*.09);}
+function farBell(fr,d,v,when){if(!AC||!verb)return;const t=AC.currentTime+(when||0);const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=fr;
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(verb);const g2=AC.createGain();g2.gain.value=.25;g.connect(g2);g2.connect(master);o.start(t);o.stop(t+d+.05);}
 function tone(fr,d,type,v,when,slide){
   if(!AC||muted)return;const t=AC.currentTime+(when||0);
   const o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(fr,t);
@@ -56,7 +73,7 @@ function bell(fr,d,v,when,ratio){
   c.type='sine';m.type='sine';c.frequency.value=fr;m.frequency.value=fr*(ratio||3.5);
   mg.gain.setValueAtTime(fr*2.2,t);mg.gain.exponentialRampToValueAtTime(fr*.05,t+d);
   g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.12,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);
-  m.connect(mg);mg.connect(c.frequency);c.connect(g);g.connect(master);c.start(t);m.start(t);c.stop(t+d+.05);m.stop(t+d+.05);
+  m.connect(mg);mg.connect(c.frequency);c.connect(g);g.connect(master);if(verb)g.connect(verb);c.start(t);m.start(t);c.stop(t+d+.05);m.stop(t+d+.05);
 }
 // weicher Synth-Ton (gefilterte Rechteckwelle) für Melodien und Fanfaren
 function soft(fr,d,v,when,type){
@@ -64,7 +81,7 @@ function soft(fr,d,v,when,type){
   const o=AC.createOscillator(),f=AC.createBiquadFilter(),g=AC.createGain();o.type=type||'square';o.frequency.value=fr;
   f.type='lowpass';f.frequency.setValueAtTime(fr*6,t);f.frequency.exponentialRampToValueAtTime(fr*1.5,t+d);
   g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.08,t+.01);g.gain.setValueAtTime(v||.08,t+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t+d);
-  o.connect(f);f.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05);
+  o.connect(f);f.connect(g);g.connect(master);if(verb&&d>.1)g.connect(verb);o.start(t);o.stop(t+d+.05);
 }
 const NOTE=n=>440*Math.pow(2,(n-69)/12); // MIDI-Nummer -> Hz
 let noiseBuf=null;

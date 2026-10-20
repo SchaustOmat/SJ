@@ -39,7 +39,7 @@ function chandelier(F,x,z,s){s=s||1;const g=new THREE.Group();g.position.set(x,4
       mesh(new THREE.OctahedronGeometry(.035),cry,cx,y-.12,cz,g);mesh(new THREE.OctahedronGeometry(.022),cry,cx,y-.2,cz,g);}});
   for(let i=0;i<10;i++){const a=i/10*TAU;mesh(new THREE.OctahedronGeometry(.03),cry,Math.cos(a)*.18*s,-1.02-(i%2)*.06,Math.sin(a)*.18*s,g);}
   mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
-  pointLight(F,0xffd8a0,x,3.05,z,1.05,10);return g;}
+  bakeGroup(g,true);pointLight(F,0xffd8a0,x,3.05,z,1.05,10);return g;}
 // Gemälde mit Goldrahmen (abstrakte Landschaft, selbst gemalt)
 function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=upTex(48,32,(g,W,H)=>{seed=seedN||77;
     const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,['#3a5a8a','#8a4a3a','#2a3a2a'][seedN%3]);sky.addColorStop(1,'#e8c890');g.fillStyle=sky;g.fillRect(0,0,W,H);
@@ -66,4 +66,4 @@ function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
   box(.06,.5,.02,acc,-.13,.3,-.05,back);box(.06,.5,.02,acc,.13,.3,-.05,back);
   box(.1,.07,.02,acc,-.22,.61,-.05,back);box(.1,.07,.02,acc,.22,.61,-.05,back);
   box(.2,.09,.05,acc,0,.5,-.065,back);
-  return c;}
+  c.userData.noBake=true;bakeGroup(c,true);return c;}

@@ -139,7 +139,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   // stool
   const stool=gamingChair(g,accent);stool.position.set(0,0,.98);stool.rotation.y=.25;g.userData.chair=stool; // Gaming-Stuhl, beim Hinsetzen ausgeblendet
   // Kartenschlitz unter dem Bildschirm rechts: Chromrahmen, dunkler Schlitz, LED daneben
-  const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);box(.17,.014,.044,dark,.2,1.125,.172,g);
+  const slotFr=box(.22,.055,.04,chrome,.2,1.125,.17,g);slotFr.userData.keep=true;box(.17,.014,.044,dark,.2,1.125,.172,g);
   const cardLed=new THREE.MeshBasicMaterial({color:0x2a0000});box(.045,.045,.046,cardLed,.36,1.125,.171,g);
   const m={cardSlot:slotFr,cardLed,F,G,defG:G,scrMesh,group:g,deck,scr:scrTex,top:topTex,ledMat,accent,btns:{},state:'idle',lines:G.lines.length,betIdx:0,win:0,disp:0,
     reels:[0,1,2,3,4].map(i=>({pos:Math.random()*G.strips[i].length,spin:false,stopAt:0,target:0,bounce:0,teased:false})),
@@ -155,6 +155,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
     const act={type:'mbtn',m,key};b.userData.act=act;F.hits.push(b);
     m.btns[key]={mesh:b,tex,mat:top,label:'',color:'',lit:false,blink:false,press:0};
   });
+  bakeGroup(g,true); // feste Gehäuseteile zusammenfassen (Tasten, Bildschirm, Stuhl bleiben einzeln)
   const fx=Math.sin(rotY),fz=Math.cos(rotY);
   const act={type:'machine',m,label:G.title,sub:'Hinsetzen und spielen',pos:new THREE.Vector3(x+fx*.6,1.2,z+fz*.6),reach:2.2};
   const hitList=[];g.traverse(o=>{if(o.isMesh&&!o.userData.act){o.userData.act=act;F.hits.push(o);}});F.acts.push(act);
