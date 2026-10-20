@@ -599,7 +599,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496339";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496396";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1437,25 +1437,29 @@ function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=upTex(48,32,(g,W,H)=>{see
     g.fillStyle='rgba(255,240,200,.6)';g.beginPath();g.arc(W*.7,H*.25,3,0,TAU);g.fill();},6);
   const grp=new THREE.Group();grp.position.set(x,y,z);grp.rotation.y=rotY;F.group.add(grp);
   box(w+.16,h+.16,.05,lam({color:0xc8962a,emissive:0x2a1800}),0,0,0,grp);mesh(new THREE.PlaneGeometry(w,h),lam({map:tex}),0,0,.03,grp);}
-// Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe).
-// Niedrige Lehne, damit er den Bildschirm beim Hinlaufen nicht verdeckt; Farbteile mit Abstand + polygonOffset gegen Flackern.
+// abgerundeter Quader (Polster, Lehnen): Grundform mit Fase, Form wird je Größe nur einmal gebaut
+function rboxGeo(w,h,d,r){return PGEO('rb'+w+'_'+h+'_'+d+'_'+r,()=>{r=Math.min(r,w/2-.001,h/2-.001,d/2-.001);const W=w/2-r,H=h/2-r,sh=new THREE.Shape();
+  sh.moveTo(-W,-H);sh.lineTo(W,-H);sh.lineTo(W,H);sh.lineTo(-W,H);sh.lineTo(-W,-H);
+  const g=new THREE.ExtrudeGeometry(sh,{depth:Math.max(.001,d-2*r),bevelEnabled:true,bevelThickness:r,bevelSize:r,bevelSegments:3,curveSegments:4});g.translate(0,0,-(d-2*r)/2);g.computeVertexNormals();return g;});}
+function rbox(w,h,d,r,mat,x,y,z,p){return mesh(rboxGeo(w,h,d,r),mat,x,y,z,p);}
+// Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe): weiche Polster, Chromfuß.
+// Niedrige Lehne, damit er den Bildschirm beim Hinlaufen nicht verdeckt.
 function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
-  const blk=lam({color:0x16161a}),chr=lam({color:0x9aa0aa});
-  const acc=lam({color:accent,emissive:new THREE.Color(accent).multiplyScalar(.12)});acc.polygonOffset=true;acc.polygonOffsetFactor=-2;acc.polygonOffsetUnits=-4;
+  const blk=new THREE.MeshPhongMaterial({color:0x17161a,shininess:25,specular:0x2a2a30}),chr=new THREE.MeshPhongMaterial({color:0xb8bcc6,shininess:120,specular:0xffffff});
+  const acc=new THREE.MeshPhongMaterial({color:accent,shininess:30,specular:0x333333,emissive:new THREE.Color(accent).multiplyScalar(.12)});
   // Fußkreuz mit Rollen
-  for(let i=0;i<5;i++){const a=i/5*TAU+.3,leg=box(.05,.04,.3,blk,Math.sin(a)*.15,.08,Math.cos(a)*.15,c);leg.rotation.y=a;
-    mesh(new THREE.SphereGeometry(.035,6,4),blk,Math.sin(a)*.29,.035,Math.cos(a)*.29,c);}
-  mesh(new THREE.CylinderGeometry(.03,.03,.34,6),chr,0,.27,0,c);
+  for(let i=0;i<5;i++){const a=i/5*TAU+.3,leg=rbox(.05,.035,.3,.012,chr,Math.sin(a)*.15,.085,Math.cos(a)*.15,c);leg.rotation.y=a;
+    mesh(PGEO('roll',()=>new THREE.SphereGeometry(.035,10,8)),blk,Math.sin(a)*.29,.035,Math.cos(a)*.29,c);}
+  mesh(PGEO('ch1',()=>new THREE.CylinderGeometry(.028,.028,.34,12)),chr,0,.27,0,c);mesh(PGEO('ch2',()=>new THREE.CylinderGeometry(.06,.05,.05,14)),blk,0,.43,0,c);
   // Sitz mit farbigen Seitenwangen
-  box(.46,.08,.46,blk,0,.47,0,c);box(.07,.06,.44,acc,-.22,.53,0,c);box(.07,.06,.44,acc,.22,.53,0,c);
+  rbox(.44,.09,.46,.035,blk,0,.48,0,c);rbox(.08,.09,.44,.03,acc,-.22,.52,0,c);rbox(.08,.09,.44,.03,acc,.22,.52,0,c);
   // Armlehnen
-  [-.28,.28].forEach(x=>{box(.04,.16,.04,blk,x,.58,.06,c);box(.06,.03,.22,blk,x,.67,.03,c);});
+  [-.28,.28].forEach(x=>{rbox(.035,.16,.035,.012,blk,x,.6,.06,c);rbox(.07,.035,.22,.015,blk,x,.69,.03,c);});
   // Rückenlehne (bis ca. 1,1 m) mit Farbstreifen, leicht nach hinten geneigt
   const back=new THREE.Group();back.position.set(0,.5,.23);back.rotation.x=.18;c.add(back);
-  box(.46,.6,.08,blk,0,.32,0,back);box(.52,.1,.08,blk,0,.6,0,back);
-  box(.06,.5,.02,acc,-.13,.3,-.05,back);box(.06,.5,.02,acc,.13,.3,-.05,back);
-  box(.1,.07,.02,acc,-.22,.61,-.05,back);box(.1,.07,.02,acc,.22,.61,-.05,back);
-  box(.2,.09,.05,acc,0,.5,-.065,back);
+  rbox(.46,.62,.09,.04,blk,0,.33,0,back);rbox(.5,.12,.09,.045,blk,0,.6,0,back);
+  rbox(.06,.5,.02,.008,acc,-.13,.3,-.048,back);rbox(.06,.5,.02,.008,acc,.13,.3,-.048,back);
+  rbox(.2,.09,.04,.015,acc,0,.5,-.055,back);
   c.userData.noBake=true;bakeGroup(c,true);return c;}
 
 
