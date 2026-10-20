@@ -186,7 +186,7 @@ function btnModel(m){
   if((s==='gamble'||s==='gambleNext')&&m.gamble){
     const live=s==='gamble'&&!m.gamble.busy;
     B('INFO','INFO','white',false);B('LINIEN','LINIEN','amber',false);B('EINSATZ','EINSATZ','amber',false);B('AUTO','AUTO','blue',false);
-    if(m.gamble.kind==='rb'){B('KARTE','ROT','red',live,live);B('LEITER','SCHWARZ','black',live,live);}
+    if(m.gamble.kind==='rb'){B('LEITER','ROT','red',live,live);B('KARTE','SCHWARZ','black',live,live);} // rote Leiter-Taste = Rot, schwarze Karten-Taste = Schwarz
     else{const nx=s==='gambleNext'&&m.win>0,sp=(live||nx)&&m.gamble.idx>=1;B('KARTE','TEILEN','amber',sp,sp&&live);B('LEITER','LEITER ▲','yellow',live||nx,live);}
     B('START','NEHMEN','green',live||(s==='gambleNext'&&m.gamble.kind==='ladder'&&m.win>0));B('MENU','MENÜ','white',false);return o;
   }
@@ -236,7 +236,7 @@ function pressButton(m,key){
   if(key==='LINIEN'&&m.G.power&&(s==='show'||s==='count')&&m.win>=4*totalBet(m)){if(s==='count'){m.timer=0;m.disp=m.win;}openOffer(m);return;}
   if(s==='gamble'){
     const gm=m.gamble;
-    if(gm.kind==='rb'){if(key==='KARTE')gambleRB(m,true);else if(key==='LEITER')gambleRB(m,false);else if(key==='START')collect(m,true);}
+    if(gm.kind==='rb'){if(key==='LEITER')gambleRB(m,true);else if(key==='KARTE')gambleRB(m,false);else if(key==='START')collect(m,true);}
     else{if(key==='LEITER')ladderPress(m);else if(key==='KARTE')ladderSplit(m);else if(key==='START')collect(m,true);}
     return;
   }
