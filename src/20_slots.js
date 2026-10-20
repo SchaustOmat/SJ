@@ -690,12 +690,12 @@ function ladderPress(m){
   ladderResult(m);
 }
 function ladderResult(m){
-  const gm=m.gamble,L=ladOf(m),from=gm.idx,t=gm.target;gm.run=false;gm.idx=t;
-  if(t>from){m.win=L[t];m.disp=m.win;m.msg='HOCH! '+fmt(m.win);SFX.win();
-    fxBurst(m,239,RY+70,22,{cols:['#a8ffb0','#ffd23a','#fff'],spd:110,w:70});fxFlash(m,.3,'160,255,170');if(m.win>=totalBet(m)*20)fxShake(m,.35,true);}
-  else if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win)+' · WEITER?';SFX.lose();fxFlash(m,.3,'255,60,60');fxShake(m,.3);}
-  else{gm.idx=-1;m.msg='ABGESTÜRZT';m.win=0;m.disp=0;SFX.lose();SFX.boom();fxFlash(m,.7,'255,30,30');fxShake(m,.7,true);}
-  m.state='gambleNext';m.timer=t<0?1.6:1.0;m.stateT=0;m.dirty=true;updateButtons(m);
+  const gm=m.gamble,L=ladOf(m),from=gm.idx,t=gm.target;gm.run=false;gm.idx=t;gm.anim={from,to:t,t0:now};
+  if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);SFX.ladUp(t);
+    if(m.win>=totalBet(m)*50){fxBurst(m,239,RY+60,16,{cols:['#fff4a0','#ffd23a'],spd:90,w:60});}}
+  else if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win);SFX.ladDown();}
+  else{gm.idx=-1;m.msg='VERLOREN';m.win=0;m.disp=0;SFX.ladZero();}
+  m.state='gambleNext';m.timer=t<0?1.0:t>from?.32:.42;m.stateT=0;m.dirty=true;updateButtons(m);
   if(t>from&&t>=AUS_I&&from<AUS_I){m.disp=L[AUS_I];ausShow(m);}
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
@@ -714,60 +714,87 @@ function gambleRB(m,red){
   m.state='gambleNext';m.timer=isRed===red?1.3:2.2;m.dirty=true;updateButtons(m);
 }
 /* ---------- RISIKO+ Leiter (wie am echten Gerät: goldene Stufen über den abgedunkelten Walzen) ---------- */
-const LAD_TEILEN={x:155,y:166}; // unten zwischen RISIKO+-Spalte und Leiter
+const LAD_TEILEN={x:56,y:150}; // unten zwischen RISIKO+-Spalte und Leiter
 const LAD_HZ=1.65; // Blinktakt wie am Gerät (Video: Wechsel alle ~0,3 s)
-function goldRung(g,x,y,w,h,lit,txt,col,zone){
-  const fr=g.createLinearGradient(0,y,0,y+h);fr.addColorStop(0,'#fff0a0');fr.addColorStop(.5,'#c88a10');fr.addColorStop(1,'#6a3a00');
-  g.fillStyle='#000';g.fillRect(x-1,y-1,w+2,h+2);g.fillStyle=fr;g.fillRect(x,y,w,h);
-  if(lit){const lf=g.createLinearGradient(0,y,0,y+h);lf.addColorStop(0,col==='red'?'#ff8a8a':col==='green'?'#a8ffb0':'#fffbb0');lf.addColorStop(1,col==='red'?'#d01020':col==='green'?'#1fb04a':'#ffc400');g.fillStyle=lf;}
-  else g.fillStyle=zone?'#4a0610':'#120a02';
-  g.fillRect(x+2,y+2,w-4,h-4);
-  px(g,Math.min(h>14?9:h>11?8:7,Math.floor((w-6)/txt.length)));g.textAlign='center';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#f4f0e8';g.fillText(txt,x+w/2,y+h/2+1);
-}
+// ---- Leiter wie am echten Gerät: runde Goldsprossen, Glas-Innenteil, glatte kräftige Ziffern, Leuchten ----
+const LAD_FONT='"Arial Black","Segoe UI Black","Helvetica Neue",Arial,sans-serif';
+function lRR(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.quadraticCurveTo(x+w,y,x+w,y+r);g.lineTo(x+w,y+h-r);g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);g.lineTo(x+r,y+h);g.quadraticCurveTo(x,y+h,x,y+h-r);g.lineTo(x,y+r);g.quadraticCurveTo(x,y,x+r,y);g.closePath();}
+function lFit(g,t,x,y,w,size,col,align){let z=size;g.font='900 '+z+'px '+LAD_FONT;let mw=g.measureText(t).width;if(mw>w){g.save();g.translate(x,y);g.scale(w/mw,1);g.textAlign=align||'center';g.fillStyle=col;g.fillText(t,0,0);g.restore();return;}g.textAlign=align||'center';g.fillStyle=col;g.fillText(t,x,y);}
+// glow 0..1 = Leuchten, flash 0..1 = kurzes Weiß beim Ankommen des Lichts, col: 'y' gelb, 'red' rot
+function goldRung(g,x,y,w,h,lit,txt,col,zone,glow,flash){
+  const r=Math.min(3,h*.3);
+  // Bronze-/Goldrahmen mit Glanz
+  const fr=g.createLinearGradient(0,y-1,0,y+h+1);fr.addColorStop(0,'#fff2b0');fr.addColorStop(.35,'#e0a83a');fr.addColorStop(.7,'#8a5410');fr.addColorStop(1,'#3a2004');
+  g.fillStyle='#000';lRR(g,x-1.2,y-1.2,w+2.4,h+2.4,r+1);g.fill();g.fillStyle=fr;lRR(g,x-.3,y-.3,w+.6,h+.6,r+.5);g.fill();
+  const ix=x+1.3,iy=y+1.3,iw=w-2.6,ih=h-2.6;
+  if(lit){const red=col==='red';
+    g.save();g.shadowColor=red?'rgba(255,60,40,.95)':'rgba(255,214,40,.95)';g.shadowBlur=5+(glow||0)*5;
+    const lf=g.createLinearGradient(0,iy,0,iy+ih);
+    if(red){lf.addColorStop(0,'#ffb0a0');lf.addColorStop(.5,'#ff3a28');lf.addColorStop(1,'#a80a08');}
+    else{lf.addColorStop(0,'#fffde8');lf.addColorStop(.45,'#ffe640');lf.addColorStop(1,'#e8a400');}
+    g.fillStyle=lf;lRR(g,ix,iy,iw,ih,r*.7);g.fill();g.restore();
+    if(flash>0){g.fillStyle='rgba(255,255,255,'+(flash*.85).toFixed(3)+')';lRR(g,ix,iy,iw,ih,r*.7);g.fill();}
+    g.fillStyle='rgba(255,255,255,.45)';lRR(g,ix+1,iy+.6,iw-2,ih*.32,r*.5);g.fill();}
+  else{const gl=g.createLinearGradient(0,iy,0,iy+ih);gl.addColorStop(0,zone?'#3a0a0c':'#1c1408');gl.addColorStop(1,zone?'#140204':'#050302');g.fillStyle=gl;lRR(g,ix,iy,iw,ih,r*.7);g.fill();
+    g.fillStyle='rgba(255,240,200,.07)';lRR(g,ix+1,iy+.5,iw-2,ih*.35,r*.5);g.fill();}
+  g.textBaseline='middle';const isWord=/[A-Z]{3,}/.test(txt);
+  lFit(g,txt,x+w/2,y+h/2+.6,w-6,isWord?Math.min(h*.62,7.5):h*.8,lit?'#2a1400':'#f8e8b8');}
 function drawLadder(m,g,gm){
-  // Walzen abdunkeln
-  g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+  g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.66)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+  const vg=g.createRadialGradient(240,RY+70,10,240,RY+70,150);vg.addColorStop(0,'rgba(255,190,60,.10)');vg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=vg;g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
   const run=m.state==='gambleNext'&&gm.run,result=m.state==='gambleNext'&&!run,cur=gm.idx,L=ladOf(m);
   const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
   if(!result&&!run&&ph!==gm.ph){gm.ph=ph;if(!gm.preview&&!m.remote)SFX.gambleTick(ph);}
   const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
   const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k<F_I?k+1:k,yOf=p=>yb-rh*(p+2);
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
-  // laufendes Licht: über die oberen Stufen hin und her
   const st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_IDX[(st*7919+st*st*31+13)%AUS_IDX.length];
   const upT=ladNext(cur),dnT=ladDown(cur);
+  // Lichtsprung: kurzer leuchtender Weg von der alten zur neuen Stufe, dann Aufblitzen
+  const A=gm.anim,ak=A?clamp((now-A.t0)/.14,0,1):1,af=A?clamp(1-(now-A.t0-.14)/.18,0,1):0;
+  const rungY=k=>k<0?yb-rh:k>=F_I&&k!==TOP_I?null:yOf(pos(k));
   for(let k=0;k<PLUS_I;k++){if(k===F_I)continue;const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
-    let lit=false,col='y';
+    let lit=false,col='y',fl=0;
     if(run){lit=k===rk;col='red';}
-    else if(result){if(k===cur){lit=true;col=gm.up?'green':'y';}}
+    else if(result){if(k===cur){lit=ak>=1;fl=af;}}
     else{if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}
-    goldRung(g,xx,y,w,rh-1.4,lit,String(L[k]),col,up);}
-  {const y=yOf(AUS_I),lit=run?true:(!result&&cur===AUS_I-1&&ph);goldRung(g,x+3,y,W-6,rh-1.4,lit,'AUSSPIELUNG',lit?'red':'y',true);}
-  const zl=!run&&((result&&cur<0)||(!result&&dnT<0&&!ph));
-  goldRung(g,x+18,yb-rh,W-36,rh-1.4,zl,'0',zl&&result?'red':'y');
-  // RISIKO+-Spalte (links neben der Leiter): 100 · 140 · 180 · 220 · 260 · 300 €
+    goldRung(g,xx,y,w,rh-1.6,lit,String(L[k]),col,false,lit&&k===cur?1:0,fl);}
+  {const y=yOf(AUS_I),lit=run?Math.floor(now*12)%2===0:(!result&&cur===AUS_I-1&&ph);goldRung(g,x+3,y,W-6,rh-1.6,lit,'AUSSPIELUNG',run?'red':'y',true,1,0);}
+  const zl=!run&&((result&&cur<0&&ak>=1)||(!result&&dnT<0&&!ph));
+  goldRung(g,x+18,yb-rh,W-36,rh-1.6,zl,'0',result&&cur<0?'red':'y',false,1,result&&cur<0?af:0);
+  if(A&&ak<1&&!run){const y0=rungY(A.from),y1=rungY(A.to);if(y0!==null&&y1!==null){const yy=y0+(y1-y0)*ak+(rh-1.6)/2;
+    g.save();g.globalCompositeOperation='lighter';const cg=g.createRadialGradient(x+W/2,yy,1,x+W/2,yy,W*.55);cg.addColorStop(0,A.to>A.from?'rgba(255,240,160,.95)':'rgba(255,120,80,.9)');cg.addColorStop(1,'rgba(255,200,40,0)');
+    g.fillStyle=cg;g.fillRect(x-6,yy-14,W+12,28);g.restore();m.dirty=true;}}
+  if(A&&(ak<1||af>0))m.dirty=true;
+  // RISIKO+-Spalte: rot gerahmte Kästen, große Zahl mit kleinen 00
   {const PV=L.slice(F_I),bh=19,bx=118,bw=70;
-    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,col='y';
-      if(k>=F_I){if(result&&k===cur){lit=true;col=gm.up?'green':'y';}else if(!result&&!run){if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
-      g.fillStyle='#000';g.fillRect(bx-2,y-2,bw+4,bh+4);g.fillStyle=lit?(col==='green'?'#3adf5a':'#ffd23a'):'#2a0608';g.fillRect(bx,y,bw,bh);
-      g.strokeStyle=k===cur&&!run?'#fff':'#c01020';g.lineWidth=k===cur&&!run?2:1.5;g.strokeRect(bx+1,y+1,bw-2,bh-2);
-      const t=String(Math.round(v/100));px(g,10);g.textAlign='right';g.textBaseline='middle';g.fillStyle=lit?'#1a0e00':'#d8b860';g.fillText(t,bx+bw/2+14,y+bh/2+1);px(g,6);g.textAlign='left';g.fillText('00',bx+bw/2+15,y+bh/2+3);});}
-  // RISIKO+ Schriftzug und Erfolg ganz links
-  g.textAlign='left';g.textBaseline='middle';px(g,13);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('RISIKO',24,RY+16+dy);
-  const tg=g.createLinearGradient(0,RY+8,0,RY+26);tg.addColorStop(0,'#fff6a0');tg.addColorStop(1,'#e07a00');g.fillStyle=tg;g.fillText('RISIKO',24,RY+16+dy);
-  px(g,11);g.fillStyle='#ff3a3a';g.strokeText('+',100,RY+10+dy);g.fillText('+',100,RY+10+dy);
-  px(g,7);g.fillStyle='#e8e0cc';g.fillText('ERFOLG',26,RY+48);
-  g.fillStyle='#000';g.fillRect(24,RY+56,88,26);g.strokeStyle='#c88a10';g.lineWidth=2;g.strokeRect(24,RY+56,88,26);
-  {const t=fmt(m.disp);px(g,Math.min(12,Math.floor(82/t.length)));g.textAlign='right';g.fillStyle=result&&cur<0?'#ff3a3a':'#ffd23a';g.fillText(t,108,RY+70);}
-  g.fillStyle='#9b8fb3';
-  fitL(g,run?'AUSSPIELUNG ...':result?(cur<0?'VERLOREN':gm.up?'GEWONNEN!':'RUNTER'):cur>=F_I?'RISIKO+ · MIND. 100':'LEITER = HOCH',26,RY+96,86,6);
-  if(!result&&!run&&cur>=1){// gelber Teilen-Knopf wie am Gerät (antippbar)
-    const ox=LAD_TEILEN.x,oy=LAD_TEILEN.y+dy;g.fillStyle='#000';g.beginPath();g.ellipse(ox,oy,24,11,0,0,TAU);g.fill();
-    const tb=g.createLinearGradient(0,oy-10,0,oy+10);tb.addColorStop(0,'#fff8a0');tb.addColorStop(1,'#d8a000');g.fillStyle=tb;g.beginPath();g.ellipse(ox,oy,22,9.5,0,0,TAU);g.fill();
-    g.fillStyle='#1a0e00';g.textAlign='center';px(g,6);g.fillText('Teilen',ox,oy+1);}
-  g.fillStyle='#9b8fb3';fitL(g,'START = NEHMEN',26,RY+124,86,6);
+    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,fl=0;
+      if(k>=F_I){if(result&&k===cur){lit=ak>=1;fl=af;}else if(!result&&!run){if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
+      const fr=g.createLinearGradient(0,y,0,y+bh);fr.addColorStop(0,'#ff6a5a');fr.addColorStop(.5,'#b01020');fr.addColorStop(1,'#4a0408');
+      g.fillStyle='#000';lRR(g,bx-2,y-2,bw+4,bh+4,4);g.fill();g.fillStyle=fr;lRR(g,bx-.5,y-.5,bw+1,bh+1,3.5);g.fill();
+      if(lit){g.save();g.shadowColor='rgba(255,214,40,.95)';g.shadowBlur=8;const lf=g.createLinearGradient(0,y,0,y+bh);lf.addColorStop(0,'#fffde8');lf.addColorStop(.45,'#ffe640');lf.addColorStop(1,'#e8a400');g.fillStyle=lf;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();g.restore();
+        if(fl>0){g.fillStyle='rgba(255,255,255,'+(fl*.85).toFixed(3)+')';lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}}
+      else{const gl=g.createLinearGradient(0,y,0,y+bh);gl.addColorStop(0,'#1c0c08');gl.addColorStop(1,'#050202');g.fillStyle=gl;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}
+      g.textBaseline='middle';const c=lit?'#2a1400':'#e8c860';g.font='900 13px '+LAD_FONT;g.textAlign='right';g.fillStyle=c;g.fillText(String(Math.round(v/100)),bx+bw/2+14,y+bh/2+1);
+      g.font='900 7px '+LAD_FONT;g.textAlign='left';g.fillText('00',bx+bw/2+15,y+bh/2+3);});}
+  // RISIKO+ Schriftzug
+  g.save();g.textAlign='left';g.textBaseline='middle';g.font='italic 900 17px '+LAD_FONT;g.lineJoin='round';g.lineWidth=4;g.strokeStyle='#1a0800';g.strokeText('RISIKO',22,RY+17+dy);
+  const tg=g.createLinearGradient(0,RY+6,0,RY+28);tg.addColorStop(0,'#fff8c8');tg.addColorStop(.5,'#ffc828');tg.addColorStop(1,'#b86a00');g.fillStyle=tg;g.fillText('RISIKO',22,RY+17+dy);
+  g.font='900 15px '+LAD_FONT;g.strokeText('+',96,RY+10+dy);g.fillStyle='#ff2a2a';g.fillText('+',96,RY+10+dy);g.restore();
+  // ERFOLG-Anzeige
+  g.textBaseline='middle';g.font='700 7px '+LAD_FONT;g.textAlign='left';g.fillStyle='#e8dcc0';g.fillText('ERFOLG',26,RY+48);
+  g.fillStyle='#000';lRR(g,23,RY+54,90,28,3);g.fill();const eb=g.createLinearGradient(0,RY+54,0,RY+82);eb.addColorStop(0,'#8a8a92');eb.addColorStop(1,'#2a2a30');g.strokeStyle=eb;g.lineWidth=2;lRR(g,24,RY+55,88,26,3);g.stroke();
+  {const v=Math.max(0,Math.round(m.disp)),eu=String(Math.floor(v/100)),ct=String(v%100).padStart(2,'0'),c=result&&cur<0?'#ff3a3a':'#ffd820';
+    g.font='900 7.5px '+LAD_FONT;const cw=g.measureText(ct).width;g.textAlign='right';g.fillStyle=c;g.fillText(ct,108,RY+72);
+    lFit(g,eu,108-cw-1,RY+68,70,17,c,'right');}
+  g.font='700 6.5px '+LAD_FONT;g.textAlign='left';g.fillStyle='#b8a888';
+  const hint=run?'AUSSPIELUNG …':result?(cur<0?'VERLOREN':''):cur>=F_I?'RISIKO+ · MIND. 100':'LEITER = HOCH';if(hint)fitL2(g,hint,26,RY+96,86);
+  if(!result&&!run&&cur>=1){const ox=LAD_TEILEN.x,oy=LAD_TEILEN.y+dy;g.fillStyle='#000';g.beginPath();g.ellipse(ox,oy,24,11,0,0,TAU);g.fill();
+    const tb=g.createLinearGradient(0,oy-10,0,oy+10);tb.addColorStop(0,'#fffbc0');tb.addColorStop(.5,'#ffd820');tb.addColorStop(1,'#b88000');g.fillStyle=tb;g.beginPath();g.ellipse(ox,oy,22,9.5,0,0,TAU);g.fill();
+    g.fillStyle='rgba(255,255,255,.5)';g.beginPath();g.ellipse(ox,oy-4,16,3,0,0,TAU);g.fill();g.font='700 7px '+LAD_FONT;g.textAlign='center';g.fillStyle='#2a1400';g.fillText('Teilen',ox,oy+1);}
   g.restore();
 }
+function fitL2(g,t,x,y,w){const mw=g.measureText(t).width;if(mw<=w){g.fillText(t,x,y);return;}g.save();g.translate(x,y);g.scale(w/mw,1);g.fillText(t,0,0);g.restore();}
 function drawSplash(m,g){
   const G=m.G,t=m.stateT;
   const bg=g.createRadialGradient(160,110,10,160,120,200);bg.addColorStop(0,'#ffcf3a');bg.addColorStop(.35,'#e0305a');bg.addColorStop(1,'#2a0010');g.fillStyle=bg;g.fillRect(0,0,320,240);

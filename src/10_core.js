@@ -96,6 +96,10 @@ const SFX={
   doors(){noise(1,.05,400);},
   fsIntro(){[[67,0],[72,.14],[76,.28],[79,.42],[76,.6],[79,.72],[84,.86]].forEach(([n,t])=>{soft(NOTE(n),.24,.08,t);bell(NOTE(n+12),.4,.06,t);});soft(NOTE(48),1.3,.07,.86,'sawtooth');soft(NOTE(55),1.3,.05,.86,'sawtooth');bell(NOTE(96),1.4,.09,.86);},
   expand(){for(let k=0;k<10;k++)bell(NOTE(72+k*2),.25,.07,k*.045);},
+  // Leiter: hoch = hell und kurz (je Stufe etwas höher), runter = zwei fallende Töne, verloren = tiefer Abschluss
+  ladUp(k){const b=81+Math.min(12,Math.max(0,k||0));soft(NOTE(b+12),.09,.06,0,'square');bell(NOTE(b+19),.35,.07,.05);},
+  ladDown(){soft(NOTE(81),.08,.05,0,'square');soft(NOTE(76),.14,.05,.08,'square');},
+  ladZero(){soft(NOTE(69),.12,.06,0,'square');soft(NOTE(64),.14,.06,.11,'square');soft(NOTE(57),.35,.06,.24,'square');},
   gambleTick(on){ // Leiter-Blinken nach dem Video: Hoch-Phase A6 mit kurzem H5, Runter-Phase schnelle Folge D6-A5-C6-D6-F5-D6-A5 und D6
     if(on){soft(NOTE(93),.16,.05,0,'square');soft(NOTE(71),.035,.03,.07,'square');return;}
     [[86,.05],[81,.012],[84,.015],[86,.012],[77,.04],[86,.03],[81,.08],[86,.14]].reduce((t,[n,d])=>{soft(NOTE(n),d+.01,.045,t,'square');return t+d;},0);},
