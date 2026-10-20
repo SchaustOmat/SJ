@@ -599,7 +599,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496396";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496594";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -2771,9 +2771,9 @@ function buildPoker(F){
   PK.F=F;const cx=PK.cx,cz=PK.cz;
   const g=new THREE.Group();g.position.set(cx,0,cz);F.group.add(g);PK.group=g;
   const feltTex=upTex(64,64,pokerFeltT,4);
-  const top=mesh(new THREE.CylinderGeometry(1,1,.1,20),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
-  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,20),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
-  mesh(new THREE.CylinderGeometry(.35,.6,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  const top=mesh(new THREE.CylinderGeometry(1,1,.1,56),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
+  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,56),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
+  mesh(new THREE.CylinderGeometry(.35,.6,.76,24),lam({color:0x120c18}),0,.38,0,g);
   const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 50/100',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+2.3);
   col(F,cx,cz,2.8,4.4);
@@ -2782,7 +2782,7 @@ function buildPoker(F){
   const human={name:'DU',human:true,pos:[0,2.62],stack:0,hole:[],bet:0,total:0,folded:true,allin:false,out:true,last:''};
   PK.human=human;
   const hs=new THREE.Group();hs.position.set(cx,0,cz+2.65);F.group.add(hs);
-  mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:0x6a1020}),0,.62,0,hs);
+  mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:0x6a1020}),0,.62,0,hs);
   PK.seats.push(human);
   BOT_DEF.forEach(d=>{
     const wx=cx+d.pos[0],wz=cz+d.pos[1];
@@ -3070,14 +3070,14 @@ const HLBTN=[['MINUS',.12,'white'],['PLUS',.12,'white'],['GEBEN',.26,'green'],['
 function buildHilo(F){
   HL.F=F;const cx=HL.cx,cz=HL.cz;
   const g=new THREE.Group();g.position.set(cx,0,cz);F.group.add(g);HL.group=g;
-  const top=mesh(new THREE.CylinderGeometry(1,1,.1,18),[lam({map:T.wood}),lam({color:0x5a1424}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.15,1,.75);
-  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,18),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.22,1,.82);
-  mesh(new THREE.CylinderGeometry(.3,.5,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  const top=mesh(new THREE.CylinderGeometry(1,1,.1,56),[lam({map:T.wood}),lam({color:0x5a1424}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.15,1,.75);
+  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,56),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.22,1,.82);
+  mesh(new THREE.CylinderGeometry(.3,.5,.76,24),lam({color:0x120c18}),0,.38,0,g);
   const act={type:'hilo',label:'HÖHER/TIEFER',sub:'Karten-Risiko · Hinsetzen',pos:new THREE.Vector3(cx,1,cz+1.2),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+1.1);
   col(F,cx,cz,2.5,1.7);
   const hs=new THREE.Group();hs.position.set(cx,0,cz+1.25);F.group.add(hs);
-  mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:0x6a1020}),0,.62,0,hs);
+  mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:0x6a1020}),0,.62,0,hs);
   HL.dealer=npc(F,{x:cx,z:cz-1.05,rot:0,anim:'dealer',lines:["Höher gewinnt doppelt.","Gleich bleibt gleich.","Na, traust du dich?"],name:'KARTENGEBER',color:0x1a1a1e,glasses:true});
   // printed felt labels
   const lt=labelTex(256,32,(c)=>{c.clearRect(0,0,256,32);px(c,10);c.textAlign='center';c.textBaseline='middle';c.fillStyle='rgba(255,207,58,.8)';c.fillText('BANK          WÄHLE EINE KARTE',128,16);});
@@ -4506,17 +4506,17 @@ function buildMTable(F,o){
   TABLES[T.id]=T;
   const g=new THREE.Group();g.position.set(T.cx,0,T.cz);F.group.add(g);
   const felt=upTex(64,64,pokerFeltT,4);
-  mesh(new THREE.CylinderGeometry(1.15,1.15,.1,18),[lam({map:TEXR.wood}),lam({map:felt}),lam({map:TEXR.wood})],0,.84,0,g);
-  mesh(new THREE.CylinderGeometry(1.25,1.25,.12,18),lam({color:0x2a1408}),0,.82,0,g);
-  mesh(new THREE.CylinderGeometry(.3,.55,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  mesh(new THREE.CylinderGeometry(1.15,1.15,.1,56),[lam({map:TEXR.wood}),lam({map:felt}),lam({map:TEXR.wood})],0,.84,0,g);
+  mesh(new THREE.CylinderGeometry(1.25,1.25,.12,56),lam({color:0x2a1408}),0,.82,0,g);
+  mesh(new THREE.CylinderGeometry(.3,.55,.76,24),lam({color:0x120c18}),0,.38,0,g);
   box(1.6,.08,.6,bas({color:o.color}),0,3.2,0,g);
   const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+T.sb+'/'+T.bb,pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
   tagAct(F,g,act);col(F,T.cx,T.cz,2.5,2.5);
   for(let i=0;i<MT_N;i++){
     const p=mtSeatPos(T,i,T.R);
     const st=new THREE.Group();st.position.set(p.x,0,p.z);F.group.add(st);
-    mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,st);
-    mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:o.stool}),0,.62,0,st);
+    mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,st);
+    mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:o.stool}),0,.62,0,st);
     st.traverse(m=>{if(m.isMesh){m.userData.act=act;F.hits.push(m);}});
     const lab=spriteLabel(192,56,.2);lab.position.set(p.x,1.95,p.z);F.group.add(lab);
     const cp=mtSeatPos(T,i,.78),ry=Math.atan2(Math.cos(p.a),Math.sin(p.a));
@@ -5590,6 +5590,8 @@ function focusPose(){
   if(out.look){out.yaw+=f.ly||0;out.pitch+=f.lp||0;}
   return out;
 }
+// Sprechblasen nie über den oberen Anzeigen/Knöpfen (Geld, Etage, Aufstehen)
+function bubTop(){let t=60;['#hudTop','#standBtn','#svStand'].forEach(q=>{const e=$(q);if(e&&!e.hidden){const r=e.getBoundingClientRect();if(r.height>0&&r.bottom>0&&r.bottom<LH()*.4)t=Math.max(t,r.bottom+8);}});return t;}
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
@@ -5889,7 +5891,7 @@ function frame(){
     for(const n of F.npcs.concat(mpVisibleAvatars())){if(!n.bubbleEl)continue;if(n.bubbleUntil<now||openId){n.bubbleEl.hidden=true;continue;}
       n.head.getWorldPosition(tmpV);tmpV.y+=.42;const dist=tmpV.distanceTo(camera.position);tmpV.project(camera);
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
-      n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,60,lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
+      n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,bubTop(),lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
     if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=.15;updatePrompt();}}else if(!promptEl.hidden)promptEl.hidden=true;
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }

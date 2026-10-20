@@ -13,9 +13,9 @@ function buildPoker(F){
   PK.F=F;const cx=PK.cx,cz=PK.cz;
   const g=new THREE.Group();g.position.set(cx,0,cz);F.group.add(g);PK.group=g;
   const feltTex=upTex(64,64,pokerFeltT,4);
-  const top=mesh(new THREE.CylinderGeometry(1,1,.1,20),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
-  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,20),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
-  mesh(new THREE.CylinderGeometry(.35,.6,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  const top=mesh(new THREE.CylinderGeometry(1,1,.1,56),[lam({map:T.wood}),lam({map:feltTex}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.2,1,2);
+  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,56),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.3,1,2.1);
+  mesh(new THREE.CylinderGeometry(.35,.6,.76,24),lam({color:0x120c18}),0,.38,0,g);
   const act={type:'poker',label:'TEXAS HOLD\'EM',sub:'Hinsetzen · Blinds 50/100',pos:new THREE.Vector3(cx,1,cz+2.4),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+2.3);
   col(F,cx,cz,2.8,4.4);
@@ -24,7 +24,7 @@ function buildPoker(F){
   const human={name:'DU',human:true,pos:[0,2.62],stack:0,hole:[],bet:0,total:0,folded:true,allin:false,out:true,last:''};
   PK.human=human;
   const hs=new THREE.Group();hs.position.set(cx,0,cz+2.65);F.group.add(hs);
-  mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:0x6a1020}),0,.62,0,hs);
+  mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:0x6a1020}),0,.62,0,hs);
   PK.seats.push(human);
   BOT_DEF.forEach(d=>{
     const wx=cx+d.pos[0],wz=cz+d.pos[1];

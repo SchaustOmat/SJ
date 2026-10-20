@@ -21,17 +21,17 @@ function buildMTable(F,o){
   TABLES[T.id]=T;
   const g=new THREE.Group();g.position.set(T.cx,0,T.cz);F.group.add(g);
   const felt=upTex(64,64,pokerFeltT,4);
-  mesh(new THREE.CylinderGeometry(1.15,1.15,.1,18),[lam({map:TEXR.wood}),lam({map:felt}),lam({map:TEXR.wood})],0,.84,0,g);
-  mesh(new THREE.CylinderGeometry(1.25,1.25,.12,18),lam({color:0x2a1408}),0,.82,0,g);
-  mesh(new THREE.CylinderGeometry(.3,.55,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  mesh(new THREE.CylinderGeometry(1.15,1.15,.1,56),[lam({map:TEXR.wood}),lam({map:felt}),lam({map:TEXR.wood})],0,.84,0,g);
+  mesh(new THREE.CylinderGeometry(1.25,1.25,.12,56),lam({color:0x2a1408}),0,.82,0,g);
+  mesh(new THREE.CylinderGeometry(.3,.55,.76,24),lam({color:0x120c18}),0,.38,0,g);
   box(1.6,.08,.6,bas({color:o.color}),0,3.2,0,g);
   const act={type:'mtable',T,label:T.name,sub:'Hold\'em mit echten Leuten · Blinds '+T.sb+'/'+T.bb,pos:new THREE.Vector3(T.cx,1,T.cz),reach:2.9};
   tagAct(F,g,act);col(F,T.cx,T.cz,2.5,2.5);
   for(let i=0;i<MT_N;i++){
     const p=mtSeatPos(T,i,T.R);
     const st=new THREE.Group();st.position.set(p.x,0,p.z);F.group.add(st);
-    mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,st);
-    mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:o.stool}),0,.62,0,st);
+    mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,st);
+    mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:o.stool}),0,.62,0,st);
     st.traverse(m=>{if(m.isMesh){m.userData.act=act;F.hits.push(m);}});
     const lab=spriteLabel(192,56,.2);lab.position.set(p.x,1.95,p.z);F.group.add(lab);
     const cp=mtSeatPos(T,i,.78),ry=Math.atan2(Math.cos(p.a),Math.sin(p.a));

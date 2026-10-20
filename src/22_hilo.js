@@ -6,14 +6,14 @@ const HLBTN=[['MINUS',.12,'white'],['PLUS',.12,'white'],['GEBEN',.26,'green'],['
 function buildHilo(F){
   HL.F=F;const cx=HL.cx,cz=HL.cz;
   const g=new THREE.Group();g.position.set(cx,0,cz);F.group.add(g);HL.group=g;
-  const top=mesh(new THREE.CylinderGeometry(1,1,.1,18),[lam({map:T.wood}),lam({color:0x5a1424}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.15,1,.75);
-  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,18),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.22,1,.82);
-  mesh(new THREE.CylinderGeometry(.3,.5,.76,8),lam({color:0x120c18}),0,.38,0,g);
+  const top=mesh(new THREE.CylinderGeometry(1,1,.1,56),[lam({map:T.wood}),lam({color:0x5a1424}),lam({map:T.wood})],0,.84,0,g);top.scale.set(1.15,1,.75);
+  const rim=mesh(new THREE.CylinderGeometry(1,1,.12,56),lam({color:0x2a1408}),0,.82,0,g);rim.scale.set(1.22,1,.82);
+  mesh(new THREE.CylinderGeometry(.3,.5,.76,24),lam({color:0x120c18}),0,.38,0,g);
   const act={type:'hilo',label:'HÖHER/TIEFER',sub:'Karten-Risiko · Hinsetzen',pos:new THREE.Vector3(cx,1,cz+1.2),reach:2.2};
   tagAct(F,g,act);act.pos=new THREE.Vector3(cx,1,cz+1.1);
   col(F,cx,cz,2.5,1.7);
   const hs=new THREE.Group();hs.position.set(cx,0,cz+1.25);F.group.add(hs);
-  mesh(new THREE.CylinderGeometry(.04,.14,.6,6),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,8),lam({color:0x6a1020}),0,.62,0,hs);
+  mesh(new THREE.CylinderGeometry(.04,.14,.6,16),lam({color:0x2a2a30}),0,.3,0,hs);mesh(new THREE.CylinderGeometry(.24,.24,.09,24),lam({color:0x6a1020}),0,.62,0,hs);
   HL.dealer=npc(F,{x:cx,z:cz-1.05,rot:0,anim:'dealer',lines:["Höher gewinnt doppelt.","Gleich bleibt gleich.","Na, traust du dich?"],name:'KARTENGEBER',color:0x1a1a1e,glasses:true});
   // printed felt labels
   const lt=labelTex(256,32,(c)=>{c.clearRect(0,0,256,32);px(c,10);c.textAlign='center';c.textBaseline='middle';c.fillStyle='rgba(255,207,58,.8)';c.fillText('BANK          WÄHLE EINE KARTE',128,16);});

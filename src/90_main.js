@@ -246,6 +246,8 @@ function focusPose(){
   if(out.look){out.yaw+=f.ly||0;out.pitch+=f.lp||0;}
   return out;
 }
+// Sprechblasen nie über den oberen Anzeigen/Knöpfen (Geld, Etage, Aufstehen)
+function bubTop(){let t=60;['#hudTop','#standBtn','#svStand'].forEach(q=>{const e=$(q);if(e&&!e.hidden){const r=e.getBoundingClientRect();if(r.height>0&&r.bottom>0&&r.bottom<LH()*.4)t=Math.max(t,r.bottom+8);}});return t;}
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
@@ -545,7 +547,7 @@ function frame(){
     for(const n of F.npcs.concat(mpVisibleAvatars())){if(!n.bubbleEl)continue;if(n.bubbleUntil<now||openId){n.bubbleEl.hidden=true;continue;}
       n.head.getWorldPosition(tmpV);tmpV.y+=.42;const dist=tmpV.distanceTo(camera.position);tmpV.project(camera);
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
-      n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,60,lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
+      n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,bubTop(),lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
     if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=.15;updatePrompt();}}else if(!promptEl.hidden)promptEl.hidden=true;
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
