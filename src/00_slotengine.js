@@ -18,35 +18,6 @@ var SlotEngine=(function(){
   var LINES_LP=LINES10.slice(0,5).concat([[1,0,1,0,1],[1,2,2,2,1],[0,0,1,2,2],[2,2,1,0,0],[0,1,1,1,0]]);
   var LINES20=LINES10.concat([[1,2,1,0,1],[1,0,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],[0,0,2,0,0],[2,2,0,2,2]]);
   var GAMES={
-    book:{id:'book',title:'GRABKAMMER',sub:'DAS BUCH DER TOTEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'BUCH',scatter:'BUCH',low:['10','J','Q','K','A'],
-      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],'ANKH':[0,0,5,30,100,800],'SKARAB':[0,0,5,30,100,800],'PYRAMIDE':[0,0,5,40,400,2000],'MASKE':[0,0,10,100,1000,5000]},
-      scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true},
-      counts:null},
-    fruit:{id:'fruit',title:'GLUTOFEN',sub:'HEISSE FRÜCHTE',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
-      wild:null,scatter:'STERN',
-      pay:{'KIRSCHE':[0,0,5,20,50,200],'ZITRONE':[0,0,0,20,50,200],'ORANGE':[0,0,0,20,50,200],'PFLAUME':[0,0,0,20,50,200],'TRAUBE':[0,0,0,50,120,500],'MELONE':[0,0,0,50,120,500],'SIEBEN':[0,0,0,100,1000,5000]},
-      scatterPay:[0,0,0,2,10,50],free:null,counts:null},
-    // Freispiele: Gewinne x3
-    viking:{id:'viking',title:'WIKINGERGOLD',sub:'DER SCHATZ IM NORDEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'HELM',scatter:'RUNE',
-      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'AXT':[0,0,0,30,120,400],'SCHILD':[0,0,0,30,150,600],'DRACHE':[0,0,6,60,300,1500],'HELM':[0,0,15,150,750,3000]},
-      scatterPay:[0,0,0,3,15,100],free:{count:12,trigger:3,mult:3,desc:['12 FREISPIELE','ALLE GEWINNE ×3']},counts:null},
-    // Freispiele: Walzen voller Joker
-    mine:{id:'mine',title:'DIAMANTMINE',sub:'GRABEN BIS ZUM GLÜCK',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'DIAMANT',scatter:'LORE',
-      pay:{'10':[0,0,0,8,30,120],'J':[0,0,0,8,30,120],'Q':[0,0,0,8,40,150],'K':[0,0,0,15,50,200],'A':[0,0,0,15,50,200],'LATERNE':[0,0,0,30,120,500],'HACKE':[0,0,0,40,150,600],'NUGGET':[0,0,8,60,300,1500],'DIAMANT':[0,0,15,150,750,4000]},
-      scatterPay:[0,0,0,0,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
-    // Joker verdoppelt jeden Gewinn, Freispiele x3
-    reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'DELFIN',scatter:'MUSCHEL',wildDouble:true,
-      pay:{'10':[0,0,0,4,15,60],'J':[0,0,0,4,15,60],'Q':[0,0,0,4,20,80],'K':[0,0,0,8,25,100],'A':[0,0,0,8,25,100],'FISCH':[0,0,0,15,60,200],'SEESTERN':[0,0,0,20,80,300],'PERLE':[0,0,4,30,150,800],'DELFIN':[0,0,8,120,600,3000]},
-      scatterPay:[0,0,0,2,10,100],free:{count:15,trigger:3,mult:3,desc:['15 FREISPIELE ×3','JOKER = DOPPELT']},counts:null},
-    // Freispiele: Joker breiten sich über die ganze Walze aus
-    temple:{id:'temple',title:'TEMPELFEUER',sub:'DIE FLAMME DER GÖTTER',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'FEUER',scatter:'TEMPEL',
-      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'KELCH':[0,0,0,30,120,400],'SCHLANGE':[0,0,0,30,150,600],'STATUE':[0,0,6,60,300,1500],'FEUER':[0,0,15,150,750,3000]},
-      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,wildExpand:true,desc:['10 FREISPIELE','JOKER FÜLLT WALZE']},counts:null},
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],stack:3,

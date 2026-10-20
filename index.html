@@ -597,7 +597,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792492601";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792495953";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -623,35 +623,6 @@ var SlotEngine=(function(){
   var LINES_LP=LINES10.slice(0,5).concat([[1,0,1,0,1],[1,2,2,2,1],[0,0,1,2,2],[2,2,1,0,0],[0,1,1,1,0]]);
   var LINES20=LINES10.concat([[1,2,1,0,1],[1,0,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],[1,1,0,1,1],[1,1,2,1,1],[0,0,2,0,0],[2,2,0,2,2]]);
   var GAMES={
-    book:{id:'book',title:'GRABKAMMER',sub:'DAS BUCH DER TOTEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'BUCH',scatter:'BUCH',low:['10','J','Q','K','A'],
-      pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,5,40,150],'A':[0,0,0,5,40,150],'ANKH':[0,0,5,30,100,800],'SKARAB':[0,0,5,30,100,800],'PYRAMIDE':[0,0,5,40,400,2000],'MASKE':[0,0,10,100,1000,5000]},
-      scatterPay:[0,0,0,2,20,200],free:{count:10,trigger:3,expanding:true},
-      counts:null},
-    fruit:{id:'fruit',title:'GLUTOFEN',sub:'HEISSE FRÜCHTE',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400],
-      wild:null,scatter:'STERN',
-      pay:{'KIRSCHE':[0,0,5,20,50,200],'ZITRONE':[0,0,0,20,50,200],'ORANGE':[0,0,0,20,50,200],'PFLAUME':[0,0,0,20,50,200],'TRAUBE':[0,0,0,50,120,500],'MELONE':[0,0,0,50,120,500],'SIEBEN':[0,0,0,100,1000,5000]},
-      scatterPay:[0,0,0,2,10,50],free:null,counts:null},
-    // Freispiele: Gewinne x3
-    viking:{id:'viking',title:'WIKINGERGOLD',sub:'DER SCHATZ IM NORDEN',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'HELM',scatter:'RUNE',
-      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'AXT':[0,0,0,30,120,400],'SCHILD':[0,0,0,30,150,600],'DRACHE':[0,0,6,60,300,1500],'HELM':[0,0,15,150,750,3000]},
-      scatterPay:[0,0,0,3,15,100],free:{count:12,trigger:3,mult:3,desc:['12 FREISPIELE','ALLE GEWINNE ×3']},counts:null},
-    // Freispiele: Walzen voller Joker
-    mine:{id:'mine',title:'DIAMANTMINE',sub:'GRABEN BIS ZUM GLÜCK',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'DIAMANT',scatter:'LORE',
-      pay:{'10':[0,0,0,8,30,120],'J':[0,0,0,8,30,120],'Q':[0,0,0,8,40,150],'K':[0,0,0,15,50,200],'A':[0,0,0,15,50,200],'LATERNE':[0,0,0,30,120,500],'HACKE':[0,0,0,40,150,600],'NUGGET':[0,0,8,60,300,1500],'DIAMANT':[0,0,15,150,750,4000]},
-      scatterPay:[0,0,0,0,10,100],free:{count:10,trigger:3,mult:1,fsWild:true,desc:['10 FREISPIELE','MIT EXTRA-JOKERN']},counts:null},
-    // Joker verdoppelt jeden Gewinn, Freispiele x3
-    reef:{id:'reef',title:'DELFINRIFF',sub:'PERLEN DER TIEFE',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'DELFIN',scatter:'MUSCHEL',wildDouble:true,
-      pay:{'10':[0,0,0,4,15,60],'J':[0,0,0,4,15,60],'Q':[0,0,0,4,20,80],'K':[0,0,0,8,25,100],'A':[0,0,0,8,25,100],'FISCH':[0,0,0,15,60,200],'SEESTERN':[0,0,0,20,80,300],'PERLE':[0,0,4,30,150,800],'DELFIN':[0,0,8,120,600,3000]},
-      scatterPay:[0,0,0,2,10,100],free:{count:15,trigger:3,mult:3,desc:['15 FREISPIELE ×3','JOKER = DOPPELT']},counts:null},
-    // Freispiele: Joker breiten sich über die ganze Walze aus
-    temple:{id:'temple',title:'TEMPELFEUER',sub:'DIE FLAMME DER GÖTTER',lines:LINES10,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
-      wild:'FEUER',scatter:'TEMPEL',
-      pay:{'10':[0,0,0,6,30,120],'J':[0,0,0,6,30,120],'Q':[0,0,0,6,30,150],'K':[0,0,0,15,40,150],'A':[0,0,0,15,40,150],'KELCH':[0,0,0,30,120,400],'SCHLANGE':[0,0,0,30,150,600],'STATUE':[0,0,6,60,300,1500],'FEUER':[0,0,15,150,750,3000]},
-      scatterPay:[0,0,0,2,10,100],free:{count:10,trigger:3,mult:1,wildExpand:true,desc:['10 FREISPIELE','JOKER FÜLLT WALZE']},counts:null},
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200],
       wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],stack:3,
@@ -1600,25 +1571,10 @@ function upTex(w,h,draw,k,rx,ry){return hdTex(w*k,h*k,(g)=>{g.scale(k,k);draw(g,
 
 /* ---- 20_slots.js ---- */
 /* =========================================================
-   SPIELAUTOMATEN  (Grabkammer = Buch-Spiel, Glutofen = Früchte)
+   SPIELAUTOMATEN: Lucky Pharaoh Wild, Alles Spitze, Zentaurus, Tizona, Doppel Buch
    ========================================================= */
 const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
-// Feinabstimmung der Walzen pro Spiel (Quote ~97 % bei glatten Gewinnbeträgen, per Simulation)
-const ADJ=(rows,d)=>rows.map(r=>r.map((v,i)=>Math.max(1,v+(d[i]||0))));
-const BK=['10','J','Q','K','A','ANKH','SKARAB','PYRAMIDE','MASKE','BUCH'];
-const FK=['KIRSCHE','ZITRONE','ORANGE','PFLAUME','TRAUBE','MELONE','SIEBEN','STERN'];
-SlotEngine.setup('book',ADJ([[6,6,5,5,4,3,2,2,1,1],[7,7,6,6,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,1,2],[8,7,7,6,6,3,3,2,1,1],[8,8,7,7,6,3,3,2,1,1]],[-1]).map(a=>R_(a,BK)),101);
-SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,2]],[-1]).map(a=>R_(a,FK)),202);
 (function(){
-  const BASE=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,2,1],[7,7,6,6,5,3,3,2,2,2],[8,7,7,6,6,3,3,2,2,1],[8,8,7,7,6,3,3,2,1,1]];
-  const MINEFS=[[6,6,6,5,5,3,3,2,1,1],[7,7,6,6,5,3,3,2,5,1],[7,7,6,6,5,3,3,2,5,2],[8,7,7,6,6,3,3,2,5,1],[8,8,7,7,6,3,3,2,1,1]];
-  const K={viking:['10','J','Q','K','A','AXT','SCHILD','DRACHE','HELM','RUNE'],mine:['10','J','Q','K','A','LATERNE','HACKE','NUGGET','DIAMANT','LORE'],
-    reef:['10','J','Q','K','A','FISCH','SEESTERN','PERLE','DELFIN','MUSCHEL'],temple:['10','J','Q','K','A','KELCH','SCHLANGE','STATUE','FEUER','TEMPEL']};
-  const mk=(id,rows)=>rows.map(a=>R_(a,K[id]));
-  SlotEngine.setup('viking',mk('viking',ADJ(BASE,[1,1,0,0,-1])),301);
-  SlotEngine.setup('mine',mk('mine',ADJ(BASE,[1,0,0,1])),302,mk('mine',ADJ(MINEFS,[1,0,0,1])));
-  SlotEngine.setup('reef',mk('reef',ADJ(BASE,[-1])),303);
-  SlotEngine.setup('temple',mk('temple',ADJ(BASE,[1,1,0,0,-1])),304);
   const PH=['10','J','Q','K','A','SMARAGD','SAPHIR','RUBIN','BRILLANT','PHARAO'];
   SlotEngine.setup('spitze',[0,1,2,3,4].map(()=>({LEER:180,KLEE:95,PFEN:38,KAEF:10,KOEN:4,TEUF:50})),501);
   const TIZ_ROWS=[[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3],[16,16,16,14,13,9,9,6,6,4,1,3]];
@@ -1630,7 +1586,7 @@ SlotEngine.setup('fruit',ADJ([[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2,1],[4,5,5,5,3,3,2
   SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
   SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,1],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,1],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={book:{rtp:'96,2',fs:'174',hit:'2,8'},fruit:{rtp:'96,2',fs:null,hit:'5,7'},viking:{rtp:'97,7',fs:'218',hit:'3,1'},mine:{rtp:'96,8',fs:'231',hit:'3,2'},reef:{rtp:'97,1',fs:'191',hit:'3,3'},temple:{rtp:'96,5',fs:'217',hit:'3,3'},pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
+const GAMEINFO={pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,m.useFs==='buy'?'buy':!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -1765,7 +1721,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   slotIdleMsg(m);updateButtons(m);drawTop(m);drawScreen(m);
   return m;
 }
-function slotIdleMsg(m){const G=m.G;m.msg=G.special?'KLEE · MÜNZE · KÄFER · SONNE':G.power?'AB 4× EINSATZ GEWINN: POWER SPINS':G.id==='book'?'3 BÜCHER = 10 FREISPIELE':G.walkWild?'3/4/5 SCHILDE = 10/15/20 FREISPIELE':G.free?'3 '+SYMNAME[G.scatter]+' = '+G.free.count+' FREISPIELE':'VIEL GLÜCK';}
+function slotIdleMsg(m){const G=m.G;m.msg=G.special?'KLEE · MÜNZE · KÄFER · SONNE':G.power?'AB 4× EINSATZ GEWINN: POWER SPINS':G.walkWild?'3/4/5 SCHILDE = 10/15/20 FREISPIELE':G.free?'3 '+({MÜNZE:'MÜNZEN',BUCH:'BÜCHER'}[SYMNAME[G.scatter]]||SYMNAME[G.scatter])+' = '+G.free.count+' FREISPIELE':'VIEL GLÜCK';}
 function betLine(m){return m.G.betOpts[m.betIdx];}
 function totalBet(m){return betLine(m)*m.lines*(m.G.doppel&&m.dbl?2:1)/(m.G.lineDiv||1);}
 function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.39:1)/(m.G.lineDiv||1);}
@@ -1872,8 +1828,8 @@ function pressButton(m,key){
 /* ---------- EFFEKTE: Funken, Münzen, Blitz, Wackeln, große Gewinne ---------- */
 let camShake=0;
 const easeBack=t=>{const c=1.25,u=t-1;return 1+(c+1)*u*u*u+c*u*u;};
-const BIGT=[{x:10,t:'BIG WIN',c:['#fff8c0','#ffc020','#a04a00']},{x:25,t:'MEGA WIN',c:['#ffe0ff','#ff4ad0','#6a0060']},
-  {x:50,t:'SUPER WIN',c:['#e0ffff','#2ae0ff','#00406a']},{x:100,t:'MONSTER WIN',c:['#ffffff','#ff3030','#5a0000']}];
+const BIGT=[{x:10,t:'BIG WIN',c:['#fff8c0','#ffc020','#a04a00']},{x:25,t:'SUPER WIN',c:['#e0ffff','#2ae0ff','#00406a']},
+  {x:50,t:'MEGA WIN',c:['#ffe0ff','#ff4ad0','#6a0060']},{x:100,t:'MONSTER WIN',c:['#ffffff','#ff3030','#5a0000']}];
 const SPARK=['#fff','#ffd23a','#ff9a20','#fff4a0'];
 function fxOf(m){return m.fx||(m.fx={parts:[],flash:0,fcol:'255,255,255',shake:0,big:null});}
 function fxBurst(m,x,y,n,o){const F=fxOf(m);o=o||{};
@@ -2444,12 +2400,9 @@ function drawMystCell(m,g,x,y,w,h,r,c){
 const RX=22,RY=27,CW=55.2,CH=51;
 function bgFor(m,g){
   if(typeof MK_BG!=='undefined'&&MK_BG[m.G.id]){g.drawImage(MK_BG[m.G.id](m),0,0);return;}
-  const BGC={viking:['#0a1a30','#04101e'],mine:['#1a1410','#0a0806'],reef:['#03304a','#011a2a'],temple:['#3a1004','#1a0602'],pharao:['#4a0808','#140202'],spitze:['#0a1030','#02040e'],zent:['#0a2a4a','#04101e'],tizona:['#2a1a0a','#0a0604'],doppel:['#3a2208','#120802']}[m.G.id];
+  const BGC={pharao:['#4a0808','#140202'],spitze:['#0a1030','#02040e'],zent:['#0a2a4a','#04101e'],tizona:['#2a1a0a','#0a0604'],doppel:['#3a2208','#120802']}[m.G.id];
   if(BGC){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,BGC[0]);gr.addColorStop(1,BGC[1]);g.fillStyle=gr;g.fillRect(0,0,320,240);return;}
-  if(m.G.id==='book'){const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,'#3a2208');gr.addColorStop(.5,'#1a0e04');gr.addColorStop(1,'#2a1606');g.fillStyle=gr;g.fillRect(0,0,320,240);
-    g.fillStyle='rgba(232,176,32,.18)';for(let i=0;i<16;i++){g.fillRect(i*20+4,2,8,2);g.fillRect(i*20+8,236,6,2);}}
-  else{const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,'#5a0a04');gr.addColorStop(.6,'#2a0402');gr.addColorStop(1,'#8a2a04');g.fillStyle=gr;g.fillRect(0,0,320,240);
-    for(let i=0;i<24;i++){const x=i*14,h=8+Math.sin(now*3+i)*4+6;g.fillStyle='rgba(255,140,20,.25)';g.fillRect(x,240-h-46,10,h);}}
+  const gr=g.createLinearGradient(0,0,0,240);gr.addColorStop(0,'#2a1608');gr.addColorStop(1,'#0a0604');g.fillStyle=gr;g.fillRect(0,0,320,240);
 }
 function drawReelArea(m,g){
   const G=m.G;
@@ -2458,7 +2411,7 @@ function drawReelArea(m,g){
     const x=RX+i*CW,r=m.reels[i],S=stripsFor(m)[i],L=S.length;
     g.save();g.beginPath();g.rect(x+1,RY,CW-2,CH*3);g.clip();
     const rg=g.createLinearGradient(0,RY,0,RY+CH*3);
-    const RC={book:['#5a4020','#e8d8b0'],fruit:['#3a0a08','#f4e8d0'],viking:['#1a2a4a','#dce6f4'],mine:['#2a2014','#e8dcc8'],reef:['#0a3a5a','#d8f0f8'],temple:['#4a1a08','#f4dcc0'],pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#060c1a','#101c34'],doppel:['#000000','#0c0a08']}[G.id];
+    const RC={pharao:['#3a0a0a','#f4e0c8'],zent:['#9aa4b4','#ffffff'],tizona:['#060c1a','#101c34'],doppel:['#000000','#0c0a08']}[G.id];
     rg.addColorStop(0,RC[0]);rg.addColorStop(.5,RC[1]);rg.addColorStop(1,RC[0]);
     if(G.id==='pharao')g.drawImage(lpSand(),x+1,RY,CW-2,CH*3);else if(G.id==='zent')g.drawImage(ztMarble(),x+1,RY,CW-2,CH*3);else{g.fillStyle=rg;g.fillRect(x+1,RY,CW-2,CH*3);}
     const fl=Math.floor(r.pos),off=r.pos-fl,bo=r.bounce>0?Math.sin(r.bounce*Math.PI)*6:0;
@@ -2536,9 +2489,9 @@ function drawBar(m,g){
   const F=m.remote?null:m.fly,wv=m.disp>0?m.disp:(F?F.unl:0),pop=F?Math.max(0,1-(now-F.lastHit)/.22):0;
   const own=m===RESV; // dein Guthaben steht nur auf dem Automaten, in dem deine Karte steckt
   const fields=[[m.remote?cleanText(m.remote.name,10):own?'GUTHABEN':'KARTE',m.remote?fmt(m.remote.credit):own?fmt(chips-(F?F.pending:0)):'STECKEN'],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
-  fields.forEach(([l,v],i)=>{const x=4+i*105,hot=(i===2&&wv>0)||(i===0&&F);g.fillStyle=i===0&&pop>0?'rgba(255,210,58,'+(.12+pop*.3).toFixed(2)+')':'#1a1424';g.fillRect(x,y+3,101,30);
-    g.strokeStyle=hot?'#ffd23a':'#3a2c52';g.strokeRect(x+.5,y+3.5,100,29);
-    g.fillStyle='#9b8fb3';px(g,7);g.textAlign='left';g.textBaseline='top';g.fillText(l,x+4,y+5);
+  fields.forEach(([l,v],i)=>{const x=4+i*105,hot=(i===2&&wv>0)||(i===0&&F);if(i===0&&pop>0){g.fillStyle='rgba(255,210,58,'+(.12+pop*.3).toFixed(2)+')';}else{const fg=g.createLinearGradient(0,y+3,0,y+33);fg.addColorStop(0,'#16120c');fg.addColorStop(1,'#060504');g.fillStyle=fg;}g.fillRect(x,y+3,101,30);
+    g.lineWidth=1;g.strokeStyle=hot?'#ffd23a':'#5a4626';g.strokeRect(x+.5,y+3.5,100,29);
+    g.fillStyle='#b8a888';px(g,7);g.textAlign='left';g.textBaseline='top';g.fillText(l,x+4,y+5);
     g.fillStyle=i===2||(i===0&&F)?'#ffd23a':'#f4f0e8';g.textAlign='right';
     const vz=pxFit(g,v,92,11,5,800);
     if(i===0&&pop>0){const s=1+pop*.25;g.save();g.translate(x+97,y+23);g.scale(s,s);px(g,vz,800);g.textBaseline='middle';g.fillText(v,0,0);g.restore();}
@@ -2604,7 +2557,9 @@ function drawHeader(m,g){
   if(tzBuyable(m)){const B=TZ_BUY,armed=m.buyArm&&now-m.buyArm<3,bl=Math.floor(now*3)%2;
     const bg=g.createLinearGradient(0,B.y,0,B.y+B.h);bg.addColorStop(0,armed&&bl?'#fff4a0':'#ffd23a');bg.addColorStop(1,'#a06a00');g.fillStyle='#000';g.fillRect(B.x-1,B.y-1,B.w+2,B.h+2);g.fillStyle=bg;g.fillRect(B.x,B.y,B.w,B.h);
     g.fillStyle='#2a1400';g.textAlign='center';g.textBaseline='middle';fitC2(g,armed?'SICHER?':'FS KAUFEN '+fmt(100*totalBet(m)).replace(' €','€'),B.x+B.w/2,B.y+B.h/2+1,B.w-6,5);if(armed)m.dirty=true;}
-  if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=g.measureText(t).width+12;g.fillStyle='#3adf5a';g.fillRect(160-w/2,5,w,13);g.fillStyle='#001a04';g.textAlign='center';g.fillText(t,160,12);}
+  if(m===RESV){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=g.measureText(t).width+20;g.fillStyle='rgba(0,0,0,.7)';lRR(g,160-w/2,4,w,15,7.5);g.fill();
+    g.lineWidth=1;g.strokeStyle='#d6a02a';lRR(g,160-w/2+.5,4.5,w-1,14,7);g.stroke();g.fillStyle='#3adf5a';g.beginPath();g.arc(160-w/2+7,11.5,2.2,0,TAU);g.fill();
+    g.fillStyle='#ffd870';g.textAlign='center';g.fillText(t,163,12);}
 }
 // Text links ausgerichtet, schrumpft/staucht, damit er nie aus dem Feld läuft
 function fitL(g,t,x,y,w,sz){let s=sz;px(g,s);while(s>4&&g.measureText(t).width>w){s--;px(g,s);}const mw=g.measureText(t).width;g.save();g.translate(x,y);if(mw>w)g.scale(w/mw,1);g.textAlign='left';g.fillText(t,0,0);g.restore();}
@@ -2697,7 +2652,7 @@ function drawScreen(m){
 function drawTop(m){
   const g=m.top.userData.ctx,G=m.G;SYMSET=G.id;
   const gr=g.createLinearGradient(0,0,0,128);
-  const TOPC={book:['#1a0a30','#3a1a04'],fruit:['#3a0000','#a03a00'],viking:['#06142a','#2a4a6a'],mine:['#101018','#3a2a10'],reef:['#002a3a','#0a6a8a'],temple:['#2a0a00','#8a2a00'],pharao:['#2a0000','#8a1010'],spitze:['#0a1a40','#1a4a1a'],zent:['#0a2a5a','#3a6a2a'],tizona:['#2a1a0a','#6a3a10'],doppel:['#1a0a30','#3a1a04']}[G.id];
+  const TOPC={pharao:['#2a0000','#8a1010'],spitze:['#0a1a40','#1a4a1a'],zent:['#0a2a5a','#3a6a2a'],tizona:['#2a1a0a','#6a3a10'],doppel:['#1a0a30','#3a1a04']}[G.id];
   gr.addColorStop(0,TOPC[0]);gr.addColorStop(1,TOPC[1]);
   g.fillStyle=gr;g.fillRect(0,0,256,128);
   if(m.power){const P=m.power;g.textAlign='center';g.textBaseline='middle';px(g,14);g.lineWidth=5;g.strokeStyle='#000';g.strokeText('POWER SPINS',128,24);
@@ -2711,9 +2666,7 @@ function drawTop(m){
     else if(G.free.shields){const lv=SlotEngine.tizLevel(m.fs.sh);px(g,9);g.fillStyle='#ffd23a';g.fillText('SCHILDE '+(m.fs.sh||0),128,92);px(g,7);g.fillStyle=lv>=3?'#ffd23a':'#f4f0e8';g.fillText(['SCHWERT: 1 FELD','SCHWERT: 2 FELDER','SCHWERT: GANZE WALZE','GOLDENE SCHWERTER'][lv],128,108);}
     else{px(g,9);g.fillStyle='#ffd23a';g.fillText(G.free.desc[1],128,96);}}
   else{
-    if(G.id==='book'){g.fillStyle='#d8a050';g.beginPath();g.moveTo(200,30);g.lineTo(250,118);g.lineTo(150,118);g.closePath();g.fill();g.drawImage(symCanvas('BUCH'),8,58,60,60);}
-    else if(G.id==='fruit'){g.drawImage(symCanvas('SIEBEN'),6,60,56,56);g.drawImage(symCanvas('KIRSCHE'),194,60,56,56);}
-    else if(G.special){g.drawImage(symCanvas('KOEN'),6,60,56,56); /* Sonne */g.drawImage(symCanvas('KAEF'),194,60,56,56);}
+    if(G.special){g.drawImage(symCanvas('KOEN'),6,60,56,56); /* Sonne */g.drawImage(symCanvas('KAEF'),194,60,56,56);}
     else{g.drawImage(symCanvas(G.wild),6,60,56,56);g.drawImage(symCanvas(G.scatter||G.syms[G.syms.length-2]),194,60,56,56);}
     g.textAlign='center';g.textBaseline='middle';px(g,G.title.length>9?18:22);
     g.lineWidth=6;g.strokeStyle='#000';g.strokeText(G.title,128,38);
@@ -2721,7 +2674,7 @@ function drawTop(m){
     const fitC=(t,y,w,sz)=>{let z=sz;px(g,z);while(z>5&&g.measureText(t).width>w){z--;px(g,z);}g.textAlign='center';g.fillText(t,128,y);};
     g.fillStyle='#f4f0e8';fitC(G.sub,66,128,8);
     px(g,7);g.fillStyle='#ffd23a';
-    const D=G.special?['3 TÜRME · CASHPOT','SONNE HEBT · TEUFEL NIMMT']:G.id==='book'?['10 FREISPIELE MIT','WACHSENDEM SYMBOL']:G.power?['LINKS, RECHTS, MITTE','POWER SPINS AB 4×']:G.free?G.free.desc:['5 LINIEN · RISIKO','KARTE ODER LEITER'];
+    const D=G.special?['3 TÜRME · CASHPOT','SONNE HEBT · TEUFEL NIMMT']:G.power?['LINKS, RECHTS, MITTE','POWER SPINS AB 4×']:G.free?G.free.desc:['5 LINIEN · RISIKO','KARTE ODER LEITER'];
     fitC(D[0],88,128,7);fitC(D[1],100,128,7);
   }
   m.top.needsUpdate=true;m.topDirty=false;m.topVer=(m.topVer||0)+1;
@@ -3302,6 +3255,9 @@ Object.assign(SYMNAME,{PHARAO:'PHARAO',BRILLANT:'BRILLANT',RUBIN:'RUBIN',SAPHIR:
    ========================================================= */
 const SPIELOMAT={ver:'V0.1',games:[['pharao','PHARAO'],['spitze','KLEE'],['zent','ZENT'],['tizona','SCHWERT'],['doppel','FORSCH']]};
 const SM_TILE={x0:11,y0:42,w:70,h:56,gx:6,gy:4,cols:4};
+// Kachelposition; die letzte, nicht volle Reihe steht mittig
+function smTileXY(i){const T=SM_TILE,n=SPIELOMAT.games.length,c=i%T.cols,r=i/T.cols|0,inRow=Math.min(T.cols,n-r*T.cols);
+  return [T.x0+c*(T.w+T.gx)+(T.cols-inRow)*(T.w+T.gx)/2,T.y0+r*(T.h+T.gy)];}
 function setMachineGame(m,id){
   if(!SPIELOMAT.games.some(x=>x[0]===id))id='pharao'; // nur noch echte Merkur-Spiele
   const G=SlotEngine.GAMES[id];if(!G||m.G===G)return;
@@ -3334,40 +3290,42 @@ function smTap(m,uv){
   if(m.state==='poffer')return offerTap(m,uv);
   if(m.state!=='menu'||!uv)return false;
   const x=uv.x*320,y=(1-uv.y)*240,T=SM_TILE;
-  for(let i=0;i<SPIELOMAT.games.length;i++){const c=i%T.cols,r=i/T.cols|0,tx=T.x0+c*(T.w+T.gx),ty=T.y0+r*(T.h+T.gy);
+  for(let i=0;i<SPIELOMAT.games.length;i++){const [tx,ty]=smTileXY(i);
     if(x>=tx&&x<=tx+T.w&&y>=ty&&y<=ty+T.h){if(m.menuIdx===i)smStart(m);else{m.menuIdx=i;SFX.tick();m.dirty=true;}return true;}}
   return false;
 }
 function smDraw(m,g){
   const t=m.stateT;
-  const bg=g.createLinearGradient(0,0,0,240);bg.addColorStop(0,'#160a2a');bg.addColorStop(1,'#04020a');g.fillStyle=bg;g.fillRect(0,0,320,240);
-  g.strokeStyle='rgba(255,46,136,.18)';g.lineWidth=1;for(let y=8;y<240;y+=16){g.beginPath();g.moveTo(0,y);g.lineTo(320,y);g.stroke();}
+  // edel: tiefes Bordeaux-Schwarz, goldener Schimmer, feiner Goldrahmen
+  const bg=g.createRadialGradient(160,90,10,160,120,230);bg.addColorStop(0,'#2a0c12');bg.addColorStop(.6,'#12060a');bg.addColorStop(1,'#050204');g.fillStyle=bg;g.fillRect(0,0,320,240);
+  g.strokeStyle='rgba(214,160,42,.45)';g.lineWidth=1;g.strokeRect(4.5,4.5,311,231);g.strokeStyle='rgba(214,160,42,.18)';g.strokeRect(7.5,7.5,305,225);
+  const gold=(y0,y1)=>{const gg=g.createLinearGradient(0,y0,0,y1);gg.addColorStop(0,'#fff4c8');gg.addColorStop(.5,'#e8b840');gg.addColorStop(1,'#9a6a10');return gg;};
   g.textAlign='center';g.textBaseline='middle';
   if(m.state==='boot'){
     const k=clamp(t/1.6,0,1);
-    px(g,22);g.lineWidth=6;g.strokeStyle='#000';g.strokeText('SPIELOMAT',160,92);
-    const tg=g.createLinearGradient(0,78,0,106);tg.addColorStop(0,'#ff9ad0');tg.addColorStop(1,'#ff2e88');g.fillStyle=tg;g.fillText('SPIELOMAT',160,92);
-    px(g,10);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,160,120);
-    g.fillStyle='#2a1a40';g.fillRect(60,150,200,10);g.fillStyle='#ffcf3a';g.fillRect(60,150,200*k,10);
-    px(g,7);g.fillStyle='#9b8fb3';g.fillText(k<1?'LADE SPIELE… '+Math.round(k*SPIELOMAT.games.length)+'/'+SPIELOMAT.games.length:'BEREIT',160,174);
+    px(g,24,800);g.lineWidth=6;g.lineJoin='round';g.strokeStyle='#1a0800';g.strokeText('SPIELOMAT',160,92);g.fillStyle=gold(76,108);g.fillText('SPIELOMAT',160,92);
+    px(g,9);g.fillStyle='#b8a888';g.fillText(SPIELOMAT.ver,160,120);
+    g.fillStyle='#1a1008';lRR(g,60,150,200,8,4);g.fill();g.fillStyle=gold(150,158);lRR(g,60,150,Math.max(8,200*k),8,4);g.fill();
+    px(g,7);g.fillStyle='#b8a888';g.fillText(k<1?'LADE SPIELE… '+Math.round(k*SPIELOMAT.games.length)+'/'+SPIELOMAT.games.length:'BEREIT',160,174);
     g.fillText('© SJ SPIELBANK',160,222);
     if(t>1.9){m.state='menu';updateButtons(m);}
     return;
   }
-  px(g,11);g.fillStyle='#ff2e88';g.textAlign='left';g.fillText('SPIELOMAT',12,16);px(g,7);g.fillStyle='#29f0ff';g.fillText(SPIELOMAT.ver,128,17);
+  px(g,12,800);g.fillStyle=gold(8,24);g.textAlign='left';g.fillText('SPIELOMAT',14,17);const tw=g.measureText('SPIELOMAT').width;px(g,6);g.fillStyle='#b8a888';g.fillText(SPIELOMAT.ver,20+tw,18);
   g.textAlign='right';g.fillStyle='#ffcf3a';px(g,8);g.fillText(m===RESV?'GUTHABEN '+fmt(chips):'KARTE STECKEN',308,16);
-  g.textAlign='center';px(g,8);g.fillStyle='#f4f0e8';g.fillText('WÄHLE DEIN SPIEL',160,33);
+  g.textAlign='center';px(g,7);g.fillStyle='#e8dcc0';g.fillText('WÄHLE DEIN SPIEL',160,33);
   const T=SM_TILE,blink=Math.floor(now*3)%2===0;
   SPIELOMAT.games.forEach(([id,icon],i)=>{
-    const G=SlotEngine.GAMES[id],c=i%T.cols,r=i/T.cols|0,x=T.x0+c*(T.w+T.gx),y=T.y0+r*(T.h+T.gy),sel=i===m.menuIdx;
-    const TOPC={book:['#3a1a50','#1a0a04'],fruit:['#6a0a00','#2a0400'],viking:['#1a3a6a','#06142a'],mine:['#4a3a20','#101010'],reef:['#0a6a8a','#002a3a'],temple:['#8a2a00','#2a0a00'],pharao:['#8a1010','#2a0000'],spitze:['#1a4a1a','#04100a'],zent:['#1a4a8a','#0a1a2a'],tizona:['#1a3a6a','#06142a'],doppel:['#4a2a6a','#1a0a04']}[id];
+    const G=SlotEngine.GAMES[id],[x,y]=smTileXY(i),sel=i===m.menuIdx;
+    const TOPC={pharao:['#8a1010','#2a0000'],spitze:['#1a4a1a','#04100a'],zent:['#1a4a8a','#0a1a2a'],tizona:['#1a3a6a','#06142a'],doppel:['#4a2a6a','#1a0a04']}[id];
     const tg=g.createLinearGradient(0,y,0,y+T.h);tg.addColorStop(0,TOPC[0]);tg.addColorStop(1,TOPC[1]);g.fillStyle=tg;g.fillRect(x,y,T.w,T.h);
     SYMSET=id;g.drawImage(symCanvas(icon),x+T.w/2-15,y+4,30,30);SYMSET=m.G.id;
     px(g,G.title.length>9?5:6);g.fillStyle='#ffd23a';g.fillText(G.title,x+T.w/2,y+42);
-    px(g,5);g.fillStyle='#e8e0cc';g.fillText(G.special?'3 LEITERN':G.doppel?'EINZEL/DOPPEL':G.power?'POWER SPINS':G.free?(G.id==='book'?'10 FS · BUCH':G.free.count+' FS'+(G.free.mult>1?' ×'+G.free.mult:'')):'5 LINIEN',x+T.w/2,y+51);
-    g.lineWidth=sel?3:1;g.strokeStyle=sel?(blink?'#ffffff':'#ffcf3a'):'#3a2c52';g.strokeRect(x+.5,y+.5,T.w-1,T.h-1);
+    px(g,5);g.fillStyle='#e8e0cc';g.fillText(G.special?'3 LEITERN':G.doppel?'EINZEL/DOPPEL':G.power?'POWER SPINS':G.free?(G.free.count+' FS'+(G.free.mult>1?' ×'+G.free.mult:'')):'5 LINIEN',x+T.w/2,y+51);
+    if(sel){g.save();g.shadowColor='rgba(255,210,90,.9)';g.shadowBlur=8+4*Math.sin(now*5);g.lineWidth=2.5;g.strokeStyle='#ffd870';g.strokeRect(x,y,T.w,T.h);g.restore();m.dirty=true;}
+    else{g.lineWidth=1;g.strokeStyle='rgba(214,160,42,.45)';g.strokeRect(x+.5,y+.5,T.w-1,T.h-1);}
   });
-  px(g,6);g.fillStyle='#9b8fb3';g.fillText('ANTIPPEN ODER ◄ ► · NOCHMAL TIPPEN / SPIELEN = START',160,226);
+  g.fillStyle='#8a7a5a';pxFit(g,'ANTIPPEN ODER ◄ ► · NOCHMAL TIPPEN / SPIELEN = START',296,6);g.fillText('ANTIPPEN ODER ◄ ► · NOCHMAL TIPPEN / SPIELEN = START',160,224);
 }
 
 
