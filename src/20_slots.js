@@ -223,6 +223,8 @@ function pressButton(m,key){
   if(key==='RISIKO')key='KARTE';
   // Leiter ist immer drückbar (Anzeige wird sofort abgeschlossen) – nur die AUSSPIELUNG läuft immer komplett durch
   if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;if(m.btns[key])m.btns[key].press=1;SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
+  // Einstiegs-Flackern (krummer Betrag): erst landen lassen – sonst drückt man unbemerkt von der unteren Stufe aus. Nehmen geht sofort.
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.ent){if(key==='START'){m.timer=0;timerDone(m);if(m.gamble)collect(m,true);}return;}
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START'||key==='KARTE')){for(let n=0;n<3&&m.state==='gambleNext';n++){m.timer=0;timerDone(m);}if(m.state!=='gamble')return;}
   if(typeof svGateOn==='function'&&svGateOn(m))return;
   if(m.btns[key])m.btns[key].press=1;SFX.btn();
