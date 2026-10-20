@@ -1,6 +1,6 @@
 <title>SJ Spielbank</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap">
 <style>
 [hidden]{display:none!important}
 /* Layout: one full-screen low-res 3D canvas, HUD pinned to the safe-area edges, pixel-framed menus floating over it */
@@ -21,6 +21,7 @@
   --green:#1f9a4a;
   --f-title:"Cinzel", "Trajan Pro", Georgia, serif;
   --f-body:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --f-dev:"Barlow Condensed","Arial Narrow",Arial,sans-serif; /* Geräteschrift: Automaten-Bildschirm + Knopfleiste */
   color-scheme:dark;
 }
 html,body{height:100%}
@@ -426,6 +427,10 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .mk-disp span{font-family:var(--f-title);font-size:11px;letter-spacing:.06em;text-align:center;color:#f4f4f4}
 .mk-disp b{background:#050505;border-radius:3px;text-align:right;padding:0 6px;font-family:"Arial Black",Arial,sans-serif;font-size:clamp(18px,5vw,30px);color:#ffd820;line-height:1.15;white-space:nowrap;overflow:hidden}
 .mk-disp b small{font-size:.62em}
+/* Knopfleiste in derselben Geräteschrift wie der Bildschirm */
+#slotView .sv-deck.mk .svb,#slotView .sv-deck.mk .mk-disp span{font-family:var(--f-dev)!important;font-weight:700;letter-spacing:.03em}
+#slotView .sv-deck.mk .mk-disp span{font-size:13px;text-transform:uppercase}
+#slotView .mk-main .svb{font-size:clamp(14px,3.9vw,19px)!important}
 .mk-disp.lvl{flex:0 0 auto;width:clamp(58px,16vw,96px);cursor:pointer;pointer-events:auto}
 @media (max-width:560px){#slotView:not(.land) .mk-main{flex-wrap:wrap;row-gap:6px}#slotView:not(.land) .mk-disp{order:-1;flex:1 1 55%;max-width:none}#slotView:not(.land) .mk-disp.lvl{order:-1;flex:1 1 30%;width:auto}.mk-sm .svb{font-size:10px!important;min-height:28px!important}}
 /* Querformat (auch gedrehtes Handy): alles in einer flachen Zeile, Automat bleibt groß */

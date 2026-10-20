@@ -550,7 +550,7 @@ function frame(){
 }
 
 /* ---------- boot ---------- */
-const fontWait=Promise.race([Promise.all([document.fonts.load('16px "Press Start 2P"'),document.fonts.load('700 20px Cinzel'),document.fonts.load('600 20px "Cormorant Garamond"')]),new Promise(r=>setTimeout(r,3000))]).catch(()=>{});
+const fontWait=Promise.race([Promise.all([document.fonts.load('700 16px "Barlow Condensed"'),document.fonts.load('800 16px "Barlow Condensed"'),document.fonts.load('700 20px Cinzel'),document.fonts.load('600 20px "Cormorant Garamond"')]),new Promise(r=>setTimeout(r,3000))]).catch(()=>{});
 fontWait.then(()=>{
   setChips(chips);mtBarInit();
   buildWorld();setFloor(0);P.x=0;P.z=9;P.yaw=0;resvRestore();

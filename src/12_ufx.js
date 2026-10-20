@@ -55,15 +55,15 @@ const UFX=(function(){
     if(B.tier>=1){g.save();g.translate(cx,cy);g.rotate(performance.now()/1000*.5);
       for(let i=0;i<20;i++){g.rotate(TAU/20);g.fillStyle=i%2?'rgba(255,200,40,.18)':'rgba(255,80,20,.1)';g.beginPath();g.moveTo(0,0);g.lineTo(-R*.09,-R);g.lineTo(R*.09,-R);g.closePath();g.fill();}g.restore();}
     const pop=Math.max(0,1-B.t/.3),sc=(1+pop*.35)*(1+Math.sin(B.t*7)*.03);
-    const sz=Math.max(14,Math.min(54,Math.floor(w*.84/(B.title.length*1.3))));
-    g.save();g.translate(cx,cy);g.rotate(Math.sin(B.t*3.2)*.035);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,sz);
+    const sz=pxFit(g,B.title,w*.84,54,14,800);
+    g.save();g.translate(cx,cy);g.rotate(Math.sin(B.t*3.2)*.035);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,sz,800);
     g.lineWidth=Math.max(5,sz*.32);g.lineJoin='round';g.strokeStyle='#1a0400';g.strokeText(B.title,0,sz*.12);g.strokeText(B.title,0,0);
     const C=B.tier>=2?['#e0ffff','#2ae0ff','#00406a']:B.tier>=1?['#ffe0ff','#ff4ad0','#6a0060']:['#fff8c0','#ffc020','#a04a00'];
     const tg=g.createLinearGradient(0,-sz/2,0,sz/2);tg.addColorStop(0,C[0]);tg.addColorStop(.55,C[1]);tg.addColorStop(1,C[2]);g.fillStyle=tg;g.fillText(B.title,0,0);g.restore();
     if(B.amount>0){const k=Math.min(1,B.t/1.3),v=Math.floor(B.amount*(1-Math.pow(1-k,2.2))),txt='+'+fmt(k>=1?B.amount:v);
-      const tz=Math.max(12,Math.min(38,Math.floor(w*.7/(txt.length*1.05))));px(g,tz);g.textAlign='center';g.textBaseline='middle';
+      const tz=pxFit(g,txt,w*.7,38,12,800);g.textAlign='center';g.textBaseline='middle';
       g.lineWidth=Math.max(4,tz*.3);g.strokeStyle='#000';g.strokeText(txt,cx,cy+sz*.9+tz*.5);g.fillStyle=k>=1&&Math.floor(B.t*4)%2?'#fff':'#ffd23a';g.fillText(txt,cx,cy+sz*.9+tz*.5);
-      if(B.sub){const sz2=Math.max(10,Math.min(18,Math.floor(w*.84/(B.sub.length*1.05))));px(g,sz2);g.lineWidth=4;g.strokeText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);g.fillStyle='#f4f0e8';g.fillText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);}}
+      if(B.sub){const sz2=pxFit(g,B.sub,w*.84,18,10);g.lineWidth=4;g.strokeText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);g.fillStyle='#f4f0e8';g.fillText(B.sub,cx,cy+sz*.9+tz*1.5+sz2);}}
     g.restore();
   }
   function flyPos(f,tx,ty){const k=Math.min(1,Math.max(0,(f.t-f.launch)/f.dur)),e=k*k*(3-2*k),cx=(f.gx+tx)/2+f.bend,cy=Math.min(f.gy,ty)-LH()*.18;

@@ -185,7 +185,11 @@ function graffiti(text,col){return (g,w,h)=>{g.clearRect(0,0,w,h);g.font='italic
   for(let i=0;i<6;i++){g.fillStyle=col;g.fillRect(w*.15+rnd()*w*.7|0,h*.72|0,1,4+rnd()*8|0);}}}
 function fitText(c,txt,x,y,maxW,size){let s=size;px(c,s);while(s>5&&c.measureText(txt).width>maxW){s--;px(c,s);}c.textAlign='center';c.textBaseline='middle';c.fillStyle='#f4f0e8';c.fillText(txt,x,y);}
 function labelTex(w,h,draw){return canvasTex(w,h,draw,0,0,false);}
-function px(g,size){g.font=size+'px "Press Start 2P", monospace';}
+// Bildschirmschrift: klare, kräftige Schmalschrift wie an echten Geräten (Größen wie früher bei der Pixelschrift, daher ×1,5)
+const SCR_FONT='"Barlow Condensed","Arial Narrow",Arial,sans-serif';
+function px(g,size,w){g.font=(w||700)+' '+(Math.round(size*3)/2)+'px '+SCR_FONT;}
+// größte Schrift bis max, bei der t in die Breite w passt
+function pxFit(g,t,w,max,min,wt){let s=max;px(g,s,wt);while(s>(min||4)&&g.measureText(t).width>w){s-=.5;px(g,s,wt);}return s;}
 
 /* ---------- roulette data ---------- */
 const ORDER=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
