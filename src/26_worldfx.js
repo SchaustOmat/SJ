@@ -5,7 +5,7 @@
 let coneTex=null;
 function coneTexture(){
   if(coneTex)return coneTex;
-  coneTex=canvasTex(8,64,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.25,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,.12)');g.fillStyle=gr;g.fillRect(0,0,w,h);});
+  coneTex=hdTex(16,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.25,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,.12)');g.fillStyle=gr;g.fillRect(0,0,w,h);});coneTex.wrapS=coneTex.wrapT=THREE.ClampToEdgeWrapping;
   return coneTex;
 }
 function addAtmos(F){
@@ -19,7 +19,10 @@ function addAtmos(F){
   const N=320,pos=new Float32Array(N*3),seed=[];
   for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*23;pos[i*3+1]=.2+Math.random()*3.6;pos[i*3+2]=(Math.random()-.5)*23;seed.push(Math.random()*TAU);}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const dust=new THREE.Points(geo,new THREE.PointsMaterial({color:0xffe8c8,size:.035,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false}));
+  // runde, weiche Staubkörnchen statt eckiger Punkte
+  const dot=hdTex(32,32,(g,w,h)=>{const rg=g.createRadialGradient(16,16,0,16,16,16);rg.addColorStop(0,'rgba(255,255,255,1)');rg.addColorStop(.35,'rgba(255,255,255,.5)');rg.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=rg;g.fillRect(0,0,w,h);});
+  dot.wrapS=dot.wrapT=THREE.ClampToEdgeWrapping;
+  const dust=new THREE.Points(geo,new THREE.PointsMaterial({color:0xffe8c8,map:dot,size:.05,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));
   F.group.add(dust);F.atmos.dust={pts:dust,pos,seed};
 }
 function worldFxStep(F,dt){

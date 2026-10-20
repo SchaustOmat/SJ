@@ -20,7 +20,7 @@ function buildMTable(F,o){
     seats3d:[],board3d:[],S:null,deck:[],deckHand:-1,lastK:{},lastTT:null,authId:null,view:null,viewKey:'',lastPub:0,lastActs:{},lastBoard:0};
   TABLES[T.id]=T;
   const g=new THREE.Group();g.position.set(T.cx,0,T.cz);F.group.add(g);
-  const felt=canvasTex(64,64,pokerFeltT);
+  const felt=upTex(64,64,pokerFeltT,4);
   mesh(new THREE.CylinderGeometry(1.15,1.15,.1,18),[lam({map:TEXR.wood}),lam({map:felt}),lam({map:TEXR.wood})],0,.84,0,g);
   mesh(new THREE.CylinderGeometry(1.25,1.25,.12,18),lam({color:0x2a1408}),0,.82,0,g);
   mesh(new THREE.CylinderGeometry(.3,.55,.76,8),lam({color:0x120c18}),0,.38,0,g);

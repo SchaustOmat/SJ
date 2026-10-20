@@ -84,13 +84,13 @@ function elevStep(dt){
    ========================================================= */
 let ambient,marker;
 function buildWorld(){
-  T.felt=canvasTex(64,32,feltT);
-  T.wheel=canvasTex(128,128,wheelTop);
-  T.wood=canvasTex(16,16,woodT,1,1);T.metal=canvasTex(16,16,metalT,1,1);
+  T.felt=upTex(64,32,feltT,6);
+  T.wheel=upTex(128,128,wheelTop,4);
+  T.wood=hdTex(256,256,hdWood);T.metal=hdTex(256,256,hdMetal);
   // ----- EG -----
   const A=makeFloor('EG · HALLE');
-  buildRoom(A,{floor:canvasTex(32,32,luxCarpet('#6a0a12','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#5a0c18','#3a1a0a'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
-  const marb=lam({map:canvasTex(32,32,luxMarble('#e8e0d4','#9a8a7a'),1,3)});
+  buildRoom(A,{floor:hdTex(512,512,hdCarpet('#6a0a12','#d6a02a','#f4e0a0'),12),wall:hdTex(512,1024,hdWall('#5a0c18','#3a1a0a')),ceil:hdTex(256,256,hdCeil,12),strip:0xd6a02a,lux:true});
+  const marb=lam({map:hdTex(256,512,hdMarble('#e8e0d4','#9a8a7a'),1,2)});
   luxPillar(A,-5,-7,marb);luxPillar(A,5,-6.5,marb);luxPillar(A,-5,4.5,marb);luxPillar(A,5,4.5,marb);
   chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
   luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
@@ -125,8 +125,8 @@ function buildWorld(){
   // ----- 2. STOCK -----
   seed=4242;
   const B=makeFloor('2. STOCK · VIP');
-  buildRoom(B,{floor:canvasTex(32,32,luxCarpet('#0a3a24','#d6a02a','#f4e0a0'),12),wall:canvasTex(32,32,luxWall('#0e2a1e','#2a1408'),1,1),ceil:canvasTex(32,32,luxCeil,12),strip:0xd6a02a,lux:true});
-  const marbB=lam({map:canvasTex(32,32,luxMarble('#2a2a2e','#c8a050'),1,3)});
+  buildRoom(B,{floor:hdTex(512,512,hdCarpet('#0a3a24','#d6a02a','#f4e0a0'),12),wall:hdTex(512,1024,hdWall('#0e2a1e','#2a1408')),ceil:hdTex(256,256,hdCeil,12),strip:0xd6a02a,lux:true});
+  const marbB=lam({map:hdTex(256,512,hdMarble('#2a2a2e','#c8a050'),1,2)});
   luxPillar(B,0,-8.5,marbB);luxPillar(B,0,3,marbB);
   chandelier(B,4.5,-4.5,.9);chandelier(B,-6,-4,1);chandelier(B,-5,7,.85);chandelier(B,7,6,.8);
   luxPainting(B,6,2.2,11.94,Math.PI,1.4,.9,4);luxPainting(B,-11.94,2.2,-8,Math.PI/2,1.2,.8,5);
@@ -210,12 +210,15 @@ function focusPose(){
   const asp=LW()/LH(),f=focus;const out={pos:new THREE.Vector3(),yaw:0,pitch:0,fov:60,look:true};
   if(f.type==='slot'){
     // Kamera fährt nah an den Automaten: Bildschirm füllt den freien Bereich über den Knöpfen, die Halle bleibt sichtbar
-    const g=f.m.group,deck=$('.sv-side'),bh=deck&&!SV.el.hidden?deck.offsetHeight+16:120,top=asp<1?56:12,LHv=LH();
+    const g=f.m.group,deck=$('.sv-side'),bh=deck&&!SV.el.hidden?deck.offsetHeight+16:120,top=asp<1?64:12,LHv=LH();
     const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
     const v=asp<1?60:50,tv=Math.tan(v*Math.PI/360),th=tv*asp;
     const H=asp<1?.74:.68,W=.86;
     const d=Math.max(H/(2*tv*free),W/(2*th))+.02,vis=2*d*tv;
-    g.localToWorld(out.pos.set(0,1.47+shift*vis,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
+    // Hochformat mit Platz: Aufsatz (Spielname) ganz unter die Knöpfe oben schieben, Bildschirm bleibt ganz über der Knopfleiste
+    let cy=1.47+shift*vis;const cyTop=2.47-vis*(.5-top/LHv);
+    if(asp<1&&cyTop+vis*(.5-(LHv-bh)/LHv)<=1.17)cy=cyTop;
+    g.localToWorld(out.pos.set(0,cy,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
   } else if(f.type==='poker'||f.type==='hilo'||f.type==='mtable'){
     const cx=f.type==='poker'?PK.cx:HL.cx,cz=f.type==='poker'?PK.cz:HL.cz;
     const bar=f.type==='poker'?$('#pkBar'):f.type==='hilo'?$('#hlBar'):$('#mtBar');const top=110;

@@ -129,7 +129,10 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const topTex=canvasTex(256,128,null);
   mesh(new THREE.PlaneGeometry(.74,.37),bas({map:topTex}),0,2.13,.093,g);
   const crown=bas({color:accent});box(.94,.09,.48,crown,0,2.44,-.13,g);
-  const brand=labelTex(160,20,(c,w,h)=>{c.fillStyle='#0a0610';c.fillRect(0,0,w,h);px(c,9);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';c.fillStyle='#ff2e88';c.fillText('SPIELOMAT '+SPIELOMAT.ver,w/2,h/2+1);});
+  const brand=canvasTex(640,80,(c,w,h)=>{const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#1a1014');bg.addColorStop(1,'#060406');c.fillStyle=bg;c.fillRect(0,0,w,h);
+    c.strokeStyle='rgba(214,160,42,.7)';c.lineWidth=3;c.strokeRect(4,4,w-8,h-8);c.textAlign='center';c.textBaseline='middle';px(c,30,800);
+    const tg=c.createLinearGradient(0,14,0,h-14);tg.addColorStop(0,'#fff4c8');tg.addColorStop(.5,'#e8b840');tg.addColorStop(1,'#9a6a10');c.fillStyle=tg;c.shadowColor='rgba(255,200,80,.6)';c.shadowBlur=10;
+    c.fillText('SPIELOMAT '+SPIELOMAT.ver,w/2,h/2+2);},0,0,true);
   mesh(new THREE.PlaneGeometry(.5,.065),bas({map:brand}),0,1.82,.155,g);
   const ledMat=bas({color:accent});
   box(.03,2.2,.03,ledMat,-.465,1.3,.1,g);box(.03,2.2,.03,ledMat,.465,1.3,.1,g);
@@ -145,7 +148,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   m.stops=m.reels.map(r=>Math.floor(r.pos)%1000);m.reels.forEach((r,i)=>{r.pos=Math.floor(r.pos);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);
   BTN_DEF.forEach(([key,bx,bw])=>{
-    const tex=labelTex(64,40,null);
+    const tex=canvasTex(256,160,null,0,0,true);
     const top=bas({map:tex,color:0x666666});
     const side=lam({color:0x1a1a1a});
     const b=mesh(new THREE.BoxGeometry(bw,.03,.085),[side,side,top,side,side,side],bx,.035,.03,deck);
@@ -172,8 +175,10 @@ const BTNCOL={white:['#f4f0e8','#1a1a1a'],red:['#ff3a3a','#1a0000'],amber:['#ffb
 function setBtn(m,key,label,color,lit,blink){
   const b=m.btns[key];if(b.label!==label||b.color!==color){b.label=label;b.color=color;
     const c=b.tex.userData.ctx,[bg,fg]=BTNCOL[color]||BTNCOL.white;
-    c.fillStyle=bg;c.fillRect(0,0,64,40);c.fillStyle='rgba(255,255,255,.35)';c.fillRect(0,0,64,6);c.fillStyle='rgba(0,0,0,.25)';c.fillRect(0,34,64,6);
-    c.fillStyle=fg;px(c,label.length>6?7:label.length>4?8:10);c.textAlign='center';c.textBaseline='middle';c.fillText(label,32,21);b.tex.needsUpdate=true;}
+    c.setTransform(4,0,0,4,0,0);c.fillStyle=bg;c.fillRect(0,0,64,40); // Taste mit Glanzkante, 4× scharf
+    const gl=c.createLinearGradient(0,0,0,40);gl.addColorStop(0,'rgba(255,255,255,.45)');gl.addColorStop(.18,'rgba(255,255,255,.12)');gl.addColorStop(.55,'rgba(0,0,0,0)');gl.addColorStop(1,'rgba(0,0,0,.35)');
+    c.fillStyle=gl;c.fillRect(0,0,64,40);c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=1.5;c.strokeRect(.75,.75,62.5,38.5);
+    c.fillStyle=fg;pxFit(c,label,56,10,5,800);c.textAlign='center';c.textBaseline='middle';c.fillText(label,32,21);b.tex.needsUpdate=true;}
   b.lit=lit;b.blink=blink;
 }
 const SVKEYS=['MENU','INFO','LINIEN','EINSATZ','AUTO','KARTE','LEITER','START'];

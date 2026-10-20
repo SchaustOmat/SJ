@@ -41,10 +41,10 @@ function chandelier(F,x,z,s){s=s||1;const g=new THREE.Group();g.position.set(x,4
   mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
   pointLight(F,0xffd8a0,x,3.05,z,1.05,10);return g;}
 // Gemälde mit Goldrahmen (abstrakte Landschaft, selbst gemalt)
-function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=canvasTex(48,32,(g,W,H)=>{seed=seedN||77;
+function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=upTex(48,32,(g,W,H)=>{seed=seedN||77;
     const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,['#3a5a8a','#8a4a3a','#2a3a2a'][seedN%3]);sky.addColorStop(1,'#e8c890');g.fillStyle=sky;g.fillRect(0,0,W,H);
     for(let k=0;k<3;k++){g.fillStyle=['#4a3a20','#2a4a2a','#6a5a3a'][k];g.beginPath();g.moveTo(0,H);for(let x=0;x<=W;x+=4)g.lineTo(x,H*(.45+k*.15)+Math.sin(x*.2+k+seedN)*3+rnd()*2);g.lineTo(W,H);g.fill();}
-    g.fillStyle='rgba(255,240,200,.6)';g.beginPath();g.arc(W*.7,H*.25,3,0,TAU);g.fill();});
+    g.fillStyle='rgba(255,240,200,.6)';g.beginPath();g.arc(W*.7,H*.25,3,0,TAU);g.fill();},6);
   const grp=new THREE.Group();grp.position.set(x,y,z);grp.rotation.y=rotY;F.group.add(grp);
   box(w+.16,h+.16,.05,lam({color:0xc8962a,emissive:0x2a1800}),0,0,0,grp);mesh(new THREE.PlaneGeometry(w,h),lam({map:tex}),0,0,.03,grp);}
 // Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe).

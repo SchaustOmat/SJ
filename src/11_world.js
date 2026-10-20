@@ -8,7 +8,7 @@ function col(F,x,z,w,d){(F?F.cols:globalCols).push({x,z,w,d});}
 function blocker(F,m){m.userData.block=true;(F?F.hits:globalHits).push(m);}
 function tagAct(F,obj,act){obj.traverse(m=>{if(m.isMesh){m.userData.act=act;(F?F.hits:globalHits).push(m);}});if(act.pos)(F?F.acts:globalActs).push(act);}
 function faceTo(x,z,cx,cz){return Math.atan2(cx-x,cz-z);}
-function planeUV(w,h,sx,sy,tw,th){const g=new THREE.PlaneGeometry(w,h,sx||1,sy||1);const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/tw,uv.getY(i)*h/th);return g;}
+function planeUV(w,h,sx,sy,tw,th,oy){const g=new THREE.PlaneGeometry(w,h,sx||1,sy||1);const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/tw,(uv.getY(i)*h+(oy||0))/th);return g;}
 
 function signTex(text,color,bg){
   // edles Schild: dunkles Holz, doppelter Goldrahmen, Goldschrift in Cinzel (hoch aufgelöst)
@@ -33,12 +33,12 @@ function buildRoom(F,th){
   const fl=mesh(new THREE.PlaneGeometry(24,24,24,24),lam({map:th.floor}),0,0,0,g);fl.rotation.x=-Math.PI/2;fl.userData.floor=true;F.hits.push(fl);
   const ce=mesh(new THREE.PlaneGeometry(24,24,12,12),lam({map:th.ceil}),0,4,0,g);ce.rotation.x=Math.PI/2;
   const wm=lam({map:th.wall});
-  [[0,12,Math.PI],[-12,0,Math.PI/2],[12,0,-Math.PI/2]].forEach(([x,z,r])=>{const w=mesh(planeUV(24,4,24,4,2,2),wm,x,2,z,g);if(x)w.position.set(x,2,0);else w.position.set(0,2,z);w.rotation.y=r;blocker(F,w);});
+  [[0,12,Math.PI],[-12,0,Math.PI/2],[12,0,-Math.PI/2]].forEach(([x,z,r])=>{const w=mesh(planeUV(24,4,24,4,2,4),wm,x,2,z,g);if(x)w.position.set(x,2,0);else w.position.set(0,2,z);w.rotation.y=r;blocker(F,w);});
   // north wall with elevator opening
   const L=DOOR_X-DOOR_W/2,R=DOOR_X+DOOR_W/2;
-  const nl=mesh(planeUV(L+12,4,18,4,2,2),wm,(-12+L)/2,2,-12,g);blocker(F,nl);
-  const nr=mesh(planeUV(12-R,4,5,4,2,2),wm,(R+12)/2,2,-12,g);blocker(F,nr);
-  const nt=mesh(planeUV(DOOR_W,4-DOOR_H,2,1,2,2),wm,DOOR_X,(4+DOOR_H)/2,-12,g);blocker(F,nt);
+  const nl=mesh(planeUV(L+12,4,18,4,2,4),wm,(-12+L)/2,2,-12,g);blocker(F,nl);
+  const nr=mesh(planeUV(12-R,4,5,4,2,4),wm,(R+12)/2,2,-12,g);blocker(F,nr);
+  const nt=mesh(planeUV(DOOR_W,4-DOOR_H,2,1,2,4,DOOR_H),wm,DOOR_X,(4+DOOR_H)/2,-12,g);blocker(F,nt);
   col(F,0,12.5,26,1);col(F,-12.5,0,1,26);col(F,12.5,0,1,26);
   col(F,(-13+L)/2,-12.5,L+13,1);col(F,(R+13)/2,-12.5,13-R,1);
   const nb=bas({color:th.strip});

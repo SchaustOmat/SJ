@@ -126,7 +126,7 @@ function setBeat(on){
 
 /* ---------- three ---------- */
 const cv=$('#game');
-const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:false,powerPreference:'default'});
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(1);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07050c);
@@ -134,7 +134,10 @@ scene.fog=new THREE.Fog(0x0a0712,4,24);
 const camera=new THREE.PerspectiveCamera(70,1,.03,60);
 camera.rotation.order='YXZ';
 const snapRes={value:new THREE.Vector2(160,120)};
+// früher PS1-Wackeln der Ecken (Vertex-Snapping); für die edle Optik aus
+const PSX_SNAP=false;
 function psx(m){
+  if(!PSX_SNAP)return m;
   m.onBeforeCompile=sh=>{
     sh.uniforms.uSnap=snapRes;
     sh.vertexShader='uniform vec2 uSnap;\n'+sh.vertexShader.replace('#include <project_vertex>',
