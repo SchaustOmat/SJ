@@ -98,7 +98,7 @@ function buildWorld(){
   const mA=[[-6.5,'pharao',0xd6a02a],[-4,'zent',0xc42a3a],[-1.5,'tizona',0x2a6ad6],[1,'doppel',0xff6a1a]].map(([z,id,c])=>buildMachine(A,-11.6,z,Math.PI/2,id,c));
   // vier Freispiel-Automaten um die Ecke an der Nordwand
   [[-10.3,'spitze',0x4a9aff],[-8.9,'zent',0x29f0ff],[-7.5,'tizona',0x2ad8c8],[-6.1,'doppel',0xff6a1a],[-4.7,'pharao',0xff2a2a]].forEach(([x,id,c])=>buildMachine(A,x,-11.6,0,id,c));
-  buildBar(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
+  buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:50,bb:100,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
@@ -139,6 +139,12 @@ function buildWorld(){
   const mB=[[1.5,'pharao',0xd6a02a],[4,'doppel',0xc42a3a],[6.5,'spitze',0xff6a1a]].map(([z,id,c])=>buildMachine(B,11.6,z,-Math.PI/2,id,c));
   mB[1].npc=npc(B,{x:10.62,z:4,rot:Math.PI/2,sit:true,anim:'slot',lines:LINES.slot,name:'ZOCKER',noCol:true});
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
+  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 200 €, wenn man pleite ist)
+  buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
+  npc(B,{x:10.9,z:-6.8,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPERIN',special:'bartender',color:0x1a1a1e,hair:0x8a1a2a,noCol:true});
+  npc(B,{x:8.85,z:-5.4,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true,color:0x5a1a6a});
+  sign(B,'BAR','#ffcf3a',11.55,3.25,-6.8,-Math.PI/2,.6);
+  pointLight(B,0xffb060,9.2,3,-6.8,1.2,9);
   sofa(B,-9.5,9.8,Math.PI,0x6a1020);sofa(B,-10.8,6.8,Math.PI/2,0x6a1020);
   npc(B,{x:-9.9,z:9.7,rot:Math.PI,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true});
   npc(B,{x:-10.7,z:6.5,rot:Math.PI/2,sit:true,anim:'idle',lines:LINES.vip,name:'GAST',noCol:true});

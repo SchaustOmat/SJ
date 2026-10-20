@@ -71,31 +71,35 @@ function buildRoulette(F,x,z,label){
   F.roulettes.push({wheel,spin:false});
   tagAct(F,g,act);col(F,x,z,3.95,2.35);
 }
-function buildBar(F){
-  // edle Bar: dunkle Holztheke mit Feldern und Goldkante, warmes Licht, beleuchtete Spiegelwand, echte Flaschen
+function buildBar(F,o){
+  // edle Bar an der Ostwand: dunkle Holztheke mit Feldern und Goldkante, warmes Licht, beleuchtete Spiegelwand, echte Flaschen.
+  // o.z = Mitte der Theke, o.len = Länge (EG: Mitte -1, 8,4 m; 2. Stock kürzer)
+  o=o||{};const zc=o.z!==undefined?o.z:-1,len=o.len||8.4,z0=zc-len/2;
   const g=F.group,wood=lam({map:T.wood}),darkWood=lam({map:T.wood,color:0x6a4a3a}),gold=lam({color:0xd6a02a,emissive:0x3a2400});
-  const c=box(.9,1.1,8.4,darkWood,9.8,.55,-1,g);blocker(F,c);
-  for(let i=0;i<7;i++){box(.02,.7,1,lam({map:T.wood,color:0x8a6248}),9.34,.55,-4.6+i*1.2,g);box(.025,.72,.02,gold,9.335,.55,-5.1+i*1.2,g);}
-  box(1.05,.08,8.6,wood,9.8,1.14,-1,g);box(1.07,.02,8.62,gold,9.8,1.1,-1,g);
-  box(.04,.03,8.4,bas({color:0xffc060}),9.33,.06,-1,g); // warmes Licht am Fuß der Theke
-  box(.35,2.4,8.8,darkWood,11.78,1.6,-1,g);
-  const mirror=lam({color:0x3a3640,emissive:0x2a1a0a});box(.02,1.9,8.2,mirror,11.6,1.85,-1,g);
-  box(.03,.05,8.4,bas({color:0xffcf7a}),11.58,2.82,-1,g);
+  const c=box(.9,1.1,len,darkWood,9.8,.55,zc,g);blocker(F,c);
+  const np=Math.max(3,Math.round(len/1.2)),pw=len/np;
+  for(let i=0;i<np;i++){box(.02,.7,pw*.83,lam({map:T.wood,color:0x8a6248}),9.34,.55,z0+pw*(i+.5),g);if(i)box(.025,.72,.02,gold,9.335,.55,z0+pw*i,g);}
+  box(1.05,.08,len+.2,wood,9.8,1.14,zc,g);box(1.07,.02,len+.22,gold,9.8,1.1,zc,g);
+  box(.04,.03,len,bas({color:0xffc060}),9.33,.06,zc,g); // warmes Licht am Fuß der Theke
+  box(.35,2.4,len+.4,darkWood,11.78,1.6,zc,g);
+  const mirror=lam({color:0x3a3640,emissive:0x2a1a0a});box(.02,1.9,len-.2,mirror,11.6,1.85,zc,g);
+  box(.03,.05,len,bas({color:0xffcf7a}),11.58,2.82,zc,g);
   const glassC=[0x8a4a10,0x1a4a20,0xd8e4e4,0x3a1a0a,0x2a5a8a,0xc8a040,0x6a0a1a];
   const bMat=glassC.map(cc=>lam({color:cc,emissive:new THREE.Color(cc).multiplyScalar(.35),transparent:true,opacity:.88}));
   const capM=lam({color:0xc8a040,emissive:0x2a1800}),label=lam({color:0xf0e6d0});
   const bodyG=PGEO('bt1',()=>new THREE.CylinderGeometry(.042,.042,.2,12)),shG=PGEO('bt2',()=>new THREE.SphereGeometry(.042,12,6,0,TAU,0,Math.PI/2)),
     neckG=PGEO('bt3',()=>new THREE.CylinderGeometry(.013,.016,.1,8)),capG=PGEO('bt4',()=>new THREE.CylinderGeometry(.016,.016,.025,8)),labG=PGEO('bt5',()=>new THREE.CylinderGeometry(.0435,.0435,.07,12,1,true,-.9,1.8));
-  const shelf=new THREE.Group();g.add(shelf);
-  for(let s=0;s<3;s++){const y=1.3+s*.6;box(.4,.03,8.6,lam({color:0x8a7a6a,emissive:0x1a1208}),11.6,y,-1,g);box(.41,.012,8.6,gold,11.6,y+.018,-1,g);
-    for(let i=0;i<22;i++){if(rnd()<.2)continue;const z=-5.1+i*.39+(rnd()-.5)*.06,k=(i*3+s*5)%glassC.length,sc=.85+rnd()*.35,b=new THREE.Group();b.position.set(11.55,y+.015,z);b.scale.setScalar(sc);shelf.add(b);
+  const shelf=new THREE.Group();g.add(shelf);const nb=Math.floor((len-.4)/.39);
+  for(let s=0;s<3;s++){const y=1.3+s*.6;box(.4,.03,len+.2,lam({color:0x8a7a6a,emissive:0x1a1208}),11.6,y,zc,g);box(.41,.012,len+.2,gold,11.6,y+.018,zc,g);
+    for(let i=0;i<nb;i++){if(rnd()<.2)continue;const z=z0+.3+i*.39+(rnd()-.5)*.06,k=(i*3+s*5)%glassC.length,sc=.85+rnd()*.35,b=new THREE.Group();b.position.set(11.55,y+.015,z);b.scale.setScalar(sc);shelf.add(b);
       mesh(bodyG,bMat[k],0,.1,0,b);mesh(shG,bMat[k],0,.2,0,b);mesh(neckG,bMat[k],0,.27,0,b);mesh(capG,capM,0,.33,0,b);const lb=mesh(labG,label,0,.09,0,b);lb.rotation.y=-Math.PI/2;}}
   bakeGroup(shelf,true);
-  [-3.4,-1.2,1.2].forEach(z=>{const chrome=lam({color:0xc8ccd4,emissive:0x101010});
+  const ns=Math.max(2,Math.round(len/2.6)),sp=len/ns,stools=o.stools||[...Array(ns).keys()].map(i=>z0+sp*(i+.5));
+  for(const z of stools){const chrome=lam({color:0xc8ccd4,emissive:0x101010});
     mesh(PGEO('st1',()=>new THREE.CylinderGeometry(.24,.26,.03,20)),chrome,8.9,.015,z,g);mesh(PGEO('st2',()=>new THREE.CylinderGeometry(.03,.03,.78,10)),chrome,8.9,.4,z,g);
     const ft=mesh(PGEO('st3',()=>new THREE.TorusGeometry(.17,.012,6,20)),chrome,8.9,.3,z,g);ft.rotation.x=Math.PI/2;
-    mesh(PGEO('st4',()=>new THREE.CylinderGeometry(.22,.2,.09,20)),lam({color:0x6a1020}),8.9,.83,z,g);mesh(PGEO('st5',()=>new THREE.TorusGeometry(.21,.025,8,20)),lam({color:0x4a0a16}),8.9,.86,z,g).rotation.x=Math.PI/2;col(F,8.9,z,.4,.4);});
-  col(F,9.8,-1,1,8.6);col(F,11.4,-1,1.2,9);
+    mesh(PGEO('st4',()=>new THREE.CylinderGeometry(.22,.2,.09,20)),lam({color:0x6a1020}),8.9,.83,z,g);mesh(PGEO('st5',()=>new THREE.TorusGeometry(.21,.025,8,20)),lam({color:0x4a0a16}),8.9,.86,z,g).rotation.x=Math.PI/2;col(F,8.9,z,.4,.4);}
+  col(F,9.8,zc,1,len+.2);col(F,11.4,zc,1.2,len+.6);
 }
 function sofa(F,x,z,rot,colr){
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;F.group.add(g);const m=lam({color:colr});
