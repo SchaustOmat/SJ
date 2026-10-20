@@ -599,7 +599,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496594";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792496640";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -913,6 +913,11 @@ const SFX={
   step(){noise(.06,.06,260);},
   tick(){tone(2400,.015,'square',.035);},
   count(){bell(NOTE(96+(Math.random()*3|0)*2),.06,.035);}, // schnelles helles Hochzählen
+  // Gewinn zählt im festen Takt hoch, Tonhöhe steigt mit (k = 0..1), am Ende ein heller Abschluss
+  countStep(k){bell(NOTE(84+Math.round(k*14)),.07,.035);},
+  countEnd(){bell(NOTE(96),.55,.07);bell(NOTE(103),.45,.04,.04);soft(NOTE(84),.18,.04);},
+  // jede gezeigte Gewinnlinie bekommt einen eigenen kleinen Ton
+  lineShow(i){const n=[79,83,86,88,91][i%5];soft(NOTE(n),.1,.035);bell(NOTE(n+12),.3,.045,.02);},
   ding(){tone(1318,.7,'sine',.2);tone(1046,.9,'sine',.16,.28);},
   win(){[72,76,79,84].forEach((n,i)=>{bell(NOTE(n+12),.35,.09,i*.075);soft(NOTE(n),.12,.05,i*.075);});bell(NOTE(91),.6,.07,.33);},
   big(){[[72,0],[76,.1],[79,.2],[84,.3],[79,.45],[84,.55],[88,.65],[91,.8]].forEach(([n,t])=>{soft(NOTE(n),.2,.07,t);bell(NOTE(n+12),.5,.07,t);});soft(NOTE(48),1.1,.06,.8,'sawtooth');bell(NOTE(96),1.2,.08,.8);},
@@ -2053,12 +2058,14 @@ function slotStep(m,dt){
       if(M.fxn===n){SFX.sparkle();SFX.expand();fxFlash(m,.55,'255,230,140');fxShake(m,.4,true);}}}
   if(m.power)powerStep(m,dt);
   if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
-  if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count')m.msg=describeWin(m,m.present.items[m.present.idx]);m.dirty=true;}}
+  if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count'){m.msg=describeWin(m,m.present.items[m.present.idx]);if(m.present.items.length>1&&!m.auto)SFX.lineShow(m.present.idx);}m.dirty=true;}}
   // win counter
   if(m.state==='ssSpin')m.dirty=true; // Superspin: freie Felder drehen sichtbar
   if(m.fx&&m.fx.big&&m.state==='count'){}
   else if(m.gamble&&m.gamble.run){} // während der Ausspielung nichts verraten
-  else if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
+  else if(m.disp<m.win){if(m.cnt0===undefined||m.disp<m.cnt0)m.cnt0=m.disp;const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);
+    m.cntT=(m.cntT||0)+dt;if(m.cntT>=.055){m.cntT=0;SFX.countStep(clamp((m.disp-m.cnt0)/Math.max(1,m.win-m.cnt0),0,1));}
+    if(m.disp>=m.win){m.cnt0=undefined;if(!m.auto)SFX.countEnd();}m.dirty=true;}
   else if(m.disp>m.win){m.disp=m.win;m.dirty=true;}
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}

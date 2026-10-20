@@ -476,12 +476,14 @@ function slotStep(m,dt){
       if(M.fxn===n){SFX.sparkle();SFX.expand();fxFlash(m,.55,'255,230,140');fxShake(m,.4,true);}}}
   if(m.power)powerStep(m,dt);
   if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
-  if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count')m.msg=describeWin(m,m.present.items[m.present.idx]);m.dirty=true;}}
+  if(m.present&&m.present.items.length){m.present.t+=dt;if(m.present.t>1.1){m.present.t=0;m.present.idx=(m.present.idx+1)%m.present.items.length;if(m.state==='show'||m.state==='count'){m.msg=describeWin(m,m.present.items[m.present.idx]);if(m.present.items.length>1&&!m.auto)SFX.lineShow(m.present.idx);}m.dirty=true;}}
   // win counter
   if(m.state==='ssSpin')m.dirty=true; // Superspin: freie Felder drehen sichtbar
   if(m.fx&&m.fx.big&&m.state==='count'){}
   else if(m.gamble&&m.gamble.run){} // während der Ausspielung nichts verraten
-  else if(m.disp<m.win){const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);if(Math.random()<.5)SFX.count();m.dirty=true;}
+  else if(m.disp<m.win){if(m.cnt0===undefined||m.disp<m.cnt0)m.cnt0=m.disp;const step=Math.max(1,Math.ceil((m.win-m.disp)*dt*4));m.disp=Math.min(m.win,m.disp+step);
+    m.cntT=(m.cntT||0)+dt;if(m.cntT>=.055){m.cntT=0;SFX.countStep(clamp((m.disp-m.cnt0)/Math.max(1,m.win-m.cnt0),0,1));}
+    if(m.disp>=m.win){m.cnt0=undefined;if(!m.auto)SFX.countEnd();}m.dirty=true;}
   else if(m.disp>m.win){m.disp=m.win;m.dirty=true;}
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}

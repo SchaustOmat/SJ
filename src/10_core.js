@@ -101,6 +101,11 @@ const SFX={
   step(){noise(.06,.06,260);},
   tick(){tone(2400,.015,'square',.035);},
   count(){bell(NOTE(96+(Math.random()*3|0)*2),.06,.035);}, // schnelles helles Hochzählen
+  // Gewinn zählt im festen Takt hoch, Tonhöhe steigt mit (k = 0..1), am Ende ein heller Abschluss
+  countStep(k){bell(NOTE(84+Math.round(k*14)),.07,.035);},
+  countEnd(){bell(NOTE(96),.55,.07);bell(NOTE(103),.45,.04,.04);soft(NOTE(84),.18,.04);},
+  // jede gezeigte Gewinnlinie bekommt einen eigenen kleinen Ton
+  lineShow(i){const n=[79,83,86,88,91][i%5];soft(NOTE(n),.1,.035);bell(NOTE(n+12),.3,.045,.02);},
   ding(){tone(1318,.7,'sine',.2);tone(1046,.9,'sine',.16,.28);},
   win(){[72,76,79,84].forEach((n,i)=>{bell(NOTE(n+12),.35,.09,i*.075);soft(NOTE(n),.12,.05,i*.075);});bell(NOTE(91),.6,.07,.33);},
   big(){[[72,0],[76,.1],[79,.2],[84,.3],[79,.45],[84,.55],[88,.65],[91,.8]].forEach(([n,t])=>{soft(NOTE(n),.2,.07,t);bell(NOTE(n+12),.5,.07,t);});soft(NOTE(48),1.1,.06,.8,'sawtooth');bell(NOTE(96),1.2,.08,.8);},
