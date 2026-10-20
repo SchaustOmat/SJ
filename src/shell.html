@@ -140,6 +140,28 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .bc-logo{position:absolute;right:8px;bottom:6px;display:flex}.bc-logo i{width:20px;height:20px;border-radius:50%;background:#ff3a3a;opacity:.9}.bc-logo i+i{background:#ffcf3a;margin-left:-8px}
 .mprooms{display:flex;flex-direction:column;gap:6px}
 .mproom{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+/* Freunde */
+#friendBtn{width:auto;min-width:0;padding:0 7px;font-size:8px;position:relative}
+#friendBtn.on::after{content:attr(data-n);position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;border-radius:8px;background:#e8182c;color:#fff;font-family:var(--f-dev);font-size:11px;line-height:16px;text-align:center;box-shadow:0 0 0 2px #000}
+.fr-me{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--black);border:2px solid var(--line);padding:8px 10px}
+.fr-me b{font-family:var(--f-dev);font-size:26px;letter-spacing:.06em;color:var(--gold);flex:1;min-width:0}
+.fr-me .lbl{width:100%}.fr-me small{width:100%;color:var(--dim);font-size:14px}
+.fr-list{display:flex;flex-direction:column;gap:6px}
+.fr-row{display:flex;align-items:center;gap:6px;background:var(--black);border:2px solid var(--line);padding:6px 8px;min-width:0}
+.fr-row>span{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}
+.fr-row>span b{font-family:var(--f-dev);font-size:18px;letter-spacing:.03em;color:var(--ink);font-weight:700}
+.fr-row>span small{font-size:15px;color:var(--dim)}
+.fr-row.on>span small{color:#6dff8a}
+.fr-row .btn{padding:8px 9px;font-size:12px;flex:none}
+.fr-row .fr-x{padding:8px 8px}
+.fr-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#5a5050;margin-bottom:3px}
+.fr-row.on .fr-dot{background:#3adf5a;box-shadow:0 0 6px #3adf5a}
+#frAddIn{flex:1;min-width:0;background:var(--black);color:var(--gold);border:2px solid var(--line);font-family:var(--f-dev);font-size:22px;padding:8px 10px;letter-spacing:.08em;user-select:text;-webkit-user-select:text}
+#frInv{position:fixed;z-index:24;left:50%;top:calc(env(safe-area-inset-top,0px) + 205px);transform:translateX(-50%);width:max-content;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;background:rgba(10,6,16,.94);border:2px solid var(--gold);box-shadow:0 0 0 2px #000,0 0 24px rgba(214,160,42,.4);padding:8px 10px;max-width:calc(100vw - 24px)}
+#frInv span{font-family:var(--f-body);font-size:19px;color:var(--ink);flex:1 1 180px;min-width:0;overflow-wrap:break-word}
+@media (orientation:landscape){#frInv{top:calc(env(safe-area-inset-top,0px) + 70px)}}
+#app.rotated #frInv{top:70px}
+#frInv .btn{padding:8px 10px;font-size:12px;flex:none}
 .mproom small{font-family:var(--f-body);font-size:18px;color:var(--dim);letter-spacing:0}
 /* Panels */
 #veil{position:fixed;inset:0;z-index:19;background:rgba(4,2,8,.55)}
@@ -457,6 +479,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="icons">
     <button class="ibtn" id="chatBtn" aria-label="Chat" hidden>SAG</button>
     <button class="ibtn" id="micBtn" aria-label="Voice-Chat" hidden>MIC</button>
+    <button class="ibtn" id="friendBtn" aria-label="Freunde" hidden>FREUNDE</button>
     <button class="ibtn" id="radioBtn" aria-label="Radio">RADIO</button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat umschalten" aria-pressed="false">⟲</button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus">♪</button>
@@ -546,6 +569,20 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="row" style="flex-wrap:nowrap"><input id="mpCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="CODE"><button class="btn gold" id="mpJoin">BEITRETEN</button></div>
   <button class="btn" id="mpLeave">VERLASSEN</button>
   <p class="mps" style="color:var(--dim)">Wer hostet, erscheint oben bei OFFENE RÄUME. Die anderen tippen den Raum einfach an und sind drin. Code eintippen geht auch noch. Funktioniert über WLAN und Mobilfunk.</p>
+</section>
+<section id="pFriends" class="panel" hidden aria-label="Freunde">
+  <header><h2>FREUNDE</h2><button class="x" data-close>ZURÜCK</button></header>
+  <div class="fr-me"><span class="lbl">DEIN FREUNDESCODE</span><b id="frCode">0000 0000</b><button class="btn" id="frCopy">KOPIEREN</button><small id="frConn"></small></div>
+  <div class="lbl" id="frReqLbl" hidden>ANFRAGEN</div>
+  <div id="frReqs" class="fr-list" hidden></div>
+  <div class="lbl">DEINE FREUNDE</div>
+  <div id="frList" class="fr-list"></div>
+  <div class="lbl" id="frRoomLbl" hidden>HIER IM RAUM</div>
+  <div id="frRoom" class="fr-list"></div>
+  <div class="lbl">FREUND HINZUFÜGEN</div>
+  <div class="row" style="flex-wrap:nowrap"><input id="frAddIn" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="CODE (8 ZIFFERN)"><button class="btn gold" id="frAddBtn">HINZUFÜGEN</button></div>
+  <p class="mps" id="frMsg"></p>
+  <p class="mps" style="color:var(--dim)">Dein Code ist deine Kontonummer. Schick ihn deinen Kollegen. Wer online ist, steht oben – mit BEITRETEN gehst du direkt in seinen Raum, mit EINLADEN holst du ihn zu dir.</p>
 </section>
 <section id="pAtm" class="panel atm" hidden aria-label="Geldautomat">
   <header><h2>GELDAUTOMAT</h2><button class="x" data-close>KARTE RAUS</button></header>

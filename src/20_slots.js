@@ -1162,10 +1162,19 @@ function cardOut(m){if(!isMine(m))return;if(m.win>0||m.power||m.gamble){toast('E
 function resvKey(){return [...RESVS].map(m=>allMachines().indexOf(m)+'|'+m.G.id+'|'+m.betIdx).join(';');}
 let resvSaved=null;
 function resvSave(){const k=resvKey();if(k===resvSaved)return;resvSaved=k;store('nk_resv',k||null);}
-function resvRestore(){let k='';try{k=localStorage.getItem('nk_resv')||'';}catch(e){}if(!k)return;
-  k.split(';').forEach(e=>{const [i,g,b]=e.split('|'),m=allMachines()[+i];if(!m||m.npc||!SlotEngine.GAMES[g])return;
-    setMachineGame(m,g);m.betIdx=clamp(+b||0,0,m.G.betOpts.length-1);m.booted=true;m.state='idle';slotIdleMsg(m);RESVS.add(m);RESV=m;m.dirty=true;m.topDirty=true;updateButtons(m);});
-  resvSaved=resvKey();}
+// Nach dem Neuladen stecken keine Karten mehr (Wunsch vom Nutzer). Offene Gewinne wurden beim Laden schon gutgeschrieben (nk_slotpend).
+function resvRestore(){store('nk_resv',null);resvSaved='';}
+// Alle Karten ziehen (z. B. beim Beitreten in einen Raum). Gewinne, Cashpot und offene Power Spins werden gutgeschrieben.
+// Nur wo gerade Freispiele laufen oder die Walzen drehen, bleibt die Karte stecken, bis das fertig ist (sonst ginge etwas verloren).
+function cardsOutAll(){let kept=0;
+  [...RESVS].forEach(m=>{
+    if(m.fs||m.state==='spin'||m.state==='ssSpin'||m.state==='myst'||/^(fs|expand)/.test(m.state)||(m.power&&m.power.spinning)){kept++;m.cardsOutLater=true;return;}
+    m.auto=false;if(m.power){m.win+=m.power.left*m.power.cost;m.power=null;}
+    if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}
+    if(m.win>0||m.gamble||m.state==='count'||m.state==='show'||m.state==='poffer'){m.gamble=null;collect(m);}
+    m.state='idle';RESVS.delete(m);m.dirty=true;m.topDirty=true;updateButtons(m);if(SV.m===m)svGate(m);});
+  RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;resvSave();slotPendSave();svCardSync();MP.dirty=true;
+  if(kept)toast('Karten gezogen. Wo noch Freispiele laufen, bleibt die Karte bis zum Ende stecken.');}
 function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=!isMine(SV.m);b.textContent='KARTE ZIEHEN';b.classList.add('on');}
 // Offene Gewinne aller eigenen Automaten (plus dem, an dem du sitzt) zusammen merken: nach einem Neuladen werden sie gutgeschrieben.
 let slotPendLast=-1;
@@ -1213,6 +1222,7 @@ function updMachines(dt,F,focusM){
     if(isMine(m)&&m!==focusM){m.fly=null;}
     else if(m!==focusM){m.fly=null;m.ledMat.color.setHex(m.accent);m.ledMat.color.multiplyScalar(.55+.45*Math.abs(Math.sin(now*2.2+m.group.position.x*.7+m.group.position.z)));}
   });
+  RESVS.forEach(m=>{if(m.cardsOutLater&&!m.fs&&m.state==='idle'&&!(m.power)){m.cardsOutLater=false;if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;if(m.win>0)collect(m);}RESVS.delete(m);RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;m.auto=false;m.dirty=true;svCardSync();MP.dirty=true;}});
   // eigene Automaten auf der anderen Etage spielen (stumm) weiter
   RESVS.forEach(m=>{if(m.F!==F){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}m.fly=null;}});
   resvSave();slotPendSave();

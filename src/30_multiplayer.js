@@ -132,15 +132,17 @@ function netTick(){
   if(!NET.ok||!NET.cli)return;
   // Raum in der Raumliste anzeigen (alle 15 s, retained)
   const tl=Date.now();if(tl-(NET.lobbyT||0)>15000){NET.lobbyT=tl;const names=[MP.name||'GAST'];for(const id in NET.states)names.push(cleanText(NET.states[id].n,14)||'GAST');
-    try{NET.cli.publish('sinanskeller/lobby/'+NET.code,JSON.stringify({c:NET.code,h:names[0],p:names.slice(0,6),t:tl}),{qos:0,retain:true});}catch(e){}}
+    try{NET.cli.publish('sinanskeller/lobby/'+NET.code,JSON.stringify({c:NET.code,h:names[0],p:names.slice(0,6),t:tl,b:NET.bi%BROKERS.length}),{qos:0,retain:true});}catch(e){}}
   const js=JSON.stringify({s:NET.mine}),tn=Date.now();
   if(js!==NET.lastJs||tn-(NET.lastPub||0)>2000){NET.lastJs=js;NET.lastPub=tn;try{NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,js,{qos:0});}catch(e){}}
   const t=Date.now();let ch=false;for(const id in NET.seen)if(t-NET.seen[id]>7000){delete NET.seen[id];delete NET.states[id];ch=true;}
   mpSync(netPeers());
 }
-function netStart(asHost,code){
+// bi = Server, auf dem der Raum liegt (von Freund/Einladung/Raumliste bekannt) – sonst der Reihe nach probieren
+function netStart(asHost,code,bi){
   if(typeof mqtt==='undefined'){netStatus('Verbindungs-Bibliothek nicht geladen. Internet prüfen und Seite neu laden.');return;}
-  netLeave(true);NET.code=code;NET.myId='p'+Math.random().toString(36).slice(2,10);NET.tries=0;NET.bi=0;
+  if(typeof cardsOutAll==='function'&&RESVS.size)cardsOutAll(); // beim Beitreten/Hosten alle Automatenkarten ziehen
+  netLeave(true);NET.code=code;NET.myId='p'+Math.random().toString(36).slice(2,10);NET.tries=0;NET.bi=Number.isInteger(bi)&&bi>=0&&bi<BROKERS.length?bi:0;
   netConnect(asHost);
 }
 function netConnect(asHost){
@@ -181,7 +183,7 @@ function lobbyRender(){
   if(!list.length){el.innerHTML='<p class="mps" style="color:var(--dim)">'+(LOBBY.cli&&LOBBY.ok?'Gerade kein offener Raum. Hoste einen, dann sehen ihn die anderen hier.':'Suche Räume…')+'</p>';return;}
   el.innerHTML='';list.forEach(r=>{const b=document.createElement('button');b.className='btn mproom';
     const a=document.createElement('span');a.textContent=r.h+' · RAUM '+r.c;const sm=document.createElement('small');sm.textContent=r.p.length+' SPIELER · REIN';
-    b.append(a,sm);b.addEventListener('click',()=>{SFX.click();lobbyClose();$('#mpCode').value=r.c;netStart(false,r.c);});el.appendChild(b);});
+    b.append(a,sm);b.addEventListener('click',()=>{SFX.click();lobbyClose();$('#mpCode').value=r.c;netStart(false,r.c,r.b);});el.appendChild(b);});
 }
 function lobbyOpen(){
   if(!STANDALONE||typeof mqtt==='undefined')return;lobbyClose();LOBBY.rooms={};LOBBY.ok=false;lobbyRender();
@@ -191,7 +193,7 @@ function lobbyOpen(){
   cli.on('connect',()=>{clearTimeout(fail);LOBBY.ok=true;cli.subscribe('sinanskeller/lobby/+',{qos:0});lobbyRender();});
   cli.on('message',(topic,buf)=>{const code=topic.split('/')[2];if(!/^\d{4}$/.test(code||''))return;
     const txt=buf.toString();if(!txt){delete LOBBY.rooms[code];lobbyRender();return;}
-    try{const d=JSON.parse(txt);if(!d||typeof d.t!=='number')return;LOBBY.rooms[code]={c:code,h:cleanText(d.h,14)||'GAST',p:Array.isArray(d.p)?d.p.slice(0,6):[],t:Math.min(d.t,Date.now())};lobbyRender();}catch(e){}});
+    try{const d=JSON.parse(txt);if(!d||typeof d.t!=='number')return;LOBBY.rooms[code]={c:code,h:cleanText(d.h,14)||'GAST',p:Array.isArray(d.p)?d.p.slice(0,6):[],t:Math.min(d.t,Date.now()),b:LOBBY.bi%BROKERS.length};lobbyRender();}catch(e){}});
   cli.on('error',()=>{});
   LOBBY.timer=setInterval(lobbyRender,5000);
 }

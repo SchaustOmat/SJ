@@ -147,6 +147,28 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .bc-logo{position:absolute;right:8px;bottom:6px;display:flex}.bc-logo i{width:20px;height:20px;border-radius:50%;background:#ff3a3a;opacity:.9}.bc-logo i+i{background:#ffcf3a;margin-left:-8px}
 .mprooms{display:flex;flex-direction:column;gap:6px}
 .mproom{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+/* Freunde */
+#friendBtn{width:auto;min-width:0;padding:0 7px;font-size:8px;position:relative}
+#friendBtn.on::after{content:attr(data-n);position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;border-radius:8px;background:#e8182c;color:#fff;font-family:var(--f-dev);font-size:11px;line-height:16px;text-align:center;box-shadow:0 0 0 2px #000}
+.fr-me{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--black);border:2px solid var(--line);padding:8px 10px}
+.fr-me b{font-family:var(--f-dev);font-size:26px;letter-spacing:.06em;color:var(--gold);flex:1;min-width:0}
+.fr-me .lbl{width:100%}.fr-me small{width:100%;color:var(--dim);font-size:14px}
+.fr-list{display:flex;flex-direction:column;gap:6px}
+.fr-row{display:flex;align-items:center;gap:6px;background:var(--black);border:2px solid var(--line);padding:6px 8px;min-width:0}
+.fr-row>span{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}
+.fr-row>span b{font-family:var(--f-dev);font-size:18px;letter-spacing:.03em;color:var(--ink);font-weight:700}
+.fr-row>span small{font-size:15px;color:var(--dim)}
+.fr-row.on>span small{color:#6dff8a}
+.fr-row .btn{padding:8px 9px;font-size:12px;flex:none}
+.fr-row .fr-x{padding:8px 8px}
+.fr-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#5a5050;margin-bottom:3px}
+.fr-row.on .fr-dot{background:#3adf5a;box-shadow:0 0 6px #3adf5a}
+#frAddIn{flex:1;min-width:0;background:var(--black);color:var(--gold);border:2px solid var(--line);font-family:var(--f-dev);font-size:22px;padding:8px 10px;letter-spacing:.08em;user-select:text;-webkit-user-select:text}
+#frInv{position:fixed;z-index:24;left:50%;top:calc(env(safe-area-inset-top,0px) + 205px);transform:translateX(-50%);width:max-content;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;background:rgba(10,6,16,.94);border:2px solid var(--gold);box-shadow:0 0 0 2px #000,0 0 24px rgba(214,160,42,.4);padding:8px 10px;max-width:calc(100vw - 24px)}
+#frInv span{font-family:var(--f-body);font-size:19px;color:var(--ink);flex:1 1 180px;min-width:0;overflow-wrap:break-word}
+@media (orientation:landscape){#frInv{top:calc(env(safe-area-inset-top,0px) + 70px)}}
+#app.rotated #frInv{top:70px}
+#frInv .btn{padding:8px 10px;font-size:12px;flex:none}
 .mproom small{font-family:var(--f-body);font-size:18px;color:var(--dim);letter-spacing:0}
 /* Panels */
 #veil{position:fixed;inset:0;z-index:19;background:rgba(4,2,8,.55)}
@@ -464,6 +486,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="icons">
     <button class="ibtn" id="chatBtn" aria-label="Chat" hidden>SAG</button>
     <button class="ibtn" id="micBtn" aria-label="Voice-Chat" hidden>MIC</button>
+    <button class="ibtn" id="friendBtn" aria-label="Freunde" hidden>FREUNDE</button>
     <button class="ibtn" id="radioBtn" aria-label="Radio">RADIO</button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat umschalten" aria-pressed="false">⟲</button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus">♪</button>
@@ -554,6 +577,20 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <button class="btn" id="mpLeave">VERLASSEN</button>
   <p class="mps" style="color:var(--dim)">Wer hostet, erscheint oben bei OFFENE RÄUME. Die anderen tippen den Raum einfach an und sind drin. Code eintippen geht auch noch. Funktioniert über WLAN und Mobilfunk.</p>
 </section>
+<section id="pFriends" class="panel" hidden aria-label="Freunde">
+  <header><h2>FREUNDE</h2><button class="x" data-close>ZURÜCK</button></header>
+  <div class="fr-me"><span class="lbl">DEIN FREUNDESCODE</span><b id="frCode">0000 0000</b><button class="btn" id="frCopy">KOPIEREN</button><small id="frConn"></small></div>
+  <div class="lbl" id="frReqLbl" hidden>ANFRAGEN</div>
+  <div id="frReqs" class="fr-list" hidden></div>
+  <div class="lbl">DEINE FREUNDE</div>
+  <div id="frList" class="fr-list"></div>
+  <div class="lbl" id="frRoomLbl" hidden>HIER IM RAUM</div>
+  <div id="frRoom" class="fr-list"></div>
+  <div class="lbl">FREUND HINZUFÜGEN</div>
+  <div class="row" style="flex-wrap:nowrap"><input id="frAddIn" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="CODE (8 ZIFFERN)"><button class="btn gold" id="frAddBtn">HINZUFÜGEN</button></div>
+  <p class="mps" id="frMsg"></p>
+  <p class="mps" style="color:var(--dim)">Dein Code ist deine Kontonummer. Schick ihn deinen Kollegen. Wer online ist, steht oben – mit BEITRETEN gehst du direkt in seinen Raum, mit EINLADEN holst du ihn zu dir.</p>
+</section>
 <section id="pAtm" class="panel atm" hidden aria-label="Geldautomat">
   <header><h2>GELDAUTOMAT</h2><button class="x" data-close>KARTE RAUS</button></header>
   <div class="atmFront"><div class="atmScr" id="atmScr"></div><div class="atmSlot"><i></i></div></div>
@@ -600,7 +637,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792512590";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792513573";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -2763,10 +2800,19 @@ function cardOut(m){if(!isMine(m))return;if(m.win>0||m.power||m.gamble){toast('E
 function resvKey(){return [...RESVS].map(m=>allMachines().indexOf(m)+'|'+m.G.id+'|'+m.betIdx).join(';');}
 let resvSaved=null;
 function resvSave(){const k=resvKey();if(k===resvSaved)return;resvSaved=k;store('nk_resv',k||null);}
-function resvRestore(){let k='';try{k=localStorage.getItem('nk_resv')||'';}catch(e){}if(!k)return;
-  k.split(';').forEach(e=>{const [i,g,b]=e.split('|'),m=allMachines()[+i];if(!m||m.npc||!SlotEngine.GAMES[g])return;
-    setMachineGame(m,g);m.betIdx=clamp(+b||0,0,m.G.betOpts.length-1);m.booted=true;m.state='idle';slotIdleMsg(m);RESVS.add(m);RESV=m;m.dirty=true;m.topDirty=true;updateButtons(m);});
-  resvSaved=resvKey();}
+// Nach dem Neuladen stecken keine Karten mehr (Wunsch vom Nutzer). Offene Gewinne wurden beim Laden schon gutgeschrieben (nk_slotpend).
+function resvRestore(){store('nk_resv',null);resvSaved='';}
+// Alle Karten ziehen (z. B. beim Beitreten in einen Raum). Gewinne, Cashpot und offene Power Spins werden gutgeschrieben.
+// Nur wo gerade Freispiele laufen oder die Walzen drehen, bleibt die Karte stecken, bis das fertig ist (sonst ginge etwas verloren).
+function cardsOutAll(){let kept=0;
+  [...RESVS].forEach(m=>{
+    if(m.fs||m.state==='spin'||m.state==='ssSpin'||m.state==='myst'||/^(fs|expand)/.test(m.state)||(m.power&&m.power.spinning)){kept++;m.cardsOutLater=true;return;}
+    m.auto=false;if(m.power){m.win+=m.power.left*m.power.cost;m.power=null;}
+    if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}
+    if(m.win>0||m.gamble||m.state==='count'||m.state==='show'||m.state==='poffer'){m.gamble=null;collect(m);}
+    m.state='idle';RESVS.delete(m);m.dirty=true;m.topDirty=true;updateButtons(m);if(SV.m===m)svGate(m);});
+  RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;resvSave();slotPendSave();svCardSync();MP.dirty=true;
+  if(kept)toast('Karten gezogen. Wo noch Freispiele laufen, bleibt die Karte bis zum Ende stecken.');}
 function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=!isMine(SV.m);b.textContent='KARTE ZIEHEN';b.classList.add('on');}
 // Offene Gewinne aller eigenen Automaten (plus dem, an dem du sitzt) zusammen merken: nach einem Neuladen werden sie gutgeschrieben.
 let slotPendLast=-1;
@@ -2814,6 +2860,7 @@ function updMachines(dt,F,focusM){
     if(isMine(m)&&m!==focusM){m.fly=null;}
     else if(m!==focusM){m.fly=null;m.ledMat.color.setHex(m.accent);m.ledMat.color.multiplyScalar(.55+.45*Math.abs(Math.sin(now*2.2+m.group.position.x*.7+m.group.position.z)));}
   });
+  RESVS.forEach(m=>{if(m.cardsOutLater&&!m.fs&&m.state==='idle'&&!(m.power)){m.cardsOutLater=false;if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;if(m.win>0)collect(m);}RESVS.delete(m);RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;m.auto=false;m.dirty=true;svCardSync();MP.dirty=true;}});
   // eigene Automaten auf der anderen Etage spielen (stumm) weiter
   RESVS.forEach(m=>{if(m.F!==F){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}m.fly=null;}});
   resvSave();slotPendSave();
@@ -4439,15 +4486,17 @@ function netTick(){
   if(!NET.ok||!NET.cli)return;
   // Raum in der Raumliste anzeigen (alle 15 s, retained)
   const tl=Date.now();if(tl-(NET.lobbyT||0)>15000){NET.lobbyT=tl;const names=[MP.name||'GAST'];for(const id in NET.states)names.push(cleanText(NET.states[id].n,14)||'GAST');
-    try{NET.cli.publish('sinanskeller/lobby/'+NET.code,JSON.stringify({c:NET.code,h:names[0],p:names.slice(0,6),t:tl}),{qos:0,retain:true});}catch(e){}}
+    try{NET.cli.publish('sinanskeller/lobby/'+NET.code,JSON.stringify({c:NET.code,h:names[0],p:names.slice(0,6),t:tl,b:NET.bi%BROKERS.length}),{qos:0,retain:true});}catch(e){}}
   const js=JSON.stringify({s:NET.mine}),tn=Date.now();
   if(js!==NET.lastJs||tn-(NET.lastPub||0)>2000){NET.lastJs=js;NET.lastPub=tn;try{NET.cli.publish('sinanskeller/'+NET.code+'/'+NET.myId,js,{qos:0});}catch(e){}}
   const t=Date.now();let ch=false;for(const id in NET.seen)if(t-NET.seen[id]>7000){delete NET.seen[id];delete NET.states[id];ch=true;}
   mpSync(netPeers());
 }
-function netStart(asHost,code){
+// bi = Server, auf dem der Raum liegt (von Freund/Einladung/Raumliste bekannt) – sonst der Reihe nach probieren
+function netStart(asHost,code,bi){
   if(typeof mqtt==='undefined'){netStatus('Verbindungs-Bibliothek nicht geladen. Internet prüfen und Seite neu laden.');return;}
-  netLeave(true);NET.code=code;NET.myId='p'+Math.random().toString(36).slice(2,10);NET.tries=0;NET.bi=0;
+  if(typeof cardsOutAll==='function'&&RESVS.size)cardsOutAll(); // beim Beitreten/Hosten alle Automatenkarten ziehen
+  netLeave(true);NET.code=code;NET.myId='p'+Math.random().toString(36).slice(2,10);NET.tries=0;NET.bi=Number.isInteger(bi)&&bi>=0&&bi<BROKERS.length?bi:0;
   netConnect(asHost);
 }
 function netConnect(asHost){
@@ -4488,7 +4537,7 @@ function lobbyRender(){
   if(!list.length){el.innerHTML='<p class="mps" style="color:var(--dim)">'+(LOBBY.cli&&LOBBY.ok?'Gerade kein offener Raum. Hoste einen, dann sehen ihn die anderen hier.':'Suche Räume…')+'</p>';return;}
   el.innerHTML='';list.forEach(r=>{const b=document.createElement('button');b.className='btn mproom';
     const a=document.createElement('span');a.textContent=r.h+' · RAUM '+r.c;const sm=document.createElement('small');sm.textContent=r.p.length+' SPIELER · REIN';
-    b.append(a,sm);b.addEventListener('click',()=>{SFX.click();lobbyClose();$('#mpCode').value=r.c;netStart(false,r.c);});el.appendChild(b);});
+    b.append(a,sm);b.addEventListener('click',()=>{SFX.click();lobbyClose();$('#mpCode').value=r.c;netStart(false,r.c,r.b);});el.appendChild(b);});
 }
 function lobbyOpen(){
   if(!STANDALONE||typeof mqtt==='undefined')return;lobbyClose();LOBBY.rooms={};LOBBY.ok=false;lobbyRender();
@@ -4498,7 +4547,7 @@ function lobbyOpen(){
   cli.on('connect',()=>{clearTimeout(fail);LOBBY.ok=true;cli.subscribe('sinanskeller/lobby/+',{qos:0});lobbyRender();});
   cli.on('message',(topic,buf)=>{const code=topic.split('/')[2];if(!/^\d{4}$/.test(code||''))return;
     const txt=buf.toString();if(!txt){delete LOBBY.rooms[code];lobbyRender();return;}
-    try{const d=JSON.parse(txt);if(!d||typeof d.t!=='number')return;LOBBY.rooms[code]={c:code,h:cleanText(d.h,14)||'GAST',p:Array.isArray(d.p)?d.p.slice(0,6):[],t:Math.min(d.t,Date.now())};lobbyRender();}catch(e){}});
+    try{const d=JSON.parse(txt);if(!d||typeof d.t!=='number')return;LOBBY.rooms[code]={c:code,h:cleanText(d.h,14)||'GAST',p:Array.isArray(d.p)?d.p.slice(0,6):[],t:Math.min(d.t,Date.now()),b:LOBBY.bi%BROKERS.length};lobbyRender();}catch(e){}});
   cli.on('error',()=>{});
   LOBBY.timer=setInterval(lobbyRender,5000);
 }
@@ -5504,6 +5553,133 @@ $('#rdUp').addEventListener('click',()=>{SFX.click();radioSet({vol:Math.min(100,
 setInterval(()=>{if(RADIO.st&&RADIO.ready&&RADIO.st.p<0){try{const d=Math.abs(RADIO.player.getCurrentTime()-radioPos(RADIO.st));if(d>4)RADIO.player.seekTo(radioPos(RADIO.st),true);}catch(e){}}radioUi();},3000);
 
 
+/* ---- 38_friends.js ---- */
+/* =========================================================
+   FREUNDE: Freundescode = deine Kontonummer (steht auch am Geldautomaten).
+   - Freund hinzufügen: Code eintippen -> Anfrage. Der andere nimmt an -> ihr seid Freunde.
+   - Liste zeigt, wer online ist und in welchem Raum. BEITRETEN = direkt in seinen Raum.
+   - EINLADEN: öffnet (falls nötig) einen Raum und schickt dem Freund eine Einladung mit Beitreten-Knopf.
+   Läuft über dieselben öffentlichen MQTT-Server wie der Multiplayer (gleichzeitig auf zwei Servern, damit man sich sicher findet).
+   Themen: sinanskeller/u/<id> (Status, gemerkt), /fq/<an>/<von> (Anfrage/Antwort, gemerkt), /fi/<an> (Einladung).
+   ========================================================= */
+const FR={clis:[],ok:false,list:[],st:{},req:{},inv:null,lastKey:'',lastPub:0,started:false};
+const frId=k=>String(k||'').replace(/\D/g,'').slice(0,8);
+const frFmt=id=>id.slice(0,4)+' '+id.slice(4);
+function frLoad(){try{const l=JSON.parse(localStorage.getItem('nk_friends')||'[]');FR.list=Array.isArray(l)?l.filter(f=>f&&/^\d{8}$/.test(f.id)).slice(0,60).map(f=>({id:f.id,n:cleanText(f.n,14)||'GAST',p:!!f.p})):[];}catch(e){FR.list=[];}}
+function frSave(){try{localStorage.setItem('nk_friends',JSON.stringify(FR.list));}catch(e){}}
+function frMe(){return frId(BANK.konto);}
+function frFind(id){return FR.list.find(f=>f.id===id);}
+function frPub(topic,obj,retain){const s=obj===null?'':JSON.stringify(obj);FR.clis.forEach(c=>{if(c.ok)try{c.cli.publish(topic,s,{qos:0,retain:!!retain});}catch(e){}});}
+function frSub(topic){FR.clis.forEach(c=>{if(c.ok)try{c.cli.subscribe(topic,{qos:0});}catch(e){}});}
+function frStatus(){return {n:MP.name||'GAST',r:NET.ok?NET.code:'',b:NET.ok?NET.bi%BROKERS.length:-1,f:floorIdx,t:Date.now(),on:1};}
+const frB=v=>Number.isInteger(+v)&&+v>=0&&+v<BROKERS.length?+v:undefined;
+function frStart(){
+  if(FR.started||!STANDALONE||typeof mqtt==='undefined')return;FR.started=true;frLoad();
+  const me=frMe();
+  BROKERS.slice(0,2).forEach(url=>{
+    const C={cli:null,ok:false};FR.clis.push(C);let cli;
+    try{cli=mqtt.connect(url,{clientId:'skf_'+me+'_'+Math.random().toString(36).slice(2,6),clean:true,connectTimeout:8000,reconnectPeriod:5000,keepalive:30,
+      will:{topic:'sinanskeller/u/'+me,payload:JSON.stringify({n:MP.name||'GAST',on:0,t:Date.now()}),qos:0,retain:true}});}catch(e){return;}
+    C.cli=cli;
+    cli.on('connect',()=>{C.ok=true;FR.ok=true;
+      cli.subscribe('sinanskeller/fq/'+me+'/+',{qos:0});cli.subscribe('sinanskeller/fi/'+me,{qos:0});
+      FR.list.forEach(f=>cli.subscribe('sinanskeller/u/'+f.id,{qos:0}));
+      FR.lastKey='';frTick();frRender();});
+    cli.on('close',()=>{C.ok=false;FR.ok=FR.clis.some(x=>x.ok);});
+    cli.on('error',()=>{});
+    cli.on('message',(topic,buf)=>frMsg(topic,buf.toString()));
+  });
+  setInterval(frTick,2000);
+  addEventListener('pagehide',()=>{frPub('sinanskeller/u/'+frMe(),{n:MP.name||'GAST',on:0,t:Date.now()},true);});
+}
+// eigenen Status senden, wenn sich etwas ändert (Raum, Name, Etage) und sonst alle 30 s
+function frTick(){if(!FR.ok)return;const s=frStatus(),k=s.n+'|'+s.r+'|'+s.b+'|'+s.f,t=Date.now();
+  if(k!==FR.lastKey||t-FR.lastPub>30000){FR.lastKey=k;FR.lastPub=t;frPub('sinanskeller/u/'+frMe(),s,true);}
+  if(FR.inv&&t-FR.inv.t>90000){FR.inv=null;frInvShow();}
+  if(openId==='pFriends')frRender();frBadge();}
+function frMsg(topic,txt){
+  const p=topic.split('/'),me=frMe();let d=null;if(txt){try{d=JSON.parse(txt);}catch(e){return;}if(!d||typeof d!=='object')return;}
+  if(p[1]==='u'&&/^\d{8}$/.test(p[2]||'')){const f=frFind(p[2]);if(!f)return;
+    if(!d){delete FR.st[p[2]];}else{const prev=FR.st[p[2]],cur={n:cleanText(d.n,14)||f.n,r:/^\d{4}$/.test(d.r||'')?d.r:'',b:frB(d.b),f:+d.f===1?1:0,t:Math.min(+d.t||0,Date.now()),on:d.on?1:0};
+      if(cur.t&&(!prev||cur.t>=prev.t)){const was=frOnline(prev);FR.st[p[2]]=cur;if(cur.n&&cur.n!=='GAST'&&cur.n!==f.n){f.n=cur.n;frSave();}
+        if(!was&&frOnline(cur)&&started)toast(f.n+' ist jetzt online'+(cur.r?' · Raum '+cur.r:'')+'.');}}
+    frRender();return;}
+  if(p[1]==='fq'&&p[2]===me&&/^\d{8}$/.test(p[3]||'')){const from=p[3];
+    if(!d){delete FR.req[from];frRender();frBadge();return;}
+    const n=cleanText(d.n,14)||'GAST',f=frFind(from);
+    if(d.ok){if(f){f.p=false;f.n=n;frSave();toast(n+' hat deine Freundschaft angenommen.');SFX.chip();}frPub(topic,null,true);frSub('sinanskeller/u/'+from);}
+    else if(d.no){if(f&&f.p){FR.list=FR.list.filter(x=>x.id!==from);frSave();toast(n+' hat abgelehnt.');}frPub(topic,null,true);}
+    else if(f&&!f.p){frPub('sinanskeller/fq/'+from+'/'+me,{n:MP.name||'GAST',ok:1,t:Date.now()},true);frPub(topic,null,true);} // schon Freunde: gleich bestätigen
+    else{FR.req[from]={n,t:Math.min(+d.t||Date.now(),Date.now())};if(started){toast(n+' möchte dein Freund sein. Unter FREUNDE annehmen.');SFX.chip();}}
+    frRender();frBadge();return;}
+  if(p[1]==='fi'&&p[2]===me&&d){const from=frId(d.from),c=String(d.c||'');if(!/^\d{8}$/.test(from)||!/^\d{4}$/.test(c)||!frFind(from))return;
+    FR.inv={from,n:cleanText(d.n,14)||frFind(from).n,c,b:frB(d.b),t:Date.now()};SFX.fsIntro&&SFX.chip();frInvShow();frBadge();}
+}
+function frOnline(s){return !!(s&&s.on&&Date.now()-s.t<95000);}
+function frAdd(code){const id=frId(code),me=frMe();
+  if(!/^\d{8}$/.test(id)){frMsgOut('Der Code hat 8 Ziffern (z. B. 1234 5678).');return;}
+  if(id===me){frMsgOut('Das ist dein eigener Code.');return;}
+  if(frFind(id)){frMsgOut('Ist schon in deiner Liste.');return;}
+  if(FR.req[id]){frAccept(id);return;}
+  FR.list.push({id,n:'CODE '+frFmt(id),p:true});frSave();frSub('sinanskeller/u/'+id);
+  frPub('sinanskeller/fq/'+id+'/'+me,{n:MP.name||'GAST',t:Date.now()},true);frMsgOut('Anfrage an '+frFmt(id)+' geschickt. Sobald er annimmt, seid ihr Freunde.');SFX.chip();frRender();}
+function frAccept(id){const r=FR.req[id];if(!r)return;delete FR.req[id];const me=frMe();
+  if(!frFind(id))FR.list.push({id,n:r.n,p:false});else frFind(id).p=false;frSave();frSub('sinanskeller/u/'+id);
+  frPub('sinanskeller/fq/'+me+'/'+id,null,true);frPub('sinanskeller/fq/'+id+'/'+me,{n:MP.name||'GAST',ok:1,t:Date.now()},true);
+  toast(r.n+' ist jetzt dein Freund.');SFX.chip();frRender();frBadge();}
+function frDecline(id){delete FR.req[id];const me=frMe();frPub('sinanskeller/fq/'+me+'/'+id,null,true);frPub('sinanskeller/fq/'+id+'/'+me,{n:MP.name||'GAST',no:1,t:Date.now()},true);frRender();frBadge();}
+function frRemove(id){FR.list=FR.list.filter(f=>f.id!==id);delete FR.st[id];frSave();FR.clis.forEach(c=>{if(c.ok)try{c.cli.unsubscribe('sinanskeller/u/'+id);}catch(e){}});frRender();}
+// Freund in seinen Raum folgen
+function frJoin(id){const s=FR.st[id];if(!frOnline(s)||!s.r){toast('Dein Freund ist gerade in keinem Raum.');return;}
+  if(NET.ok&&NET.code===s.r){toast('Ihr seid schon im selben Raum.');return;}
+  closePanel();toast('Du gehst zu '+(frFind(id)||{}).n+' in Raum '+s.r+'…');netStart(false,s.r,s.b);}
+// Freund einladen: eigenen Raum öffnen (falls nötig), dann Einladung schicken
+function frInvite(id){const f=frFind(id);if(!f)return;const send=()=>{frPub('sinanskeller/fi/'+id,{from:frMe(),n:MP.name||'GAST',c:NET.code,b:NET.bi%BROKERS.length,t:Date.now()},false);toast('Einladung an '+f.n+' geschickt (Raum '+NET.code+').');SFX.chip();};
+  if(NET.ok){send();return;}
+  netStart(true,String(1000+(Math.random()*9000|0)));toast('Raum wird geöffnet…');let n=0;const iv=setInterval(()=>{n++;if(NET.ok){clearInterval(iv);send();frRender();}else if(n>30){clearInterval(iv);toast('Raum konnte nicht geöffnet werden.');}},500);}
+// Einladung oben einblenden
+function frInvShow(){let el=$('#frInv');if(!el){el=document.createElement('div');el.id='frInv';($('#app')||document.body).appendChild(el);}
+  const I=FR.inv;if(!I){el.hidden=true;return;}el.hidden=false;el.innerHTML='';
+  const t=document.createElement('span');t.textContent=I.n+' lädt dich ein · Raum '+I.c;
+  const go=document.createElement('button');go.className='btn gold';go.textContent='BEITRETEN';go.addEventListener('click',()=>{SFX.click();const c=I.c,b=I.b;FR.inv=null;frInvShow();frBadge();if(openId)closePanel();netStart(false,c,b);});
+  const no=document.createElement('button');no.className='btn';no.textContent='✕';no.addEventListener('click',()=>{SFX.click();FR.inv=null;frInvShow();frBadge();});
+  el.append(t,go,no);}
+function frBadge(){const b=$('#friendBtn');if(!b)return;const n=Object.keys(FR.req).length+(FR.inv?1:0);b.classList.toggle('on',n>0);b.dataset.n=n||'';}
+function frMsgOut(t){const e=$('#frMsg');if(e)e.textContent=t;}
+function frAgo(t){const s=(Date.now()-t)/1000;return s<120?'gerade eben':s<3600?'vor '+Math.round(s/60)+' Min.':s<86400?'vor '+Math.round(s/3600)+' Std.':'vor '+Math.round(s/86400)+' Tagen';}
+function frRender(){if(openId!=='pFriends')return;
+  $('#frCode').textContent=BANK.konto;$('#frConn').textContent=FR.ok?'':'Verbinde…';
+  // Anfragen
+  const rq=$('#frReqs');rq.innerHTML='';const ids=Object.keys(FR.req);rq.hidden=!ids.length;$('#frReqLbl').hidden=!ids.length;
+  ids.forEach(id=>{const r=FR.req[id],row=document.createElement('div');row.className='fr-row';const a=document.createElement('span');a.textContent=r.n+' · '+frFmt(id);
+    const y=document.createElement('button');y.className='btn gold';y.textContent='ANNEHMEN';y.addEventListener('click',()=>{SFX.click();frAccept(id);});
+    const n=document.createElement('button');n.className='btn';n.textContent='✕';n.addEventListener('click',()=>{SFX.click();frDecline(id);});row.append(a,y,n);rq.appendChild(row);});
+  // Freunde (online zuerst)
+  const el=$('#frList');el.innerHTML='';
+  const L=FR.list.slice().sort((a,b)=>(frOnline(FR.st[b.id])-frOnline(FR.st[a.id]))||a.n.localeCompare(b.n));
+  if(!L.length){el.innerHTML='<p class="mps" style="color:var(--dim)">Noch keine Freunde. Gib unten den Code eines Kollegen ein oder lass ihn deinen eintippen.</p>';}
+  L.forEach(f=>{const s=FR.st[f.id],on=frOnline(s),row=document.createElement('div');row.className='fr-row'+(on?' on':'');
+    const a=document.createElement('span');const dot=document.createElement('i');dot.className='fr-dot';a.appendChild(dot);
+    const nm=document.createElement('b');nm.textContent=f.n;a.appendChild(nm);const sm=document.createElement('small');
+    sm.textContent=f.p?'wartet auf Bestätigung':on?(s.r?'online · Raum '+s.r+(NET.ok&&NET.code===s.r?' (bei dir)':''):'online · allein'):(s&&s.t?'offline · '+frAgo(s.t):'offline');a.appendChild(sm);row.appendChild(a);
+    if(on&&s.r&&!(NET.ok&&NET.code===s.r)){const j=document.createElement('button');j.className='btn gold';j.textContent='BEITRETEN';j.addEventListener('click',()=>{SFX.click();frJoin(f.id);});row.appendChild(j);}
+    if(on&&!f.p&&!(NET.ok&&s.r===NET.code)){const v=document.createElement('button');v.className='btn';v.textContent='EINLADEN';v.addEventListener('click',()=>{SFX.click();frInvite(f.id);});row.appendChild(v);}
+    const x=document.createElement('button');x.className='btn fr-x';x.textContent='✕';x.title='Entfernen';x.addEventListener('click',()=>{SFX.click();if(x.dataset.sure){frRemove(f.id);}else{x.dataset.sure=1;x.textContent='SICHER?';setTimeout(()=>{x.dataset.sure='';x.textContent='✕';},2500);}});row.appendChild(x);
+    el.appendChild(row);});
+  // Leute im selben Raum, die noch keine Freunde sind
+  const rm=$('#frRoom');rm.innerHTML='';const others=[];MP.avatars.forEach(a=>{const id=frId(a.kn);if(/^\d{8}$/.test(id)&&id!==frMe()&&!frFind(id))others.push({id,n:a.name||'GAST'});});
+  $('#frRoomLbl').hidden=!others.length;others.forEach(o=>{const row=document.createElement('div');row.className='fr-row';const a=document.createElement('span');a.textContent=o.n;
+    const b=document.createElement('button');b.className='btn gold';b.textContent='+ FREUND';b.addEventListener('click',()=>{SFX.click();frAdd(o.id);});row.append(a,b);rm.appendChild(row);});
+}
+if(STANDALONE){
+  $('#friendBtn').hidden=false;
+  $('#friendBtn').addEventListener('click',()=>{SFX.click();frStart();openPanel('pFriends');frMsgOut('');frRender();});
+  $('#frAddBtn').addEventListener('click',()=>{SFX.click();frAdd($('#frAddIn').value);$('#frAddIn').value='';});
+  $('#frAddIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){frAdd($('#frAddIn').value);$('#frAddIn').value='';}});
+  $('#frCopy').addEventListener('click',()=>{SFX.click();const t=BANK.konto;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Code kopiert: '+t)).catch(()=>toast('Dein Code: '+t));});
+}
+
+
 /* ---- 90_main.js ---- */
 /* =========================================================
    AUFZUG
@@ -6086,7 +6262,7 @@ fontWait.then(()=>{
   const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
   setTimeout(()=>{
-    MP.started=true;MP.dirty=true;mpTag();
+    MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();
     $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
     $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}

@@ -579,7 +579,7 @@ fontWait.then(()=>{
   const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
   setTimeout(()=>{
-    MP.started=true;MP.dirty=true;mpTag();
+    MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();
     $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
     $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
