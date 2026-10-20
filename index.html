@@ -600,7 +600,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792509685";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792509740";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -2273,7 +2273,8 @@ function startGamble(m,kind){
 // Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
 // Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
 // Feste Euro-Beträge wie am echten Gerät (unabhängig vom Einsatz). 100 € ist nur der Rückfall-Boden in RISIKO+.
-const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000];
+// RISIKO+ geht über 300 € hinaus weiter bis 1.000 € (Wunsch vom Nutzer); Rückfall bleibt 100 €, fair mit 2 % Vorteil
+const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000,40000,50000,60000,80000,100000];
 const F_I=12;   // 100 € – Mindestrückfall in RISIKO+
 const TOP_I=13; // 140 € – Spitze der normalen Leiter, ab hier RISIKO+
 const PLUS_I=14; // erste Stufe der Risiko+-Spalte (180 €)
@@ -2379,16 +2380,16 @@ function drawLadder(m,g,gm){
     g.fillStyle=cg;g.fillRect(x-6,yy-14,W+12,28);g.restore();m.dirty=true;}}
   if(A&&(ak<1||af>0))m.dirty=true;
   // RISIKO+-Spalte: rot gerahmte Kästen, große Zahl mit kleinen 00
-  {const PV=L.slice(F_I),bh=19,bx=118,bw=70;
-    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*(bh+3)+dy,k=L.indexOf(v);let lit=false,fl=0;
+  {const PV=L.slice(F_I),pitch=Math.min(22,143/PV.length),bh=pitch-2.2,bx=118,bw=70,fz=Math.min(13,bh*.78);
+    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*pitch+dy,k=L.indexOf(v);let lit=false,fl=0;
       if(k>=F_I){if(result&&k===cur){lit=ak>=1;fl=af;}else if(!result&&!run){if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
       const fr=g.createLinearGradient(0,y,0,y+bh);fr.addColorStop(0,'#ff6a5a');fr.addColorStop(.5,'#b01020');fr.addColorStop(1,'#4a0408');
       g.fillStyle='#000';lRR(g,bx-2,y-2,bw+4,bh+4,4);g.fill();g.fillStyle=fr;lRR(g,bx-.5,y-.5,bw+1,bh+1,3.5);g.fill();
       if(lit){g.save();g.shadowColor='rgba(255,214,40,.95)';g.shadowBlur=8;const lf=g.createLinearGradient(0,y,0,y+bh);lf.addColorStop(0,'#fffde8');lf.addColorStop(.45,'#ffe640');lf.addColorStop(1,'#e8a400');g.fillStyle=lf;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();g.restore();
         if(fl>0){g.fillStyle='rgba(255,255,255,'+(fl*.85).toFixed(3)+')';lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}}
       else{const gl=g.createLinearGradient(0,y,0,y+bh);gl.addColorStop(0,'#1c0c08');gl.addColorStop(1,'#050202');g.fillStyle=gl;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}
-      g.textBaseline='middle';const c=lit?'#2a1400':'#e8c860';g.font='900 13px '+LAD_FONT;g.textAlign='right';g.fillStyle=c;g.fillText(String(Math.round(v/100)),bx+bw/2+14,y+bh/2+1);
-      g.font='900 7px '+LAD_FONT;g.textAlign='left';g.fillText('00',bx+bw/2+15,y+bh/2+3);});}
+      g.textBaseline='middle';const c=lit?'#2a1400':'#e8c860';g.font='900 '+fz.toFixed(1)+'px '+LAD_FONT;g.textAlign='right';g.fillStyle=c;g.fillText(String(Math.round(v/100)),bx+bw/2+16,y+bh/2+1);
+      g.font='900 '+(fz*.54).toFixed(1)+'px '+LAD_FONT;g.textAlign='left';g.fillText('00',bx+bw/2+17,y+bh/2+fz*.22);});}
   // RISIKO+ Schriftzug
   g.save();g.textAlign='left';g.textBaseline='middle';g.font='italic 900 17px '+LAD_FONT;g.lineJoin='round';g.lineWidth=4;g.strokeStyle='#1a0800';g.strokeText('RISIKO',22,RY+17+dy);
   const tg=g.createLinearGradient(0,RY+6,0,RY+28);tg.addColorStop(0,'#fff8c8');tg.addColorStop(.5,'#ffc828');tg.addColorStop(1,'#b86a00');g.fillStyle=tg;g.fillText('RISIKO',22,RY+17+dy);
