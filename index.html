@@ -600,7 +600,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792510370";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792512314";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -947,19 +947,20 @@ const SFX={
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){bell(NOTE(83+Math.min(i,24)),.18,.06);},
   ausTick(k){tone(1000+k*600,.035,'square',.05);}, // Ausspielung: helle Ticks, Tonhöhe steigt (k = 0..1)
-  // ---- Leiter nach dem Video des Nutzers (selbst erzeugt): ----
-  // Hochgedrückt: heller Pieps, dann D-F-A-D aufwärts, kurzes A/H-Echo, danach nachklingender a-Moll-Akkord
+  // ---- Leiter nach den Videos des Nutzers (selbst erzeugt, Zeiten/Töne gemessen): ----
+  // Hochgedrückt: Pieps A6, dann D (D5+D6) – F – A – D, kurzes A6/H5-Echo, heller Funke
   ladFan(){const s=(n,t,d,v)=>soft(NOTE(n),d,v||.06,t,'square');
-    s(93,0,.06,.045);s(74,.06,.08);s(86,.06,.08,.035);s(77,.14,.08);s(81,.22,.1,.065);s(86,.32,.14,.065);s(93,.46,.08,.028);s(83,.54,.12,.028);
-    bell(NOTE(98),.35,.025,.32);[81,84,88].forEach(n=>soft(NOTE(n),.48,.03,.66,'triangle'));},
-  // Leiter erscheint: kurze absteigende Tonfolge C-A-Fis-D
-  ladIn(){[84,81,78,74].forEach((n,i)=>soft(NOTE(n),.09,.045,.12+i*.085,'square'));},
+    s(93,0,.045,.05);s(74,.035,.07);s(86,.035,.07,.035);s(77,.1,.065);s(81,.165,.09,.065);s(86,.26,.13,.065);bell(NOTE(102),.3,.022,.27);
+    s(93,.4,.06,.03);s(83,.46,.1,.03);},
+  // Blinken: bei jedem Aufleuchten der Stufe darüber ein weicher a-Moll-Akkord, der ausklingt
+  ladChord(){[81,84,88].forEach((n,i)=>soft(NOTE(n),.5,i?.024:.03,0,'triangle'));soft(NOTE(69),.35,.012,0,'square');},
   // heller Schimmer (vor großen Momenten)
   shimmer(){noise(.22,.06,3800);noise(.16,.04,5200,.03);},
-  // Ausspielung beginnt: Schimmer + a-Moll-Akkord
-  ausStart(){SFX.shimmer();[81,84,88].forEach(n=>soft(NOTE(n),.32,.035,.1,'triangle'));},
-  // Ausspielung läuft: springende Melodie passend zu den springenden Lichtern
-  ausRun(i){const Q=[72,65,70,74,67,76,69,74,79,76,69,66,62,69,76,71,72,79,69,76,74,79];soft(NOTE(Q[i%Q.length]),.085,.045,0,'square');},
+  // Ausspielung beginnt: Schimmer
+  ausStart(){SFX.shimmer();},
+  // Ausspielung läuft: Akkordfolge Am – F – G – G – Em – D – A – C, je ~0,19 s
+  ausRun(i){const Q=[[81,84,88],[77,82,84],[79,86],[79,86,91],[76,81,88],[74,78],[81,88],[84,91]],c=Q[i%Q.length];
+    c.forEach((n,k)=>soft(NOTE(n),.2,k?.026:.034,0,'square'));soft(NOTE(c[0]-12),.18,.02,0,'triangle');},
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){bell(NOTE(67),.8,.12,0,1.5);bell(NOTE(91),.4,.05,.04);noise(.1,.06,4000);},
@@ -1738,11 +1739,14 @@ function buildMachine(F,x,z,rotY,gameId,accent){
     msg:'',dirty:true,topDirty:true,stateT:0,timer:0,expand:null,history:[]};
   m.stops=m.reels.map(r=>Math.floor(r.pos)%1000);m.reels.forEach((r,i)=>{r.pos=Math.floor(r.pos);m.stops[i]=r.pos;});
   m.grid=SlotEngine.grid(G,m.stops);
+  // Gerätetasten: dunkler Tastenkörper (wird mit dem Gehäuse zusammengefasst) + beschriftete Oberseite (einzeln, bewegt sich beim Drücken)
+  // -> 1 statt 6 Zeichenaufrufe pro Taste, wichtig bei vielen Automaten
+  const side=lam({color:0x1a1a1a});
   BTN_DEF.forEach(([key,bx,bw])=>{
     const tex=canvasTex(256,160,null,0,0,true);
     const top=bas({map:tex,color:0x666666});
-    const side=lam({color:0x1a1a1a});
-    const b=mesh(new THREE.BoxGeometry(bw,.03,.085),[side,side,top,side,side,side],bx,.035,.03,deck);
+    box(bw,.028,.085,side,bx,.033,.03,deck);
+    const b=mesh(new THREE.PlaneGeometry(bw*.96,.081),top,bx,.0485,.03,deck);b.rotation.x=-Math.PI/2;
     const act={type:'mbtn',m,key};b.userData.act=act;F.hits.push(b);
     m.btns[key]={mesh:b,tex,mat:top,label:'',color:'',lit:false,blink:false,press:0};
   });
@@ -2071,9 +2075,9 @@ function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
   if(m.auto&&m.autoRisk&&m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&!m.gamble.busy&&m.stateT>.4){
     if(m.win<=0||m.gamble.idx>=AUS_I){collect(m);if(m.auto)startSpin(m);}else ladderPress(m);}
-  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const gm=m.gamble,t=Math.floor(m.stateT/.11);
-    if(t!==gm.rb&&m.stateT>.36&&m.stateT<1.74){gm.rb=t;if(!m.remote)SFX.ausRun(t);}
-    if(!gm.sh&&m.stateT>=1.78){gm.sh=true;if(!m.remote)SFX.shimmer();}}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const gm=m.gamble,t=Math.floor((m.stateT-.03)/.185);
+    if(t!==gm.rb&&m.stateT>.03&&t<8){gm.rb=t;if(!m.remote)SFX.ausRun(t);}
+    if(!gm.sh&&m.stateT>=1.62){gm.sh=true;if(!m.remote)SFX.shimmer();}m.dirty=true;}
   if(m.state==='myst'&&m.myst){const M=m.myst,n=M.cells.length;
     while(M.fxn<n){const ci=M.at.indexOf(MY_T0+M.fxn*MY_DT);if(m.stateT<MY_T0+M.fxn*MY_DT+MY_FL/2)break;const q=M.cells[ci>=0?ci:M.fxn],[cx,cy]=cellXY(q[0],q[1]);
       M.fxn++;SFX.coinUp(M.fxn*2);fxBurst(m,cx,cy,14,{spd:110,life:.7});fxFlash(m,.15,'255,230,140');
@@ -2101,7 +2105,7 @@ function slotStep(m,dt){
   else if(hot){const h=(now*(m.state==='count'?2:.6))%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
   // button blink & press
   for(const k in m.btns){const b=m.btns[k];const on=b.lit&&(!b.blink||Math.floor(now*3)%2===0);b.mat.color.setHex(on?0xffffff:b.lit?0xaaaaaa:0x3a3a3a);
-    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.035-b.press*.012;}
+    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.0485-b.press*.012;}
 }
 function timerDone(m){
   switch(m.state){
@@ -2136,7 +2140,9 @@ function timerDone(m){
       mpWin('holt '+fmt(m.win)+' in den Freispielen!');m.fs=null;m.expand=null;m.ww=[];m.wwc=null;m.ovr=null;m.ss=null;m.ssHeld=null;m.state='show';m.disp=0;m.msg='GESAMTGEWINN '+fmt(m.win);m.topDirty=true;
       if(m.win>=totalBet(m)*10){m.auto=false;startBig(m,m.win);}
       updateButtons(m);if(m.auto)m.timer=1.5;break;
-    case 'gambleNext':if(m.gamble&&m.gamble.run){m.gamble.reveal();break;}m.gamble.busy=false;
+    case 'gambleNext':if(m.gamble&&m.gamble.run){m.gamble.reveal();break;}
+      if(m.gamble&&m.gamble.ent){m.gamble.ent=null;m.disp=m.win;if(!m.remote)SFX.ladFan();m.gamble.noChord=now+.5;ladGo(m);break;}
+      m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);if(m.auto)m.timer=.6;}
       else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
@@ -2264,8 +2270,9 @@ function startGamble(m,kind){
     const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
     if(idx>=ladOf(m).length-1){collect(m);return;}
-    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now,ph:0};m.stateT=0;m.state='gamble';SFX.ladIn();m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
-    if(idx>=AUS_I){m.gamble.last=idx;m.gamble.up=true;ausShow(m);m.dirty=true;m.topDirty=true;return;}}
+    m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
+    if(rest>0&&idx>=0&&idx+1<ladOf(m).length){const gm=m.gamble;gm.ent={t0:now,a:idx,b:idx===AUS_I-1?AUS_I:ladNext(idx)};gm.busy=true;m.disp=idx>=0?ladOf(m)[idx]+rest:m.win;m.state='gambleNext';m.timer=1.05;}
+    else{m.gamble.noChord=now+.3;if(idx>=0&&!m.remote)SFX.ladFan();}}
   else{m.gamble={kind:'rb',n:0,busy:false,card:null};m.state='gamble';m.msg='ROT ODER SCHWARZ?';}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -2275,43 +2282,54 @@ function startGamble(m,kind){
 // Leiter wie am echten Merkur-Gerät (Werte bei Level 40), auf den Einsatz umgerechnet; unterste Stufe = Einsatz.
 // Ab 400 (bei Level 40, also 10× Einsatz) beginnt die AUSSPIELUNG mit didididi.
 // Feste Euro-Beträge wie am echten Gerät (unabhängig vom Einsatz). 100 € ist nur der Rückfall-Boden in RISIKO+.
-// RISIKO+ geht über 300 € hinaus weiter bis 1.000 € (Wunsch vom Nutzer); Rückfall bleibt 100 €, fair mit 2 % Vorteil
-const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000,40000,50000,60000,80000,100000];
+const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000];
+// Über 2 € Einsatz wächst die ganze Leiter mit (×Einsatz/2 €, ganze Faktoren): höher spielen lohnt sich, Chancen bleiben gleich
+const LADC={};
+function ladFactor(m){return Math.max(1,Math.round(totalBet(m)/200));}
 const F_I=12;   // 100 € – Mindestrückfall in RISIKO+
 const TOP_I=13; // 140 € – Spitze der normalen Leiter, ab hier RISIKO+
 const PLUS_I=14; // erste Stufe der Risiko+-Spalte (180 €)
 const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
-function ladOf(m){return LAD_REAL;}
+function ladOf(m){const f=m?ladFactor(m):1;return LADC[f]||(LADC[f]=LAD_REAL.map(v=>v*f));}
 // Bis einschließlich 4 € (Ausspielung) gilt klassisch „hoch oder 0“: so geht jeder Druck ~50 % hoch (Wunsch: nicht ständig runter).
 // Ab 8 € fällt man bei Verlust 2 Stufen, in RISIKO+ (ab 140 €) nur auf mindestens 100 €. Von 100 € hoch auf 140 € oder runter auf 52 €. Fair mit 2 % Vorteil.
-const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i>AUS_I?i-2:-1;
+// Verlust (nach den Videos des Nutzers): bis 4 € auf 0, von 8 € auf 4 €, sonst 2 Stufen runter; RISIKO+ auf 100 €
+const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i===AUS_I+1?AUS_I:i>AUS_I?i-2:-1;
 const ladNext=i=>i===TOP_I-2?TOP_I:i+1; // 84 € → 140 € (100 € liegt nur in der RISIKO+-Spalte)
 // Ausspielung: das Licht landet meistens auf 4 €, ganz selten höher (bis 140 €)
 const AUS_LAND=[90,6,2.2,1,.45,.2,.1,.05],AUS_IDX=[5,6,7,8,9,10,11,TOP_I]; // 4 8 12 20 32 52 84 140 €
 const ausEV=L=>AUS_IDX.reduce((a,i,k)=>a+L[i]*AUS_LAND[k],0)/AUS_LAND.reduce((a,b)=>a+b,0);
 function ausLand(){let r=Math.random()*AUS_LAND.reduce((a,b)=>a+b,0);for(let k=0;k<AUS_LAND.length;k++){r-=AUS_LAND[k];if(r<0)return AUS_IDX[k];}return AUS_I;}
 const ladderUp=(L,i)=>{if(i>=L.length-1)return 0;const d=ladDown(i),D=d>=0?L[d]:0,nx=i===AUS_I-1?ausEV(L):L[ladNext(i)];return (L[i]-D)/(nx-D)*.98;};
-// AUSSPIELUNG: nur Show – das Licht springt wild über die oberen Stufen (didididi) und landet auf dem erreichten Wert
-function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;gm.sh=false;m.state='gambleNext';m.stateT=0;m.timer=2.0;m.msg='AUSSPIELUNG!';SFX.ausStart();
-  gm.reveal=()=>{gm.run=false;SFX.ladFan();fxFlash(m,.7,'255,210,80');fxShake(m,.5,true);fxBurst(m,239,RY+60,40,{coin:true,sz:4,spd:150,up:80,life:1.2});
-    m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);m.stateT=0;m.timer=gm.queued?.35:.9;if(then)then();};
+// AUSSPIELUNG (Video): Feld AUSSPIELUNG leuchtet, ein Licht läuft schnell von 4 € bis 140 € hoch (1 Stufe je 1/30 s), immer wieder,
+// nach ~1,8 s bleibt es auf dem Ergebnis stehen (meistens 4 €), dann Fanfare. Dazu eine eigene kleine Melodie.
+const AUS_RUN=1.84,AUS_CHASE=[5,6,7,8,9,10,11,TOP_I];
+function ausShow(m,then){const gm=m.gamble;gm.run=true;gm.busy=true;gm.rb=-1;gm.sh=false;m.state='gambleNext';m.stateT=0;m.timer=AUS_RUN;m.msg='AUSSPIELUNG!';if(!m.remote)SFX.ausStart();
+  gm.reveal=()=>{gm.run=false;if(!m.remote)SFX.ladFan();
+    m.disp=m.win;m.msg=m.win>ladOf(m)[AUS_I]?'AUSSPIELUNG · HÖHER! '+fmt(m.win):'AUSSPIELUNG · '+fmt(m.win);gm.noChord=now+.5;ladGo(m);if(then)then();};
   m.dirty=true;updateButtons(m);}
+// weiter blinken (sofort, ohne Pause – wie am Gerät)
+function ladGo(m){const gm=m.gamble;if(!gm)return;gm.busy=false;gm.ph=undefined;m.state='gamble';m.stateT=0;m.timer=0;
+  if(gm.idx>=ladOf(m).length-1){m.msg='MAXIMUM ERREICHT';collect(m);return;}
+  m.dirty=true;m.topDirty=true;updateButtons(m);
+  if(gm.queued){const q=gm.queued;gm.queued=null;pressButton(m,q);}}
 function ladderPress(m){
-  const gm=m.gamble;if(gm.busy)return;gm.busy=true;m.stateT=0;const L=ladOf(m);gm.last=gm.idx;
+  const gm=m.gamble;if(gm.busy)return;gm.busy=true;const L=ladOf(m);gm.last=gm.idx;
   if(gm.idx<0){const up=Math.random()<m.win/L[0]*.98;gm.target=up?0:-2;gm.up=up;ladderResult(m);return;}
   const up=Math.random()<ladderUp(L,gm.idx);if(up&&gm.idx>=L.length-1){gm.busy=false;collect(m);return;}
   gm.target=up?(gm.idx===AUS_I-1?ausLand():ladNext(gm.idx)):ladDown(gm.idx);gm.up=up;
   ladderResult(m);
 }
+// Ergebnis kommt sofort: Licht springt ohne Fahrt auf die neue Stufe und blinkt gleich weiter.
+// Hoch = Fanfare ~0,1 s danach; runter = nur der Blink-Akkord; auf 0 = kurzer Abschluss, dann vorbei.
 function ladderResult(m){
-  const gm=m.gamble,L=ladOf(m),from=gm.idx,t=gm.target;gm.run=false;gm.idx=t;gm.anim={from,to:t,t0:now};
-  if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);if(!(t>=AUS_I&&from<AUS_I))SFX.ladFan();
-    if(m.win>=totalBet(m)*50){fxBurst(m,239,RY+60,16,{cols:['#fff4a0','#ffd23a'],spd:90,w:60});}}
-  else if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win);SFX.ladDown();}
-  else{gm.idx=-1;m.msg='VERLOREN';m.win=0;m.disp=0;SFX.ladZero();}
-  m.state='gambleNext';m.timer=t<0?1.0:t>from?.32:.42;m.stateT=0;m.dirty=true;updateButtons(m);
-  if(t>from&&t>=AUS_I&&from<AUS_I){m.disp=L[AUS_I];ausShow(m);}
+  const gm=m.gamble,L=ladOf(m),from=gm.idx,t=gm.target;gm.run=false;gm.idx=t;
+  if(t>from&&t>=AUS_I&&from<AUS_I){m.win=L[t];m.disp=L[AUS_I-1];m.msg='AUSSPIELUNG!';ausShow(m);return;}
+  if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);if(!m.remote)setTimeout(()=>SFX.ladFan(),100);gm.noChord=now+.5;
+    ladGo(m);return;}
+  if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win);ladGo(m);return;}
+  gm.idx=-1;m.msg='VERLOREN';m.win=0;m.disp=0;SFX.ladZero();m.state='gambleNext';m.timer=1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
 // TEILEN: die Hälfte auszahlen, mit dem Rest (nächste Stufe darunter) weiterspielen
 function ladderSplit(m){
@@ -2329,84 +2347,74 @@ function gambleRB(m,red){
   m.state='gambleNext';m.timer=isRed===red?1.3:2.2;m.dirty=true;updateButtons(m);
 }
 /* ---------- RISIKO+ Leiter (wie am echten Gerät: goldene Stufen über den abgedunkelten Walzen) ---------- */
-const LAD_TEILEN={x:56,y:150}; // unten zwischen RISIKO+-Spalte und Leiter
-const LAD_HZ=1.65; // Blinktakt wie am Gerät (Video: Wechsel alle ~0,3 s)
-// ---- Leiter wie am echten Gerät: runde Goldsprossen, Glas-Innenteil, glatte kräftige Ziffern, Leuchten ----
+const LAD_TEILEN={x:189,y:153}; // zwischen RISIKO+-Spalte und Leiter (wie am Gerät)
+const LAD_HZ=1.5; // Blinktakt wie im Video: Wechsel genau alle 1/3 s
+// ---- Leiter wie am Gerät (Videos des Nutzers): Kupferrahmen, schwarzes Feld, gelbe Zahl; leuchtend = flach gelb, schwarze Zahl.
+// Keine Glüh-/Lichtfahrt-Effekte: das Licht springt hart von Stufe zu Stufe.
 const LAD_FONT='"Arial Black","Segoe UI Black","Helvetica Neue",Arial,sans-serif';
 function lRR(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.quadraticCurveTo(x+w,y,x+w,y+r);g.lineTo(x+w,y+h-r);g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);g.lineTo(x+r,y+h);g.quadraticCurveTo(x,y+h,x,y+h-r);g.lineTo(x,y+r);g.quadraticCurveTo(x,y,x+r,y);g.closePath();}
 function lFit(g,t,x,y,w,size,col,align){let z=size;g.font='900 '+z+'px '+LAD_FONT;let mw=g.measureText(t).width;if(mw>w){g.save();g.translate(x,y);g.scale(w/mw,1);g.textAlign=align||'center';g.fillStyle=col;g.fillText(t,0,0);g.restore();return;}g.textAlign=align||'center';g.fillStyle=col;g.fillText(t,x,y);}
-// glow 0..1 = Leuchten, flash 0..1 = kurzes Weiß beim Ankommen des Lichts, col: 'y' gelb, 'red' rot
-function goldRung(g,x,y,w,h,lit,txt,col,zone,glow,flash){
-  const r=Math.min(3,h*.3);
-  // Bronze-/Goldrahmen mit Glanz
-  const fr=g.createLinearGradient(0,y-1,0,y+h+1);fr.addColorStop(0,'#fff2b0');fr.addColorStop(.35,'#e0a83a');fr.addColorStop(.7,'#8a5410');fr.addColorStop(1,'#3a2004');
-  g.fillStyle='#000';lRR(g,x-1.2,y-1.2,w+2.4,h+2.4,r+1);g.fill();g.fillStyle=fr;lRR(g,x-.3,y-.3,w+.6,h+.6,r+.5);g.fill();
-  const ix=x+1.3,iy=y+1.3,iw=w-2.6,ih=h-2.6;
-  if(lit){const red=col==='red';
-    g.save();g.shadowColor=red?'rgba(255,60,40,.95)':'rgba(255,214,40,.95)';g.shadowBlur=5+(glow||0)*5;
-    const lf=g.createLinearGradient(0,iy,0,iy+ih);
-    if(red){lf.addColorStop(0,'#ffb0a0');lf.addColorStop(.5,'#ff3a28');lf.addColorStop(1,'#a80a08');}
-    else{lf.addColorStop(0,'#fffde8');lf.addColorStop(.45,'#ffe640');lf.addColorStop(1,'#e8a400');}
-    g.fillStyle=lf;lRR(g,ix,iy,iw,ih,r*.7);g.fill();g.restore();
-    if(flash>0){g.fillStyle='rgba(255,255,255,'+(flash*.85).toFixed(3)+')';lRR(g,ix,iy,iw,ih,r*.7);g.fill();}
-    g.fillStyle='rgba(255,255,255,.45)';lRR(g,ix+1,iy+.6,iw-2,ih*.32,r*.5);g.fill();}
-  else{const gl=g.createLinearGradient(0,iy,0,iy+ih);gl.addColorStop(0,zone?'#3a0a0c':'#1c1408');gl.addColorStop(1,zone?'#140204':'#050302');g.fillStyle=gl;lRR(g,ix,iy,iw,ih,r*.7);g.fill();
-    g.fillStyle='rgba(255,240,200,.07)';lRR(g,ix+1,iy+.5,iw-2,ih*.35,r*.5);g.fill();}
+// Stufe der rechten Leiter. plain = die 0 ganz unten (ohne Kupferrahmen)
+function goldRung(g,x,y,w,h,lit,txt,plain){
+  const r=Math.min(2.2,h*.25);
+  if(!plain){g.fillStyle='#160a02';lRR(g,x-1.1,y-1.1,w+2.2,h+2.2,r+1);g.fill();
+    const fr=g.createLinearGradient(0,y-1,0,y+h+1);fr.addColorStop(0,'#ffd08a');fr.addColorStop(.3,'#e08a2a');fr.addColorStop(.7,'#9a4a0c');fr.addColorStop(1,'#4a1e02');
+    g.fillStyle=fr;lRR(g,x-.4,y-.4,w+.8,h+.8,r+.5);g.fill();}
+  else{g.fillStyle='#2a2414';g.fillRect(x-.5,y-.5,w+1,h+1);}
+  const ix=x+(plain?0:1.3),iy=y+(plain?0:1.2),iw=w-(plain?0:2.6),ih=h-(plain?0:2.4);
+  if(lit){const lf=g.createLinearGradient(0,iy,0,iy+ih);lf.addColorStop(0,'#fff27a');lf.addColorStop(.5,'#ffe21a');lf.addColorStop(1,'#f2c800');g.fillStyle=lf;}
+  else g.fillStyle='#050505';
+  if(plain)g.fillRect(ix,iy,iw,ih);else{lRR(g,ix,iy,iw,ih,r*.6);g.fill();}
   g.textBaseline='middle';const isWord=/[A-Z]{3,}/.test(txt);
-  lFit(g,txt,x+w/2,y+h/2+.6,w-6,isWord?Math.min(h*.62,7.5):h*.8,lit?'#2a1400':'#f8e8b8');}
+  lFit(g,txt,x+w/2,y+h/2+.5,w-5,isWord?Math.min(h*.6,6.6):h*.78,lit?'#120c00':isWord?'#ffeec0':'#ffd93a');}
+// RISIKO+ Schriftzug (einmal vorgezeichnet)
+function ladLogo(){if(ladLogo.c)return ladLogo.c;const c=document.createElement('canvas');c.width=330;c.height=96;const x=c.getContext('2d');x.scale(3,3);
+  // rote Platte mit blauem Rand unter dem Schriftzug
+  x.fillStyle='#1a1a5a';lRR(x,6,17,88,13,3);x.fill();const pg=x.createLinearGradient(0,18,0,30);pg.addColorStop(0,'#ff4a3a');pg.addColorStop(1,'#7a0a08');x.fillStyle=pg;lRR(x,7.2,18.2,85.6,10.6,2.4);x.fill();
+  x.font='italic 900 21px '+LAD_FONT;x.textAlign='left';x.textBaseline='alphabetic';x.lineJoin='round';
+  x.lineWidth=5;x.strokeStyle='#3a1800';x.strokeText('RISIKO',4,25);
+  const tg=x.createLinearGradient(0,7,0,26);tg.addColorStop(0,'#fffbe0');tg.addColorStop(.35,'#ffd84a');tg.addColorStop(.6,'#e09a10');tg.addColorStop(1,'#8a4a00');x.fillStyle=tg;x.fillText('RISIKO',4,25);
+  x.lineWidth=.8;x.strokeStyle='rgba(255,255,220,.8)';x.strokeText('RISIKO',4,24.4);
+  x.font='900 17px '+LAD_FONT;x.lineWidth=4;x.strokeStyle='#3a1800';x.strokeText('+',90,15);const pl=x.createLinearGradient(0,3,0,16);pl.addColorStop(0,'#fff4c0');pl.addColorStop(1,'#d88a00');x.fillStyle=pl;x.fillText('+',90,15);
+  return ladLogo.c=c;}
 function drawLadder(m,g,gm){
-  g.fillStyle=gm.preview?'rgba(0,0,0,.5)':'rgba(0,0,0,.66)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
-  const vg=g.createRadialGradient(240,RY+70,10,240,RY+70,150);vg.addColorStop(0,'rgba(255,190,60,.10)');vg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=vg;g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
-  const run=m.state==='gambleNext'&&gm.run,result=m.state==='gambleNext'&&!run,cur=gm.idx,L=ladOf(m);
-  const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0;
-  if(!result&&!run&&ph!==gm.ph)gm.ph=ph; // Blinken ist still (wie im Video), nur die Musik läuft
-  const slide=ease(clamp((now-gm.t0)/.35,0,1)),dy=-(1-slide)*240;
-  const rh=10.4,x=194,W=86,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k<F_I?k+1:k,yOf=p=>yb-rh*(p+2);
+  // Walzen abgedunkelt
+  g.fillStyle='rgba(0,0,0,.62)';g.fillRect(RX-3,RY-3,CW*5+6,CH*3+6);
+  const run=m.state==='gambleNext'&&gm.run,ent=m.state==='gambleNext'&&gm.ent,result=m.state==='gambleNext'&&!run&&!ent,cur=gm.idx,L=ladOf(m);
+  const ph=Math.floor((gm.preview?now:m.stateT)*LAD_HZ*2)%2===0; // true = Stufe darüber leuchtet mit, false = Stufe darunter
+  // jeder Wechsel auf "darüber" klingt mit einem weichen Akkord (wie am Gerät)
+  if(!result&&!run&&!ent&&ph!==gm.ph){gm.ph=ph;if(ph&&!gm.preview&&!m.remote&&!(gm.noChord&&now<gm.noChord))SFX.ladChord();}
+  const slide=clamp((now-gm.t0)/.3,0,1),dy=-(1-slide*slide)*230;if(slide<1)m.dirty=true;
+  const rh=10.4,cx=237,yb=RY+CH*3+2+dy,pos=k=>k<AUS_I?k:k<F_I?k+1:k,yOf=p=>yb-rh*(p+2);
+  const wOf=p=>56+30*p/13; // nach oben breiter (Trapez wie am Gerät)
   g.save();g.beginPath();g.rect(0,0,320,RY+CH*3+4);g.clip();
-  const st=Math.floor(m.stateT/.09),rk=m.stateT<.45?AUS_I-99:AUS_IDX[(st*7919+st*st*31+13)%AUS_IDX.length];
-  const upT=ladNext(cur),dnT=ladDown(cur);
-  // Lichtsprung: kurzer leuchtender Weg von der alten zur neuen Stufe, dann Aufblitzen
-  const A=gm.anim,ak=A?clamp((now-A.t0)/.14,0,1):1,af=A?clamp(1-(now-A.t0-.14)/.18,0,1):0;
-  const rungY=k=>k<0?yb-rh:k>=F_I&&k!==TOP_I?null:yOf(pos(k));
-  for(let k=0;k<PLUS_I;k++){if(k===F_I)continue;const y=yOf(pos(k)),up=k>=AUS_I,w=up?W:W-14,xx=up?x:x+7;
-    let lit=false,col='y',fl=0;
-    if(run){lit=k===rk;col='red';}
-    else if(result){if(k===cur){lit=ak>=1;fl=af;}}
-    else{if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}
-    goldRung(g,xx,y,w,rh-1.6,lit,String(L[k]),col,false,lit&&k===cur?1:0,fl);}
-  {const y=yOf(AUS_I),lit=run?Math.floor(now*12)%2===0:(!result&&cur===AUS_I-1&&ph);goldRung(g,x+3,y,W-6,rh-1.6,lit,'AUSSPIELUNG',run?'red':'y',true,1,0);}
-  const zl=!run&&((result&&cur<0&&ak>=1)||(!result&&dnT<0&&!ph));
-  goldRung(g,x+18,yb-rh,W-36,rh-1.6,zl,'0',result&&cur<0?'red':'y',false,1,result&&cur<0?af:0);
-  if(A&&ak<1&&!run){const y0=rungY(A.from),y1=rungY(A.to);if(y0!==null&&y1!==null){const yy=y0+(y1-y0)*ak+(rh-1.6)/2;
-    g.save();g.globalCompositeOperation='lighter';const cg=g.createRadialGradient(x+W/2,yy,1,x+W/2,yy,W*.55);cg.addColorStop(0,A.to>A.from?'rgba(255,240,160,.95)':'rgba(255,120,80,.9)');cg.addColorStop(1,'rgba(255,200,40,0)');
-    g.fillStyle=cg;g.fillRect(x-6,yy-14,W+12,28);g.restore();m.dirty=true;}}
-  if(A&&(ak<1||af>0))m.dirty=true;
-  // RISIKO+-Spalte: rot gerahmte Kästen, große Zahl mit kleinen 00
-  {const PV=L.slice(F_I),pitch=Math.min(22,143/PV.length),bh=pitch-2.2,bx=118,bw=70,fz=Math.min(13,bh*.78);
-    PV.forEach((v,q)=>{const y=RY+CH*3-8-(q+1)*pitch+dy,k=L.indexOf(v);let lit=false,fl=0;
-      if(k>=F_I){if(result&&k===cur){lit=ak>=1;fl=af;}else if(!result&&!run){if(k===cur)lit=true;if(k===upT&&ph)lit=true;if(k===dnT&&!ph)lit=true;}}
-      const fr=g.createLinearGradient(0,y,0,y+bh);fr.addColorStop(0,'#ff6a5a');fr.addColorStop(.5,'#b01020');fr.addColorStop(1,'#4a0408');
-      g.fillStyle='#000';lRR(g,bx-2,y-2,bw+4,bh+4,4);g.fill();g.fillStyle=fr;lRR(g,bx-.5,y-.5,bw+1,bh+1,3.5);g.fill();
-      if(lit){g.save();g.shadowColor='rgba(255,214,40,.95)';g.shadowBlur=8;const lf=g.createLinearGradient(0,y,0,y+bh);lf.addColorStop(0,'#fffde8');lf.addColorStop(.45,'#ffe640');lf.addColorStop(1,'#e8a400');g.fillStyle=lf;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();g.restore();
-        if(fl>0){g.fillStyle='rgba(255,255,255,'+(fl*.85).toFixed(3)+')';lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}}
-      else{const gl=g.createLinearGradient(0,y,0,y+bh);gl.addColorStop(0,'#1c0c08');gl.addColorStop(1,'#050202');g.fillStyle=gl;lRR(g,bx+2,y+2,bw-4,bh-4,2.5);g.fill();}
-      g.textBaseline='middle';const c=lit?'#2a1400':'#e8c860';g.font='900 '+fz.toFixed(1)+'px '+LAD_FONT;g.textAlign='right';g.fillStyle=c;g.fillText(String(Math.round(v/100)),bx+bw/2+16,y+bh/2+1);
-      g.font='900 '+(fz*.54).toFixed(1)+'px '+LAD_FONT;g.textAlign='left';g.fillText('00',bx+bw/2+17,y+bh/2+fz*.22);});}
-  // RISIKO+ Schriftzug
-  g.save();g.textAlign='left';g.textBaseline='middle';g.font='italic 900 17px '+LAD_FONT;g.lineJoin='round';g.lineWidth=4;g.strokeStyle='#1a0800';g.strokeText('RISIKO',22,RY+17+dy);
-  const tg=g.createLinearGradient(0,RY+6,0,RY+28);tg.addColorStop(0,'#fff8c8');tg.addColorStop(.5,'#ffc828');tg.addColorStop(1,'#b86a00');g.fillStyle=tg;g.fillText('RISIKO',22,RY+17+dy);
-  g.font='900 15px '+LAD_FONT;g.strokeText('+',96,RY+10+dy);g.fillStyle='#ff2a2a';g.fillText('+',96,RY+10+dy);g.restore();
-  // ERFOLG-Anzeige
-  g.textBaseline='middle';g.font='700 7px '+LAD_FONT;g.textAlign='left';g.fillStyle='#e8dcc0';g.fillText('ERFOLG',26,RY+48);
-  g.fillStyle='#000';lRR(g,23,RY+54,90,28,3);g.fill();const eb=g.createLinearGradient(0,RY+54,0,RY+82);eb.addColorStop(0,'#8a8a92');eb.addColorStop(1,'#2a2a30');g.strokeStyle=eb;g.lineWidth=2;lRR(g,24,RY+55,88,26,3);g.stroke();
-  {const v=Math.max(0,Math.round(m.disp)),eu=String(Math.floor(v/100)),ct=String(v%100).padStart(2,'0'),c=result&&cur<0?'#ff3a3a':'#ffd820';
-    g.font='900 7.5px '+LAD_FONT;const cw=g.measureText(ct).width;g.textAlign='right';g.fillStyle=c;g.fillText(ct,108,RY+72);
-    lFit(g,eu,108-cw-1,RY+68,70,17,c,'right');}
-  g.font='700 6.5px '+LAD_FONT;g.textAlign='left';g.fillStyle='#b8a888';
-  const hint=run?'AUSSPIELUNG …':result?(cur<0?'VERLOREN':''):cur>=F_I?'RISIKO+ · MIND. 100':'LEITER = HOCH';if(hint)fitL2(g,hint,26,RY+96,86);
-  if(!result&&!run&&cur>=1){const ox=LAD_TEILEN.x,oy=LAD_TEILEN.y+dy;g.fillStyle='#000';g.beginPath();g.ellipse(ox,oy,24,11,0,0,TAU);g.fill();
-    const tb=g.createLinearGradient(0,oy-10,0,oy+10);tb.addColorStop(0,'#fffbc0');tb.addColorStop(.5,'#ffd820');tb.addColorStop(1,'#b88000');g.fillStyle=tb;g.beginPath();g.ellipse(ox,oy,22,9.5,0,0,TAU);g.fill();
-    g.fillStyle='rgba(255,255,255,.5)';g.beginPath();g.ellipse(ox,oy-4,16,3,0,0,TAU);g.fill();g.font='700 7px '+LAD_FONT;g.textAlign='center';g.fillStyle='#2a1400';g.fillText('Teilen',ox,oy+1);}
+  const upT=cur===AUS_I-1?AUS_I:ladNext(cur),dnT=ladDown(cur);
+  // Ausspielung: Licht läuft von 4 € bis 140 € hoch, Feld AUSSPIELUNG leuchtet
+  const chase=run?AUS_CHASE[Math.floor(m.stateT*30)%AUS_CHASE.length]:-99;
+  const entK=ent?(Math.floor((now-gm.ent.t0)/.13)%2?gm.ent.b:gm.ent.a):-99;
+  const isLit=k=>{if(run)return k===chase;if(ent)return k===entK;if(result)return k===cur;return k===cur||(ph&&k===upT)||(!ph&&k===dnT);};
+  for(let k=0;k<PLUS_I;k++){if(k===F_I)continue;const p=pos(k),y=yOf(p),w=wOf(p);goldRung(g,cx-w/2,y,w,rh-1.6,isLit(k),String(L[k]));}
+  {const p=AUS_I,y=yOf(p),w=wOf(p);goldRung(g,cx-w/2,y,w,rh-1.6,run||(!ent&&!result&&cur===AUS_I-1&&ph)||(ent&&entK===AUS_I),'AUSSPIELUNG');}
+  {const w=44,lit=(!run&&!ent&&((result&&cur<0)||(!result&&dnT<0&&!ph)));goldRung(g,cx-w/2,yb-rh+.6,w,rh-2.4,lit,'0',true);}
+  // RISIKO+-Spalte: dunkelrot gerahmte Kästen, olivgoldene Zahl mit kleinen 00, oberster Kasten größer
+  {const PV=L.slice(F_I).reverse(),n=PV.length,top=RY+31+dy,bot=RY+CH*3-2+dy,ph2=(bot-top)/(n+.35),bx=98,bw=68;
+    PV.forEach((v,q)=>{const k=L.indexOf(v),big=q===0,h=big?ph2*1.25-2:ph2-2.2,y=big?top:top+ph2*(q+.35),w=big?bw+6:bw,x=bx-(big?3:0);
+      const lit=k>=F_I&&isLit(k);
+      g.fillStyle='#2a2a6a';lRR(g,x-1.6,y-1.6,w+3.2,h+3.2,3);g.fill();
+      const fr=g.createLinearGradient(0,y,0,y+h);fr.addColorStop(0,'#c8283a');fr.addColorStop(.5,'#8a0a1a');fr.addColorStop(1,'#4a0610');g.fillStyle=fr;lRR(g,x-.6,y-.6,w+1.2,h+1.2,2.5);g.fill();
+      if(lit){const lf=g.createLinearGradient(0,y,0,y+h);lf.addColorStop(0,'#fff27a');lf.addColorStop(.5,'#ffe21a');lf.addColorStop(1,'#f2c800');g.fillStyle=lf;}else g.fillStyle='#060404';
+      lRR(g,x+1.4,y+1.3,w-2.8,h-2.6,1.8);g.fill();
+      const fz=Math.min(big?15:12.5,h*.82),col=lit?'#140c00':'#a8961e',t1=String(Math.round(v/100));g.textBaseline='middle';
+      g.font='900 '+fz.toFixed(1)+'px '+LAD_FONT;const w1=g.measureText(t1).width;g.font='900 '+(fz*.56).toFixed(1)+'px '+LAD_FONT;const w2=g.measureText('00').width+.5;
+      const sc=Math.min(1,(w-8)/(w1+w2));g.save();g.translate(x+w/2-(w1+w2)*sc/2,y+h/2+.8);g.scale(sc,1);g.fillStyle=col;g.textAlign='left';
+      g.font='900 '+fz.toFixed(1)+'px '+LAD_FONT;g.fillText(t1,0,0);g.font='900 '+(fz*.56).toFixed(1)+'px '+LAD_FONT;g.fillText('00',w1+.5,fz*.2-.8);g.restore();});}
+  // RISIKO+ Schriftzug oben links
+  g.drawImage(ladLogo(),24,RY-1+dy,110,32);
+  // Teilen-Knopf (gelbes Oval)
+  if(!result&&!run&&!ent&&cur>=1){const ox=LAD_TEILEN.x,oy=LAD_TEILEN.y+dy;g.fillStyle='#2a2000';g.beginPath();g.ellipse(ox,oy,17,8.4,0,0,TAU);g.fill();
+    const tb=g.createRadialGradient(ox-4,oy-4,1,ox,oy,17);tb.addColorStop(0,'#fffbb0');tb.addColorStop(.6,'#ffe020');tb.addColorStop(1,'#a88000');g.fillStyle=tb;g.beginPath();g.ellipse(ox,oy,15.6,7.2,0,0,TAU);g.fill();
+    g.font='700 6.6px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#1a1000';g.fillText('Teilen',ox,oy+.4);}
+  if(run||ent)m.dirty=true;
   g.restore();
 }
 function fitL2(g,t,x,y,w){const mw=g.measureText(t).width;if(mw<=w){g.fillText(t,x,y);return;}g.save();g.translate(x,y);g.scale(w/mw,1);g.fillText(t,0,0);g.restore();}
@@ -2793,6 +2801,7 @@ function updMachines(dt,F,focusM){
     // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
     if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
     if(m.G.special&&m.topAnim&&d<9){const f=Math.floor(now*6);if(f!==m.topFr){m.topFr=f;m.topDirty=true;}} // Alles Spitze: volle Leitern blinken im Aufsatz
+    {const near=d<6.5||m===focusM;if(near!==m.near){m.near=near;for(const k in m.btns)m.btns[k].mesh.visible=near;}} // Tasten nur in der Nähe (spart Zeichenaufrufe)
     if(m.topDirty)drawTop(m);
     {const un=m.unlockT&&now-m.unlockT<2.2,hn=(typeof machineHeld==='function'&&machineHeld(m))||(m.remote&&m.remote.name)||'',mine=isMine(m);
       m.cardLed.color.setHex(un?(Math.floor(now*12)%2?0x7aff7a:0x0a6a1a):mine?0x3adf5a:hn?0xff2020:0x3a0606);
@@ -3365,7 +3374,7 @@ function smPress(m,key){
   m.dirty=true;
 }
 function smTap(m,uv){
-  if(m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&uv){const x=uv.x*320,y=(1-uv.y)*240;if(Math.abs(x-LAD_TEILEN.x)<28&&Math.abs(y-LAD_TEILEN.y)<14){pressButton(m,'KARTE');return true;}}
+  if(m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&uv){const x=uv.x*320,y=(1-uv.y)*240;if(Math.abs(x-LAD_TEILEN.x)<22&&Math.abs(y-LAD_TEILEN.y)<12){pressButton(m,'KARTE');return true;}}
   if(typeof tzBuyTap==='function'&&tzBuyTap(m,uv))return true;
   if(typeof spitzeTap==='function'&&m.state!=='menu'&&spitzeTap(m,uv))return true;
   if(m.state==='poffer')return offerTap(m,uv);

@@ -134,19 +134,20 @@ const SFX={
   heart(){tone(58,.13,'sine',.4);tone(52,.16,'sine',.32,.17);},
   coinUp(i){bell(NOTE(83+Math.min(i,24)),.18,.06);},
   ausTick(k){tone(1000+k*600,.035,'square',.05);}, // Ausspielung: helle Ticks, Tonhöhe steigt (k = 0..1)
-  // ---- Leiter nach dem Video des Nutzers (selbst erzeugt): ----
-  // Hochgedrückt: heller Pieps, dann D-F-A-D aufwärts, kurzes A/H-Echo, danach nachklingender a-Moll-Akkord
+  // ---- Leiter nach den Videos des Nutzers (selbst erzeugt, Zeiten/Töne gemessen): ----
+  // Hochgedrückt: Pieps A6, dann D (D5+D6) – F – A – D, kurzes A6/H5-Echo, heller Funke
   ladFan(){const s=(n,t,d,v)=>soft(NOTE(n),d,v||.06,t,'square');
-    s(93,0,.06,.045);s(74,.06,.08);s(86,.06,.08,.035);s(77,.14,.08);s(81,.22,.1,.065);s(86,.32,.14,.065);s(93,.46,.08,.028);s(83,.54,.12,.028);
-    bell(NOTE(98),.35,.025,.32);[81,84,88].forEach(n=>soft(NOTE(n),.48,.03,.66,'triangle'));},
-  // Leiter erscheint: kurze absteigende Tonfolge C-A-Fis-D
-  ladIn(){[84,81,78,74].forEach((n,i)=>soft(NOTE(n),.09,.045,.12+i*.085,'square'));},
+    s(93,0,.045,.05);s(74,.035,.07);s(86,.035,.07,.035);s(77,.1,.065);s(81,.165,.09,.065);s(86,.26,.13,.065);bell(NOTE(102),.3,.022,.27);
+    s(93,.4,.06,.03);s(83,.46,.1,.03);},
+  // Blinken: bei jedem Aufleuchten der Stufe darüber ein weicher a-Moll-Akkord, der ausklingt
+  ladChord(){[81,84,88].forEach((n,i)=>soft(NOTE(n),.5,i?.024:.03,0,'triangle'));soft(NOTE(69),.35,.012,0,'square');},
   // heller Schimmer (vor großen Momenten)
   shimmer(){noise(.22,.06,3800);noise(.16,.04,5200,.03);},
-  // Ausspielung beginnt: Schimmer + a-Moll-Akkord
-  ausStart(){SFX.shimmer();[81,84,88].forEach(n=>soft(NOTE(n),.32,.035,.1,'triangle'));},
-  // Ausspielung läuft: springende Melodie passend zu den springenden Lichtern
-  ausRun(i){const Q=[72,65,70,74,67,76,69,74,79,76,69,66,62,69,76,71,72,79,69,76,74,79];soft(NOTE(Q[i%Q.length]),.085,.045,0,'square');},
+  // Ausspielung beginnt: Schimmer
+  ausStart(){SFX.shimmer();},
+  // Ausspielung läuft: Akkordfolge Am – F – G – G – Em – D – A – C, je ~0,19 s
+  ausRun(i){const Q=[[81,84,88],[77,82,84],[79,86],[79,86,91],[76,81,88],[74,78],[81,88],[84,91]],c=Q[i%Q.length];
+    c.forEach((n,k)=>soft(NOTE(n),.2,k?.026:.034,0,'square'));soft(NOTE(c[0]-12),.18,.02,0,'triangle');},
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){bell(NOTE(67),.8,.12,0,1.5);bell(NOTE(91),.4,.05,.04);noise(.1,.06,4000);},
