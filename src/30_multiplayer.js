@@ -102,7 +102,7 @@ function mpStep(dt){
     const dx=a.tx-r.position.x,dz=a.tz-r.position.z,d=Math.hypot(dx,dz);
     if(d>4)r.position.set(a.tx,0,a.tz);else{r.position.x+=dx*Math.min(1,dt*9);r.position.z+=dz*Math.min(1,dt*9);}
     r.rotation.y=angLerp(r.rotation.y,a.ty,dt*10);
-    if(a.act==='walk'||a.act==='mwatch')a.n.anim=d>.05?'walk':'idle';
+    if(a.act==='walk'||a.act==='mwatch'){const sp=d>4?0:Math.hypot(dx,dz)*Math.min(1,dt*9)/Math.max(dt,1e-3);a.sp=(a.sp||0)+(sp-(a.sp||0))*Math.min(1,dt*8);a.n.anim=a.sp>4.6?'sprint':a.sp>2.3?'run':a.sp>.25?'walk':'idle';if(a.n.rig)a.n.rig.tScale=a.n.anim==='walk'?clamp(a.sp/1.5,.6,1.7):a.n.anim==='run'?clamp(a.sp/3.2,.75,1.5):1;}
     a.n.root.position.y=0;animNPC(a.n,dt);
   });
 }

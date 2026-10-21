@@ -80,8 +80,8 @@ function chFPStep(dt){
   if(sitting!==R.sit){R.sit=sitting;R.model.position.y=sitting?chSitOffset(n):0;}
   n.root.position.set(s.x,0,s.z);n.root.rotation.y=s.y;
   const d=Math.hypot(s.x-n.lx,s.z-n.lz);n.lx=s.x;n.lz=s.z;const v=dt>0?d/dt:0;n.v+=(v-n.v)*Math.min(1,dt*10);
-  if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>3.2?'run':n.v>.25?'walk':'idle';
-  R.tScale=n.anim==='walk'?clamp(n.v/1.35,.7,1.6):n.anim==='run'?clamp(n.v/3.4,.8,1.5):1;
+  if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
+  R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
   n.root.visible=!locked&&EL.phase!=='moving'&&!(openId);
   chAnimate(n,dt);n.root.updateMatrixWorld(true);
 }

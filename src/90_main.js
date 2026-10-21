@@ -610,8 +610,11 @@ function frame(){
     aimStep(dt);
     const mm=Math.hypot(mx,mz);
     const spr=(keys.ShiftLeft||keys.ShiftRight)&&mm>.01&&canMove;P.spr=(P.spr||0)+((spr?1:0)-(P.spr||0))*Math.min(1,dt*8);const spd=3.3*(1+P.spr*.75);
-    if(mm>.01&&canMove){const [nx,nz]=collide(P.x+mx*spd*dt,P.z+mz*spd*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;
-      P.bob+=real*3.1*(1-(P.spr||0)*.3);P.stepAcc+=real;if(P.stepAcc>.85*(1+(P.spr||0)*.8)&&now-(P.stepT||0)>.3){P.stepAcc=0;P.stepT=now;SFX.step();}}
+    // Anlaufen und Abbremsen statt sofortiger Höchstgeschwindigkeit (Bewegungsgefühl, 2026-10-21)
+    {const tx=mm>.01&&canMove?mx*spd:0,tz=mm>.01&&canMove?mz*spd:0,acc=(mm>.01&&canMove)?9:13;P.vx=(P.vx||0)+(tx-(P.vx||0))*Math.min(1,dt*acc);P.vz=(P.vz||0)+(tz-(P.vz||0))*Math.min(1,dt*acc);
+      if(!canMove){P.vx=0;P.vz=0;}
+      const vm=Math.hypot(P.vx,P.vz);if(vm>.02){const [nx,nz]=collide(P.x+P.vx*dt,P.z+P.vz*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;if(real<vm*dt*.3){P.vx*=.5;P.vz*=.5;}
+        P.bob+=real*3.1*(1-(P.spr||0)*.3);P.stepAcc+=real;if(P.stepAcc>.85*(1+(P.spr||0)*.8)&&now-(P.stepT||0)>.3){P.stepAcc=0;P.stepT=now;SFX.step();}}}
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
