@@ -156,6 +156,9 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   bakeGroup(g,true); // feste Gehäuseteile zusammenfassen (Tasten, Bildschirm, Stuhl bleiben einzeln)
   const bt=canvasTex(512,96,null,0,0,true),bs=new THREE.Sprite(new THREE.SpriteMaterial({map:bt,transparent:true,depthWrite:false,fog:false}));
   bs.position.set(0,3.02,0);bs.scale.set(2.1,.39,1);bs.visible=false;bs.renderOrder=5;g.add(bs);m.beacon={s:bs,t:bt,key:''};
+  // goldener Schimmer, wenn ein besetzter Automat in den Freispielen ist (Nutzer 2026-10-21): so sieht man von weitem, wo gerade Freispiele laufen
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:0xffc040,transparent:true,opacity:0,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,fog:false}));
+  gl.position.set(0,1.6,.75);gl.scale.set(3.0,3.8,1);gl.visible=false;gl.renderOrder=4;g.add(gl);m.glow=gl;
   const fx=Math.sin(rotY),fz=Math.cos(rotY);
   const act={type:'machine',m,label:G.title,sub:'Hinsetzen und spielen',pos:new THREE.Vector3(x+fx*.6,1.2,z+fz*.6),reach:2.2};m.act=act;
   const hitList=[];g.traverse(o=>{if(o.isMesh&&!o.userData.act){o.userData.act=act;F.hits.push(o);}});F.acts.push(act);
@@ -1201,11 +1204,15 @@ function slotPendSave(){const fm=typeof focus!=='undefined'&&focus&&focus.type==
   allMachines().forEach(m=>{if(m===fm||isMine(m))s+=m.win+(m.power?m.power.left*m.power.cost:0)+(m.sp?m.sp.pot:0);});
   if(s!==slotPendLast){slotPendLast=s;store('nk_slotpend',s>0?s:null);}}
 // Schild über dem Automaten: grün = deiner, rot = von jemand anderem besetzt (sieht man durch die ganze Halle)
+let glowT=null;
+function glowTex(){if(glowT)return glowT;const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const r=g.createRadialGradient(64,64,4,64,64,64);
+  r.addColorStop(0,'rgba(255,240,180,.95)');r.addColorStop(.3,'rgba(255,205,90,.5)');r.addColorStop(.65,'rgba(255,180,40,.14)');r.addColorStop(1,'rgba(255,170,30,0)');g.fillStyle=r;g.fillRect(0,0,128,128);glowT=new THREE.CanvasTexture(c);return glowT;}
+// Schild über dem Automaten: Schlüssel = M (meiner) oder H (gehalten), dann F (Freispiele), dann A (Auto) bzw. der Name
 function beaconDraw(m,key){const B=m.beacon,c=B.t.userData.ctx,w=512,h=96;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);if(!key){B.s.visible=false;return;}
-  B.s.visible=true;const mine=key[0]==='M',col=mine?['#7aff8a','#0a8a1a','#002a06']:['#ff8a7a','#c01818','#3a0000'];
+  B.s.visible=true;const mine=key[0]==='M',fs=key[1]==='F',rest=key.slice(fs?2:1),col=fs?['#fff2b0','#e0a820','#5a3a00']:mine?['#7aff8a','#0a8a1a','#002a06']:['#ff8a7a','#c01818','#3a0000'];
   c.shadowColor=col[0];c.shadowBlur=18;const g=c.createLinearGradient(0,10,0,h-10);g.addColorStop(0,col[0]);g.addColorStop(.5,col[1]);g.addColorStop(1,col[2]);c.fillStyle=g;lRR(c,14,12,w-28,h-24,(h-24)/2);c.fill();c.shadowBlur=0;
   c.lineWidth=4;c.strokeStyle='rgba(255,255,255,.85)';lRR(c,14,12,w-28,h-24,(h-24)/2);c.stroke();
-  const t=mine?(key[1]==='A'?'DEIN AUTOMAT · AUTO':'DEIN AUTOMAT'):'BESETZT · '+key.slice(1);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';
+  const t=mine?('DEIN AUTOMAT'+(fs?' · FREISPIELE!':rest==='A'?' · AUTO':'')):'BESETZT · '+rest+(fs?' · FREISPIELE!':'');c.textAlign='center';c.textBaseline='middle';c.fillStyle=fs?'#2a1800':'#fff';
   let fz=46;c.font='800 '+fz+'px '+SCR_FONT;while(fz>20&&c.measureText(t).width>w-80){fz-=2;c.font='800 '+fz+'px '+SCR_FONT;}c.lineWidth=6;c.strokeStyle='rgba(0,0,0,.55)';c.strokeText(t,w/2,h/2+2);c.fillText(t,w/2,h/2+2);
   B.t.needsUpdate=true;}
 /* ---------- HD-Bildschirm: beim Spielen werden Bildschirm und Kopf-Display dreifach scharf ---------- */
@@ -1234,8 +1241,11 @@ function updMachines(dt,F,focusM){
     if(m.topDirty)drawTop(m);
     {const un=m.unlockT&&now-m.unlockT<2.2,hn=(typeof machineHeld==='function'&&machineHeld(m))||(m.remote&&m.remote.name)||'',mine=isMine(m);
       m.cardLed.color.setHex(un?(Math.floor(now*12)%2?0x7aff7a:0x0a6a1a):mine?0x3adf5a:hn?0xff2020:0x3a0606);
-      const bk=mine?'M'+(m.auto?'A':''):hn?'H'+cleanText(hn,14):'';if(bk!==m.beacon.key){m.beacon.key=bk;beaconDraw(m,bk);}
-      if(bk){m.beacon.s.visible=m!==focusM;m.beacon.s.material.opacity=.78+.22*Math.sin(now*3+m.group.position.x);}}
+      const fsOn=!!m.fs&&(mine||!!hn);
+      const bk=mine?'M'+(fsOn?'F':'')+(m.auto?'A':''):hn?'H'+(fsOn?'F':'')+cleanText(hn,14):'';if(bk!==m.beacon.key){m.beacon.key=bk;beaconDraw(m,bk);}
+      if(bk){m.beacon.s.visible=m!==focusM;m.beacon.s.material.opacity=.78+.22*Math.sin(now*3+m.group.position.x);}
+      if(m.glow){const on=fsOn&&m!==focusM;if(m.glow.visible!==on)m.glow.visible=on;
+        if(on){const p=.5+.5*Math.sin(now*4+m.group.position.x*2);m.glow.material.opacity=.55+.4*p;m.glow.scale.set(2.9+p*.5,3.7+p*.6,1);}}}
     if(m.dirty&&(m===focusM||d<9))drawScreen(m);
     if(m===focusM)svDraw(m);
     if(isMine(m)&&m!==focusM){m.fly=null;}
