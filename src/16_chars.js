@@ -42,7 +42,7 @@ function chLibPrep(scene){
   ['Body_M','Body_F'].forEach(nm=>{const m=scene.getObjectByName(nm);if(!m)return;const g=m.geometry,pos=g.attributes.position,n=pos.count;g.computeBoundingBox();const H=g.boundingBox.max.y;
     const z=new Float32Array(n);const fem=nm==='Body_F';
     for(let i=0;i<n;i++){const x=pos.getX(i),y=pos.getY(i),zz=pos.getZ(i),ax=Math.abs(x);let v=1;
-      if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.372)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
+      if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.41)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
       z[i]=v;}
     g.setAttribute('zone',new THREE.BufferAttribute(z,1));});
   return scene;
