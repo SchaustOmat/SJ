@@ -194,22 +194,22 @@ joyRest();
 // PC: kein Joystick, Klick fängt die Maus (Umschauen mit der Maus), beim Spielen/Esc ist sie wieder frei
 let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false,lockOK=false,lockErrT=0;
 const pcHint=$('#pcHint'),cross=$('#cross');
-// Freier Zeiger am PC (Standard): Maus gefangen, der Kreis wandert mit der Maus, die Kamera zieht weich hinterher.
-// Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
-const AIM={x:0,y:0,sx:0,sy:0,hot:false};
-// Tab oder rechte Maustaste = Zeiger-Modus (seit 2026-10-21 abends, Wunsch des Nutzers): derselbe Kreis, aber mit viel Spielraum zum Anklicken
-// von Tasten, Automaten und Boden; die Kamera zieht nur ganz sanft nach und erst am Rand richtig. Nicht direkt. Tab, rechte Maustaste oder Esc = zurück.
+// Standard am PC (Wunsch des Nutzers 2026-10-21): Maus gefangen, fester Punkt in der Mitte, die Maus dreht die Kamera direkt (klassisch).
+// Tab oder rechte Maustaste = Zeiger-Modus: der Kreis wandert mit der Maus, die Kamera zieht weich hinterher
+// (kleine Bewegungen in der Totzone drehen langsam, größere ziehen schnell nach – Blickrichtung = Kamera + Versatz);
+// damit lassen sich Tasten, Automaten und Boden anklicken. Tab, rechte Maustaste oder Esc = zurück.
 // Nicht Strg: beim Laufen (W gedrückt) löst Strg+W im Browser das Schließen des Tabs aus, das kann die Seite nicht verhindern.
+const AIM={x:0,y:0,sx:0,sy:0,hot:false};
 // Ohne Maus-Fangen (lockFail) ist CUR der echte Zeiger: Ziehen = umschauen, Klick = benutzen.
 const CUR={on:false,x:0,y:0};
 function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;AIM.x=AIM.y=0;if(!lockFail)grabMouse();pcUi();}
 function aimPos(){return aimActive()?[AIM.sx,AIM.sy]:PC&&lockFail?[CUR.x,CUR.y]:[LW()/2,LH()/2];}
 const aimEul=new THREE.Euler(0,0,0,'YXZ'),aimV=new THREE.Vector3();
-function aimActive(){return PC&&mouseLocked()&&!locked&&!focus;}
+function aimActive(){return PC&&CUR.on&&mouseLocked()&&!locked&&!focus;}
 function aimClamp(){const t=Math.tan(camera.fov*Math.PI/360),mx=Math.atan(.86*t*camera.aspect),my=Math.atan(.78*t);AIM.x=clamp(AIM.x,-mx,mx);AIM.y=clamp(AIM.y,-my,my);}
 function aimStep(dt){
   if(!aimActive()){AIM.x=AIM.y=0;return;}
-  const c=CUR.on,k=1-Math.exp(-dt*(c?1.1:4)),ko=1-Math.exp(-dt*(c?7:14)),dz=c?.3:.07;
+  const k=1-Math.exp(-dt*4),ko=1-Math.exp(-dt*14),dz=.07;
   const f=a=>{const m=Math.abs(a);return Math.sign(a)*(Math.min(m,dz)*k+Math.max(0,m-dz)*ko);};
   const sx=f(AIM.x),sy=f(AIM.y);
   P.yaw-=sx;AIM.x-=sx;
@@ -240,7 +240,8 @@ document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi
   if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
 document.addEventListener('mousemove',e=>{if(!mouseLocked()){const [lx,ly]=toLocal(e.clientX,e.clientY);CUR.x=lx;CUR.y=ly;return;}
   if(!mouseLocked()||locked||focus)return;
-  AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();});
+  if(aimActive()){AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();}
+  else{P.yaw-=e.movementX*.0024*SENS;P.pitch=clamp(P.pitch-e.movementY*.0024*SENS,-1.2,1.1);}});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();if(typeof mpTag==='function')mpTag();if(typeof vcLabel==='function')vcLabel();}},true);
 
 let focus=null,camAnim=null;
