@@ -94,7 +94,8 @@ const SYMNAME={'10':'ZEHN','J':'BUBE','Q':'DAME','K':'KÖNIG','A':'ASS','ANKH':'
   'KIRSCHE':'KIRSCHE','ZITRONE':'ZITRONE','ORANGE':'ORANGE','PFLAUME':'PFLAUME','TRAUBE':'TRAUBE','MELONE':'MELONE','SIEBEN':'SIEBEN','STERN':'STERN'};
 
 /* ---------- cabinet ---------- */
-const BTN_DEF=[['INFO',-.345,.095],['RISIKO',-.225,.115],['LINIEN',-.09,.115],['EINSATZ',.045,.115],['AUTO',.17,.095],['START',.315,.16]];
+// Tasten auf dem Pult (wie die Knopfleiste): INFO · LINIEN · EINSATZ · AUTO · LEITER · KARTE(RISIKO) · START
+const BTN_DEF=[['INFO',-.375,.07],['LINIEN',-.285,.08],['EINSATZ',-.19,.08],['AUTO',-.085,.1],['LEITER',.03,.1],['RISIKO',.145,.1],['START',.3,.17]];
 function buildMachine(F,x,z,rotY,gameId,accent){
   const G=SlotEngine.GAMES[gameId];
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotY;F.group.add(g);
@@ -153,7 +154,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
   const bt=canvasTex(512,96,null,0,0,true),bs=new THREE.Sprite(new THREE.SpriteMaterial({map:bt,transparent:true,depthWrite:false,fog:false}));
   bs.position.set(0,3.02,0);bs.scale.set(2.1,.39,1);bs.visible=false;bs.renderOrder=5;g.add(bs);m.beacon={s:bs,t:bt,key:''};
   const fx=Math.sin(rotY),fz=Math.cos(rotY);
-  const act={type:'machine',m,label:G.title,sub:'Hinsetzen und spielen',pos:new THREE.Vector3(x+fx*.6,1.2,z+fz*.6),reach:2.2};
+  const act={type:'machine',m,label:G.title,sub:'Hinsetzen und spielen',pos:new THREE.Vector3(x+fx*.6,1.2,z+fz*.6),reach:2.2};m.act=act;
   const hitList=[];g.traverse(o=>{if(o.isMesh&&!o.userData.act){o.userData.act=act;F.hits.push(o);}});F.acts.push(act);
   const ax=Math.abs(fx)>.5;col(F,x,z,ax?.85:1,ax?1:.85);
   F.machines.push(m);
@@ -215,19 +216,19 @@ function btnModel(m){
 }
 function updateButtons(m){
   const o=btnModel(m);m.btnModel=o;
-  const map={INFO:'INFO',RISIKO:'KARTE',LINIEN:'LINIEN',EINSATZ:'EINSATZ',AUTO:'AUTO',START:'START'};
+  const map={INFO:'INFO',RISIKO:'KARTE',LEITER:'LEITER',LINIEN:'LINIEN',EINSATZ:'EINSATZ',AUTO:'AUTO',START:'START'};
   for(const k in map){const b=o[map[k]];setBtn(m,k,b.label,b.color,b.lit,b.blink);}
   if(typeof svButtons==='function')svButtons(m);
 }
 function pressButton(m,key){
   if(key==='RISIKO')key='KARTE';
   // Leiter ist immer drückbar (Anzeige wird sofort abgeschlossen) – nur die AUSSPIELUNG läuft immer komplett durch
-  if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;if(m.btns[key])m.btns[key].press=1;SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
+  if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;{const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
   // Einstiegs-Flackern (krummer Betrag): erst landen lassen – sonst drückt man unbemerkt von der unteren Stufe aus. Nehmen geht sofort.
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.ent){if(key==='START'){m.timer=0;timerDone(m);if(m.gamble)collect(m,true);}return;}
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START'||key==='KARTE')){for(let n=0;n<3&&m.state==='gambleNext';n++){m.timer=0;timerDone(m);}if(m.state!=='gamble')return;}
   if(typeof svGateOn==='function'&&svGateOn(m))return;
-  if(m.btns[key])m.btns[key].press=1;SFX.btn();
+  {const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();
   if(m.state==='count'&&key==='START'&&!m.pendingFs){skipCount(m);return;}
   const b=(m.btnModel||btnModel(m))[key];if(!b||!b.lit)return;
   const s=m.state;
@@ -1203,7 +1204,7 @@ function updMachines(dt,F,focusM){
   F.machines.forEach(m=>{
     const d=Math.hypot(m.group.position.x-camera.position.x,m.group.position.z-camera.position.z);
     if(m===focusM){slotStep(m,dt);}
-    else if(isMine(m)){const mu=muted;muted=true;try{slotStep(m,dt);}finally{muted=mu;}}
+    else if(isMine(m)){const mu=muted;if(d>4.5)muted=true;try{slotStep(m,dt);}finally{muted=mu;}} // eigene Automaten in Reichweite hört man
     else if(m.npc){ // demo play
       if(m.state==='idle'&&now>m.demoNext){startSpin(m,true);m.demoNext=now+4+Math.random()*5;}
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});

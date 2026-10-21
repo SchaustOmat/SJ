@@ -194,6 +194,28 @@ joyRest();
 // PC: kein Joystick, Klick fängt die Maus (Umschauen mit der Maus), beim Spielen/Esc ist sie wieder frei
 let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false,lockOK=false,lockErrT=0;
 const pcHint=$('#pcHint'),cross=$('#cross');
+// Freier Zeiger am PC: der Punkt wandert mit der Maus, die Kamera zieht weich hinterher.
+// Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
+const AIM={x:0,y:0,sx:0,sy:0,hot:false};
+const aimEul=new THREE.Euler(0,0,0,'YXZ'),aimV=new THREE.Vector3();
+function aimActive(){return PC&&mouseLocked()&&!locked&&!focus;}
+function aimClamp(){const t=Math.tan(camera.fov*Math.PI/360),mx=Math.atan(.86*t*camera.aspect),my=Math.atan(.78*t);AIM.x=clamp(AIM.x,-mx,mx);AIM.y=clamp(AIM.y,-my,my);}
+function aimStep(dt){
+  if(!aimActive()){AIM.x=AIM.y=0;return;}
+  const k=1-Math.exp(-dt*4),ko=1-Math.exp(-dt*14),dz=.07;
+  const f=a=>{const m=Math.abs(a);return Math.sign(a)*(Math.min(m,dz)*k+Math.max(0,m-dz)*ko);};
+  const sx=f(AIM.x),sy=f(AIM.y);
+  P.yaw-=sx;AIM.x-=sx;
+  const np=clamp(P.pitch+sy,-1.2,1.1);AIM.y-=(np-P.pitch);P.pitch=np;aimClamp();
+}
+// Punkt auf dem Bildschirm (nach dem Kamera-Update)
+function aimScreen(){
+  if(!aimActive()){AIM.sx=LW()/2;AIM.sy=LH()/2;cross.style.transform='';return;}
+  aimEul.set(P.pitch+AIM.y,P.yaw-AIM.x,0);aimV.set(0,0,-1).applyEuler(aimEul).multiplyScalar(4).add(camera.position);
+  camera.updateMatrixWorld();aimV.project(camera);
+  AIM.sx=(aimV.x*.5+.5)*LW();AIM.sy=(-aimV.y*.5+.5)*LH();
+  cross.style.transform='translate('+(AIM.sx-LW()/2).toFixed(1)+'px,'+(AIM.sy-LH()/2).toFixed(1)+'px)';
+}
 const mouseLocked=()=>document.pointerLockElement===cv;
 function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
@@ -202,13 +224,13 @@ function pcUi(){
   const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
   if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
 }
-document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;pointers.clear();pcUi();});
+document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;pointers.clear();AIM.x=AIM.y=0;pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
 // Hat es schon einmal geklappt, ist ein Fehler nur die Sperrzeit des Browsers direkt nach Esc: einfach nochmal klicken lassen
 document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi();return;}
   if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
 document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
-  P.yaw-=e.movementX*.0024*SENS;P.pitch=clamp(P.pitch-e.movementY*.0024*SENS,-1.2,1.1);});
+  AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
 
 let focus=null,camAnim=null;
@@ -292,13 +314,13 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
   if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button!==0)return;
-    if(mouseLocked()){if(curAct)interact(curAct);else tapAt(LW()/2,LH()/2,true);}
+    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);}
     else grabMouse();
     return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   const [lx,ly]=toLocal(e.clientX,e.clientY);
   const leftSide=!focus&&lx<LW()*.45&&e.pointerType!=='mouse';
-  const p={x:lx,y:ly,t:performance.now(),mode:'look',moved:0};
+  const p={x:lx,y:ly,t:performance.now(),mode:'look',moved:0,type:e.pointerType};
   if(leftSide&&!joy.active){p.mode='joy';joy.active=true;joy.id=e.pointerId;joy.cx=lx;joy.cy=ly;joy.vx=joy.vy=0;joyBase.style.left=lx+'px';joyBase.style.top=ly+'px';joyBase.classList.add('on');}
   pointers.set(e.pointerId,p);
 });
@@ -315,7 +337,7 @@ cv.addEventListener('pointermove',e=>{
 function endPtr(e){
   const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);
   if(p.mode==='joy'){joy.active=false;joy.id=null;joy.vx=joy.vy=0;joyRest();}
-  if(!locked&&e.type==='pointerup'&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y);
+  if(!locked&&e.type==='pointerup'&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
 }
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
@@ -329,22 +351,34 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
-function tapAt(x,y,noWalk){
+function tapAt(x,y,noWalk,fat){
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
-  const hits=ray.intersectObjects(hitList(),false);if(!hits.length)return;
+  let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
   if(focus){
     for(const h of hits){const a=h.object.userData.act;if(!a)continue;
-      if(focus.type==='slot'&&h.object===focus.m.scrMesh&&smTap(focus.m,h.uv))return;
-      if(focus.type==='slot'&&a.type==='mbtn'&&a.m===focus.m){pressButton(a.m,a.key);return;}
-      if(focus.type==='hilo'&&a.type==='hlcard'){hlPick(a.idx);return;}
-      if(a.type==='npc'){talk(a.npc);return;}
+      if(focus.type==='slot'&&h.object===focus.m.scrMesh&&smTap(focus.m,h.uv))return true;
+      if(focus.type==='slot'&&a.type==='mbtn'&&a.m===focus.m){pressButton(a.m,a.key);return true;}
+      if(focus.type==='hilo'&&a.type==='hlcard'){hlPick(a.idx);return true;}
+      if(a.type==='npc'){talk(a.npc);return true;}
       if(h.distance>.3)break;}
-    return;
+    return true;
   }
+  // Handy: knapp neben eine Taste getippt zählt auch (eigene Automaten)
+  if(fat&&!(hits[0].object.userData.act&&hits[0].object.userData.act.type==='mbtn')){const nb=nearBtnHit(x,y);if(nb)hits=[nb];}
   const h=hits[0],act=h.object.userData.act;
-  if(act&&act.pos){const d=Math.hypot(act.pos.x-P.x,act.pos.z-P.z);if(h.distance<4.2&&d<act.reach+1.6)interact(act);else startWalk(act.pos.x,act.pos.z,act);}
-  else if(h.object.userData.floor&&!noWalk){startWalk(h.point.x,h.point.z,null);}
+  if(act&&act.type==='mbtn')return pressStanding(act,h.distance);
+  if(act&&act.pos){actOrWalk(act,h.distance);return true;}
+  if(h.object.userData.floor&&!noWalk){startWalk(h.point.x,h.point.z,null);return true;}
+  return false;
 }
+function nearBtnHit(x,y){for(const r of [14,26])for(let i=0;i<8;i++){const a=i/8*TAU;v2.set((x+Math.cos(a)*r)/LW()*2-1,-((y+Math.sin(a)*r)/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=8;
+  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];if(h&&h.object.userData.act&&h.object.userData.act.type==='mbtn'&&isMine(h.object.userData.act.m))return h;}return null;}
+function actOrWalk(act,dist){const d=Math.hypot(act.pos.x-P.x,act.pos.z-P.z);if(dist<4.2&&d<act.reach+1.6)interact(act);else startWalk(act.pos.x,act.pos.z,act);}
+// Taste am Automaten im Stehen (nur Automaten mit deiner Karte); freie/fremde Automaten: wie den Automaten selbst antippen
+function pressStanding(act,dist){const m=act.m;
+  if(!isMine(m)){if(m.act){actOrWalk(m.act,dist);return true;}return false;}
+  if(dist>3.6){startWalk(m.act.pos.x,m.act.pos.z,null);toast('Geh näher ran, dann kannst du die Tasten drücken.');return true;}
+  pressButton(m,act.key);return true;}
 function startWalk(x,z,act){walk={x,z,act,t:0,lx:P.x,lz:P.z};marker.position.set(x,.03,z);marker.visible=!act;SFX.click();}
 function collide(px,pz){
   const r=.33;const cols=F.cols.concat(globalCols);
@@ -360,17 +394,24 @@ function collide(px,pz){
 }
 function angLerp(a,b,t){let d=((b-a+Math.PI)%TAU+TAU)%TAU-Math.PI;return a+d*Math.min(1,t);}
 
-let curAct=null,promptT=0;
+let curAct=null,promptT=0,promptKey='';
 const promptEl=$('#prompt');
 promptEl.addEventListener('click',()=>{if(curAct&&!locked&&!focus)interact(curAct);});
 function updatePrompt(){
-  let best=null;
-  v2.set(0,0);ray.setFromCamera(v2,camera);ray.far=4.2;
-  const h=ray.intersectObjects(hitList(),false)[0];
-  if(h&&h.object.userData.act&&h.object.userData.act.pos)best=h.object.userData.act;
+  let best=null;AIM.hot=false;
+  if(aimActive())v2.set(AIM.sx/LW()*2-1,-(AIM.sy/LH())*2+1);else v2.set(0,0);
+  ray.setFromCamera(v2,camera);ray.far=4.2;
+  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];
+  if(h&&h.object.userData.act){const a=h.object.userData.act;
+    if(a.type==='mbtn'){const m=a.m;
+      if(isMine(m)&&h.distance<3.6){const bm=m.btnModel||btnModel(m),d=bm[a.key==='RISIKO'?'KARTE':a.key];a.label=(d&&d.label)||a.key;a.sub=m.G.title+(d&&!d.lit?' · gerade ohne Funktion':'');best=a;AIM.hot=true;}
+      else if(m.act)best=m.act;}
+    else if(a.pos)best=a;}
   if(!best){let bd=1e9;const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);
     for(const a of F.acts.concat(globalActs)){const dx=a.pos.x-P.x,dz=a.pos.z-P.z,d=Math.hypot(dx,dz);if(d>a.reach+.4)continue;if((dx*fx+dz*fz)/(d||1)<.25)continue;if(d<bd){bd=d;best=a;}}}
-  if(best!==curAct){curAct=best;if(best){promptEl.innerHTML='';promptEl.append(document.createTextNode('▶ '+best.label));const s=document.createElement('small');s.textContent=best.sub;promptEl.append(s);promptEl.hidden=false;}else promptEl.hidden=true;}
+  const key=best?best.type+'|'+best.label+'|'+best.sub:'';
+  if(key!==promptKey||best!==curAct){promptKey=key;curAct=best;if(best){promptEl.innerHTML='';promptEl.append(document.createTextNode('▶ '+best.label));const s=document.createElement('small');s.textContent=best.sub;promptEl.append(s);promptEl.hidden=false;}else promptEl.hidden=true;}
+  cross.classList.toggle('hot',AIM.hot);
 }
 function interact(act){
   walk=null;marker.visible=false;
@@ -385,6 +426,7 @@ function interact(act){
     case 'ebtn':elevGo(act.dest,act);break;
     case 'npc':talk(act.npc);break;
     case 'atm':atmOpen();break;
+    case 'mbtn':pressStanding(act,0);break;
   }
 }
 function talk(n){
@@ -526,6 +568,7 @@ function frame(){
           walk.t+=dt;if(walk.t>.6){const mv=Math.hypot(P.x-walk.lx,P.z-walk.lz);walk.lx=P.x;walk.lz=P.z;walk.t=0;
             if(mv<.15){if(walk.act&&d<walk.act.reach+2.2){const a=walk.act;walk=null;interact(a);}else{walk=null;marker.visible=false;}}}}}
     }
+    aimStep(dt);
     const mm=Math.hypot(mx,mz);
     const spr=(keys.ShiftLeft||keys.ShiftRight)&&mm>.01&&canMove;P.spr=(P.spr||0)+((spr?1:0)-(P.spr||0))*Math.min(1,dt*8);const spd=3.3*(1+P.spr*.75);
     if(mm>.01&&canMove){const [nx,nz]=collide(P.x+mx*spd*dt,P.z+mz*spd*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;
@@ -540,7 +583,7 @@ function frame(){
     else{camera.position.copy(tp);camera.rotation.set(tpi,ty,0);camera.fov=tf;}
     if(EL.phase==='moving'){camera.position.y+=Math.sin(now*37)*.006+(Math.random()-.5)*.006;camera.rotation.z=Math.sin(now*23)*.004;}
     if(camShake>0){const k=camShake*camShake;camera.position.x+=(Math.random()-.5)*.045*k;camera.position.y+=(Math.random()-.5)*.045*k;camera.rotation.z+=(Math.random()-.5)*.03*k;camShake=Math.max(0,camShake-dt*2.2);}
-    camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix();aimScreen();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
     F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);
@@ -555,7 +598,7 @@ function frame(){
       n.head.getWorldPosition(tmpV);tmpV.y+=.42;const dist=tmpV.distanceTo(camera.position);tmpV.project(camera);
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
       n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,bubTop(),lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
-    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=.15;updatePrompt();}}else if(!promptEl.hidden)promptEl.hidden=true;
+    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=aimActive()?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
   renderer.render(scene,camera);
