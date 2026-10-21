@@ -738,7 +738,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792610726";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792613589";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -1763,43 +1763,96 @@ function upTex(w,h,draw,k,rx,ry){return hdTex(w*k,h*k,(g)=>{g.scale(k,k);draw(g,
 /* ---- 16_chars.js ---- */
 /* =========================================================
    FIGUREN MIT SKELETT UND ECHTEN ANIMATIONEN (seit 2026-10-21)
-   Körper: Quaternius-Mannequins (CC0), Animationen: Quaternius Universal Animation Library 1+2 (CC0),
-   alles auf einem 65-Knochen-Skelett (assets/chars/anim.glb = Mann + 25 Clips, mannequin_f.glb = Frau).
+   Körper: Quaternius "Universal Base Characters" (Mann/Frau mit Gesicht, Augen, Brauen, 6 Frisuren, Bart; CC0),
+   Animationen: Quaternius Universal Animation Library 1+2 (CC0), alles auf einem 65-Knochen-Skelett.
+   Dateien: assets/chars/chars.glb (alle Körperteile, jede Datei mit eigener Bind-Pose -> wird beim Laden an EIN Skelett gebunden),
+            assets/chars/anim.glb (25 Clips + Mannequin als Rückfall).
+   Kleidung: der Körper trägt nur Unterwäsche, darum malt ein kleiner Shader-Zusatz Anzug, Hose, Schuhe und Hemd
+   nach Körperzonen (aus der Bind-Pose berechnetes Attribut "zone"); Farben je Figur über Uniforms (chBodyMat).
    npc() in 11_world.js baut erst die alte Klötzchen-Figur (sofort da, Rückfall ohne Netz) und ruft chAttach();
-   sobald die Dateien geladen sind, wird die Figur durch das Skelett-Modell ersetzt: n.head/n.armL/n.armR zeigen
-   dann auf Knochen (Head, hand_l, hand_r), n.rig hält Mixer und Clips. animNPC() -> chAnimate() mit Überblendung.
-   Eigener Körper (Ich-Perspektive): CHR.fp folgt mpLocalState() (Stehen/Gehen/Sitzen), Kopf ausgeblendet,
-   Kamera hängt weich am Kopfknochen (chEye) -> Schrittgefühl aus der Lauf-Animation, Blick nach unten zeigt Beine.
+   sobald geladen, ersetzt das Skelett-Modell die Figur: n.head/n.armL/n.armR zeigen auf Knochen (Head, hand_l, hand_r),
+   n.rig hält Mixer und Clips. animNPC() -> chAnimate() mit Überblendung.
+   Eigener Körper (Ich-Perspektive): CHR.fp folgt mpLocalState(), Kopf ausgeblendet, Kamera weich am Kopfknochen (chEye).
    ========================================================= */
-const CHR={ready:false,fail:false,clips:{},male:null,female:null,pending:[],all:[],fp:null,seedN:0,sitOff:null,eye:null,base:(window.NK_ASSET_BASE||'')};
-const CH_SUITS=[0x1a1a22,0x2a1a3a,0x3a1414,0x10243a,0x1e2a1a,0x3a2a10,0x262630,0x4a1a2a,0x0e2a2a];
+const CHR={ready:false,fail:false,clips:{},lib:null,male:null,female:null,pending:[],all:[],fp:null,seedN:0,sitOff:null,eye:null,base:(window.NK_ASSET_BASE||''),mats:{}};
+const CH_SUITS=[0x1a1a22,0x2a1a3a,0x3a1414,0x10243a,0x1e2a1a,0x3a2a10,0x262630,0x4a1a2a,0x0e2a2a,0x5a4a3a,0x2a2a2a];
+const CH_HAIR=[0x111111,0x2a1a10,0x4a2a14,0x7a4a20,0xb08a50,0x8a1a2a,0x3a3a3a];
+const CH_HAIR_F=['Hair_Long','Hair_Buns','Hair_SimpleParted','Hair_BuzzedFemale'],CH_HAIR_M=['Hair_SimpleParted','Hair_Buzzed','Hair_SimpleParted','Hair_Buzzed'];
 const chV=new THREE.Vector3(),chV2=new THREE.Vector3();
 function chLoad(){
   if(typeof THREE.GLTFLoader!=='function'||typeof THREE.SkeletonUtils==='undefined'){CHR.fail=true;return;}
   const L=new THREE.GLTFLoader();const load=u=>new Promise((res,rej)=>L.load(CHR.base+u,res,undefined,rej));
-  Promise.all([load('assets/chars/anim.glb'),load('assets/chars/mannequin_f.glb')]).then(([a,f])=>{
-    a.animations.forEach(c=>{CHR.clips[c.name.split('|').pop()]=c;});
-    CHR.male=chPrep(a.scene);CHR.female=chPrep(f.scene);CHR.ready=true;
-    const p=CHR.pending;CHR.pending=[];p.forEach(([n,o])=>chAttach(n,o));
-  }).catch(e=>{CHR.fail=true;console.warn('Figuren nicht geladen, Klötzchen bleiben',e);});
+  load('assets/chars/anim.glb').then(a=>{
+    a.animations.forEach(c=>{CHR.clips[c.name.split('|').pop()]=c;});CHR.male=chPrep(a.scene);
+    return load('assets/chars/chars.glb').then(c=>{CHR.lib=chLibPrep(c.scene);}).catch(e=>{console.warn('Körper nicht geladen, Mannequin bleibt',e);});
+  }).then(()=>{CHR.ready=true;const p=CHR.pending;CHR.pending=[];p.forEach(([n,o])=>chAttach(n,o));})
+  .catch(e=>{CHR.fail=true;console.warn('Figuren nicht geladen, Klötzchen bleiben',e);});
 }
 function chPrep(scene){scene.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh)o.visible=false;if(o.isSkinnedMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=false;}});return scene;}
+// chars.glb: alle Teile an das Skelett des Mannes binden (eigene Bind-Inverse behalten), andere Armaturen entfernen
+function chLibPrep(scene){
+  // Der glTF-Export hängt an doppelte Knochennamen _1, _2 … an (mehrere Armaturen in einer Datei): Namen auf die 65 Grundnamen zurückführen
+  const names=new Set();if(CHR.male)CHR.male.traverse(o=>{if(o.isBone)names.add(o.name);});
+  const norm=n=>names.has(n)?n:(names.has(n.replace(/_\d+$/,''))?n.replace(/_\d+$/,''):n);
+  const arm=scene.getObjectByName('Arm_M');const canon={};arm.traverse(o=>{if(o.isBone){o.name=norm(o.name);canon[o.name]=o;}});
+  const meshes=[];scene.traverse(o=>{if(o.isSkinnedMesh)meshes.push(o);});
+  meshes.forEach(m=>{m.frustumCulled=false;m.castShadow=false;
+    if(!m.skeleton.bones.every(b=>canon[norm(b.name)]===b)){const bones=m.skeleton.bones.map(b=>canon[norm(b.name)]||b);m.bind(new THREE.Skeleton(bones,m.skeleton.boneInverses.map(x=>x.clone())),m.bindMatrix);}
+    if(m.parent!==arm)arm.add(m);
+    m.visible=false;m.userData.part=m.name;});
+  [...scene.children].forEach(c=>{if(c!==arm)scene.remove(c);});
+  // Körperzonen für die Kleidung (Bind-Pose = T-Pose): 0 Haut, 1 Jacke/Kleid, 2 Hose, 3 Schuhe, 4 Hemd
+  ['Body_M','Body_F'].forEach(nm=>{const m=scene.getObjectByName(nm);if(!m)return;const g=m.geometry,pos=g.attributes.position,n=pos.count;g.computeBoundingBox();const H=g.boundingBox.max.y;
+    const z=new Float32Array(n);const fem=nm==='Body_F';
+    for(let i=0;i<n;i++){const x=pos.getX(i),y=pos.getY(i),zz=pos.getZ(i),ax=Math.abs(x);let v=1;
+      if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.372)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
+      z[i]=v;}
+    g.setAttribute('zone',new THREE.BufferAttribute(z,1));});
+  return scene;
+}
+// Körper-Material: Textur für Haut, Kleidungszonen in Figurfarben (Shader-Zusatz auf Lambert)
+function chBodyMat(map,cols){
+  const m=new THREE.MeshLambertMaterial({map,skinning:true});
+  m.userData.pal=cols.map(c=>new THREE.Color(c));
+  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;varying float vZone;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;uniform vec3 pal[5];')
+      .replace('#include <map_fragment>','#include <map_fragment>\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
+  return m;
+}
+function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
 // alte Figur durch Skelett-Modell ersetzen
 function chAttach(n,o){
   if(CHR.fail||n.rig)return;if(!CHR.ready){CHR.pending.push([n,o]);return;}
-  const fem=o.female!==undefined?!!o.female:(/IN$/.test(o.name||'')||o.hair===0xb02a5a||o.hair===0x8a1a2a);
-  const model=THREE.SkeletonUtils.clone(fem?CHR.female:CHR.male);
-  const col=o.color!==undefined?o.color:CH_SUITS[(++CHR.seedN)%CH_SUITS.length];
-  const bones={};model.traverse(x=>{if(x.isBone)bones[x.name]=x;
-    if(x.isSkinnedMesh){const ms=Array.isArray(x.material)?x.material:[x.material];
-      const nm=ms.map(mt=>new THREE.MeshLambertMaterial({color:/joint/i.test(mt.name)?0x121216:col,skinning:true}));x.material=Array.isArray(x.material)?nm:nm[0];
-      if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}}});
+  CHR.seedN++;const seed=CHR.seedN;
+  const fem=o.female!==undefined?!!o.female:(/IN$/.test(o.name||'')||o.hair===0xb02a5a||o.hair===0x8a1a2a||(o.name==='GAST'&&seed%2===1));
+  const col=o.color!==undefined?o.color:CH_SUITS[seed%CH_SUITS.length];
+  let model;const bones={};
+  if(CHR.lib){
+    model=THREE.SkeletonUtils.clone(CHR.lib);model.traverse(x=>{if(x.isBone)bones[x.name]=x;});
+    const hairName=o.hairStyle||(fem?CH_HAIR_F[seed%CH_HAIR_F.length]:CH_HAIR_M[seed%CH_HAIR_M.length]);const beard=!fem&&(seed%3===0);
+    const hairCol=o.hair!==undefined?o.hair:CH_HAIR[(seed*7+3)%CH_HAIR.length];
+    const shirt=0xf0ece4,shoes=0x151214,trousers=o.pants||col;
+    const pal=fem?[0xffffff,col,col,shoes,shirt]:[0xffffff,col,trousers,shoes,shirt];
+    model.traverse(x=>{if(!x.isSkinnedMesh)return;const nm=x.name;const bodyOf=fem?'F':'M';
+      const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
+      x.visible=show;if(!show)return;
+      const src=Array.isArray(x.material)?x.material[0]:x.material;
+      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal);
+      else if(nm.startsWith('Hair_'))x.material=chLamMat(src,hairCol);
+      else x.material=chLamMat(src);
+      if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}});
+  }else{ // Rückfall: Mannequin aus anim.glb
+    model=THREE.SkeletonUtils.clone(CHR.male);model.traverse(x=>{if(x.isBone)bones[x.name]=x;
+      if(x.isSkinnedMesh){const ms=Array.isArray(x.material)?x.material:[x.material];const nm=ms.map(mt=>new THREE.MeshLambertMaterial({color:/joint/i.test(mt.name)?0x121216:col,skinning:true}));x.material=Array.isArray(x.material)?nm:nm[0];
+        if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}}});
+  }
   while(n.root.children.length)n.root.remove(n.root.children[0]);
   n.root.add(model);
   const mixer=new THREE.AnimationMixer(model);
   n.rig={model,bones,mixer,cur:'',curAct:null,sit:!!o.sit,speed:.92+Math.random()*.16,fem,seatH:o.seatH||.58,tScale:1};
   n.head=bones.Head||n.head;n.neck=bones.neck_01;n.armL=bones.hand_l||n.armL;n.armR=bones.hand_r||n.armR;n.torso=bones.spine_03||n.torso;n.items=null;
-  if(n.rig.sit){model.position.y=chSitOffset(n)+ (o.sitLift||0);}
+  if(n.rig.sit){model.position.y=chSitOffset(n)+(o.sitLift||0);}
   CHR.all.push(n);
 }
 // Sitz-Clip: wie hoch sitzt das Becken? Figur so anheben, dass es auf der Hockerhöhe liegt
@@ -1836,7 +1889,7 @@ function chAnimate(n,dt){
 // ---- eigener Körper in der Ich-Perspektive ----
 function chFPStep(dt){
   if(CHR.fail||!CHR.ready||!started)return;
-  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,{color:0x2a2a36,female:false,seatH:.55});if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
+  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,{color:0x2a2a36,female:false,seatH:.55,hairStyle:'Hair_Buzzed'});if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
   const n=CHR.fp,R=n.rig;if(!R)return;
   const s=typeof mpLocalState==='function'?mpLocalState():{x:P.x,z:P.z,y:P.yaw+Math.PI,a:'walk'};
   const sitting=s.a==='slot'||s.a==='poker'||s.a==='hilo'||s.a==='mtable';
