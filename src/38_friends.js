@@ -89,7 +89,7 @@ function frInvShow(){let el=$('#frInv');if(!el){el=document.createElement('div')
   const go=document.createElement('button');go.className='btn gold';go.textContent='BEITRETEN';go.addEventListener('click',()=>{SFX.click();const c=I.c,b=I.b;FR.inv=null;frInvShow();frBadge();if(openId)closePanel();netStart(false,c,b);});
   const no=document.createElement('button');no.className='btn';no.textContent='✕';no.addEventListener('click',()=>{SFX.click();FR.inv=null;frInvShow();frBadge();});
   el.append(t,go,no);}
-function frBadge(){const b=$('#friendBtn');if(!b)return;const n=Object.keys(FR.req).length+(FR.inv?1:0);b.classList.toggle('on',n>0);b.dataset.n=n||'';}
+function frBadge(){const b=$('#friendBtn');if(!b)return;const n=Object.keys(FR.req).length+(FR.inv?1:0);b.classList.toggle('on',n>0);b.dataset.n=n||'';const mb=$('#menuBtn');if(mb){mb.classList.toggle('on',n>0);mb.dataset.n=n||'';}}
 function frMsgOut(t){const e=$('#frMsg');if(e)e.textContent=t;}
 function frAgo(t){const s=(Date.now()-t)/1000;return s<120?'gerade eben':s<3600?'vor '+Math.round(s/60)+' Min.':s<86400?'vor '+Math.round(s/3600)+' Std.':'vor '+Math.round(s/86400)+' Tagen';}
 function frRender(){if(openId!=='pFriends')return;

@@ -66,7 +66,7 @@ function buildRoulette(F,x,z,label){
   mesh(new THREE.ConeGeometry(.1,.16,6),lam({color:0xc8b070}),0,.09,0,wheel);
   const cm=[0x3a6ad6,0xc42a3a,0x1a1a1a,0x2a9a5a];
   for(let i=0;i<5;i++){const s=1+(i*7%4);mesh(new THREE.CylinderGeometry(.07,.07,.03*s,8),lam({color:cm[i%4]}),.3+i*.32,.93+.015*s,(i%2?.35:-.3),g);}
-  box(2.6,.1,.7,bas({color:0xffd38a}),0,3.1,0,g);
+  // (die flache Leuchtplatte über dem Tisch ist weg – der Kronleuchter ist die Lampe)
   const act={type:'roulette',id:F.roulettes.length,label:'ROULETTE',sub:'Tippen zum Spielen',pos:new THREE.Vector3(x,1,z),reach:3.1,title:label};
   F.roulettes.push({wheel,spin:false});
   tagAct(F,g,act);col(F,x,z,3.95,2.35);

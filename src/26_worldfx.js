@@ -28,7 +28,8 @@ function addAtmos(F){
 function worldFxStep(F,dt){
   if(!F.atmos)addAtmos(F);
   const A=F.atmos;
-  A.cones.forEach(c=>{const k=c.L.base?c.L.l.intensity/c.L.base:1;c.m.material.opacity=(.11+.035*Math.sin(now*1.3+c.ph))*k;});
+  // Lichtkegel: direkt darunter/daneben ausblenden, sonst sieht man eine helle Fläche
+  A.cones.forEach(c=>{const k=c.L.base?c.L.l.intensity/c.L.base:1,d=Math.hypot(c.m.position.x-camera.position.x,c.m.position.z-camera.position.z),f=clamp((d-1.3)/2.4,.06,1);c.m.material.opacity=(.11+.035*Math.sin(now*1.3+c.ph))*k*f;});
   const D=A.dust,p=D.pos;
   for(let i=0;i<D.seed.length;i++){const s=D.seed[i];p[i*3]+=Math.sin(now*.3+s)*dt*.08;p[i*3+1]+=Math.cos(now*.25+s*1.7)*dt*.05+dt*.02;p[i*3+2]+=Math.cos(now*.2+s)*dt*.08;
     if(p[i*3+1]>3.9)p[i*3+1]=.2;}

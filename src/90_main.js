@@ -92,7 +92,7 @@ function buildWorld(){
   buildRoom(A,{floor:hdTex(512,512,hdCarpet('#6a0a12','#d6a02a','#f4e0a0'),12),wall:hdTex(512,1024,hdWall('#5a0c18','#3a1a0a')),ceil:hdTex(256,256,hdCeil,12),strip:0xd6a02a,lux:true});
   const marb=lam({map:hdTex(256,512,hdMarble('#e8e0d4','#9a8a7a'),1,2)});
   luxPillar(A,-5,-7,marb);luxPillar(A,5,-6.5,marb);luxPillar(A,-5,4.5,marb);luxPillar(A,5,4.5,marb);
-  chandelier(A,0,-2);chandelier(A,-6,2.5,.85);chandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
+  chandelier(A,0,-2,1,.6);chandelier(A,-6,2.5,.85); // Mitte: tiefer, damit das ROULETTE-Schild frei bleibtchandelier(A,6,2.5,.85);chandelier(A,-6,-8,.8);
   luxPainting(A,0,2.2,11.94,Math.PI,1.6,1.0,1);luxPainting(A,-6,2.2,11.94,Math.PI,1.2,.8,2);luxPainting(A,11.94,2.2,7,-Math.PI/2,1.4,.9,3);
   buildRoulette(A,0,-2,'ROULETTE · TISCH 1');
   // Spielhalle: lange Automatenreihen an den Wänden (alle frei, niemand sitzt daran)
@@ -105,7 +105,7 @@ function buildWorld(){
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
   sign(A,'SJ SPIELBANK','#ffcf3a',-3.2,3.45,-11.9,0,.6);
-  sign(A,'ROULETTE','#ffcf3a',0,3.5,-2,0,.45);
+  sign(A,'ROULETTE','#ffcf3a',0,3.55,-1.15,0,.45);
   sign(A,'SPIELHALLE','#29f0ff',-11.9,3.45,-4.2,Math.PI/2,.45);
   pointLight(A,0xffc070,-7,3,-9.6,1.1,8);
   sign(A,'BAR','#29f0ff',11.55,3.25,-1,-Math.PI/2,.6);
@@ -225,6 +225,7 @@ function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 function pcUi(){
   document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
+  {const mb=$('#menuBtn');if(mb&&mb.hidden!==(PC||!started))mb.hidden=PC||!started;}
   const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId&&!CUR.on,ch=PC&&CUR.on&&started&&!focus&&!openId;
   if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
   const cs=CUR.on&&!lk?(AIM.hot?'pointer':'crosshair'):'';if(cv.style.cursor!==cs)cv.style.cursor=cs;
@@ -237,7 +238,7 @@ document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi
 document.addEventListener('mousemove',e=>{if(CUR.on&&!mouseLocked()){const [lx,ly]=toLocal(e.clientX,e.clientY);CUR.x=lx;CUR.y=ly;return;}
   if(!mouseLocked()||locked||focus)return;
   AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();});
-addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
+addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();if(typeof mpTag==='function')mpTag();if(typeof vcLabel==='function')vcLabel();}},true);
 
 let focus=null,camAnim=null;
 function focusPose(){
@@ -455,7 +456,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeou
    PANELS (Roulette, Hilfe)
    ========================================================= */
 let openId=null,busy=false;
-function openPanel(id){freeMouse();if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
+function openPanel(id){freeMouse();if(typeof hudMenu==='function')hudMenu(false);if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
 function closePanel(){if(!openId)return;
   if(openId==='pAtm')atmClosed();
   if(openId==='pMulti'&&typeof lobbyClose==='function')lobbyClose();
@@ -549,6 +550,11 @@ function resize(){
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
 $('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
+// Handy-Menü (≡) oben rechts: Symbole aufklappen; schließt bei Auswahl, Tippen ins Bild oder wenn ein Fenster aufgeht
+function hudMenu(open){const ic=$('#hudIcons'),mb=$('#menuBtn');if(!ic||!mb)return;ic.classList.toggle('open',!!open);mb.textContent=open?'✕':'≡';mb.setAttribute('aria-expanded',String(!!open));}
+$('#menuBtn').addEventListener('click',()=>{SFX.click();hudMenu(!$('#hudIcons').classList.contains('open'));});
+$('#hudIcons').addEventListener('click',()=>{if(!PC)hudMenu(false);});
+cv.addEventListener('pointerdown',()=>hudMenu(false),true);
 const sensIn=$('#sensIn');sensIn.value=String(SENS);$('#sensVal').textContent=SENS.toFixed(1)+'×';
 sensIn.addEventListener('input',()=>{SENS=clamp(+sensIn.value||1,.2,3);$('#sensVal').textContent=SENS.toFixed(1)+'×';store('nk_sens',SENS);});
 $('#chatBtn').addEventListener('click',()=>{openPanel('pChat');});

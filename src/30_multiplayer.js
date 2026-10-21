@@ -19,9 +19,10 @@ async function mpInit(){
 }
 function mpClear(){MP.avatars.forEach(a=>{releaseMirror(a);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();});MP.avatars.clear();}
 function mpTag(){const t=$('#onlineTag');const n=MP.online;t.hidden=!MP.started;
-  if(!MP.room){t.textContent=window.NK_STANDALONE?'MULTI: TIPPEN':'MULTI: AUS';t.classList.remove('live');return;}
+  let ph=false;try{ph=!PC;}catch(e){} // Handy: kurz (PC gibt es erst später im Skript)
+  if(!MP.room){t.textContent=window.NK_STANDALONE?(ph?'RAUM':'MULTI: TIPPEN'):(ph?'OFFLINE':'MULTI: AUS');t.classList.remove('live');return;}
   if(window.NK_STANDALONE&&NET.code){t.textContent='RAUM '+NET.code+' · '+(n+1)+' SPIELER';t.classList.toggle('live',n>0);return;}
-  const c=MP.room.connected&&MP.room.connected();t.textContent=!c?'MULTI: VERBINDET…':n>0?(n+1)+' ONLINE':'MULTI: ALLEIN';t.classList.toggle('live',n>0);}
+  const c=MP.room.connected&&MP.room.connected();t.textContent=!c?(ph?'VERBINDET…':'MULTI: VERBINDET…'):n>0?(n+1)+' ONLINE':(ph?'ALLEIN':'MULTI: ALLEIN');t.classList.toggle('live',n>0);}
 // Ein Mitspieler hat zwei Modelle (stehend und sitzend) in einer gemeinsamen Gruppe
 function makeAvatar(name,color){
   const g=new THREE.Group();avG.add(g);

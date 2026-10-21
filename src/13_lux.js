@@ -30,16 +30,17 @@ function luxPillar(F,x,z,mat){const g=F.group;const goldM=lam({color:0xd6a02a,em
   mesh(new THREE.CylinderGeometry(.36,.44,.16,12),goldM,x,3.74,z,g);mesh(new THREE.CylinderGeometry(.48,.48,.1,12),goldM,x,3.86,z,g);
   mesh(new THREE.CylinderGeometry(.345,.345,.05,12),goldM,x,2.6,z,g);}
 // Kronleuchter: Goldringe, Kerzen, Kristalle, warmes Licht
-function chandelier(F,x,z,s){s=s||1;const g=new THREE.Group();g.position.set(x,4,z);F.group.add(g);
+// drop = wie weit der Leuchter an einer längeren Kette unter der Decke hängt (z. B. über dem Roulette-Tisch)
+function chandelier(F,x,z,s,drop){s=s||1;drop=drop||0;const g=new THREE.Group();g.position.set(x,4-drop,z);F.group.add(g);
   const goldM=lam({color:0xe8b840,emissive:0x3a2400}),cry=new THREE.MeshBasicMaterial({color:0xf4f8ff,transparent:true,opacity:.85}),flame=new THREE.MeshBasicMaterial({color:0xffe6a0});
-  mesh(new THREE.CylinderGeometry(.02,.02,.5,4),goldM,0,-.25,0,g);
+  mesh(new THREE.CylinderGeometry(.02,.02,.5+drop,8),goldM,0,(drop-.5)/2,0,g);
   [[.55,-.62,8],[.34,-.86,6]].forEach(([r,y,n])=>{const ring=mesh(new THREE.TorusGeometry(r*s,.025,4,16),goldM,0,y,0,g);ring.rotation.x=Math.PI/2;
     for(let i=0;i<n;i++){const a=i/n*TAU,cx=Math.cos(a)*r*s,cz=Math.sin(a)*r*s;
       mesh(new THREE.CylinderGeometry(.018,.018,.12,4),new THREE.MeshBasicMaterial({color:0xfff6e0}),cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
       mesh(new THREE.OctahedronGeometry(.035),cry,cx,y-.12,cz,g);mesh(new THREE.OctahedronGeometry(.022),cry,cx,y-.2,cz,g);}});
   for(let i=0;i<10;i++){const a=i/10*TAU;mesh(new THREE.OctahedronGeometry(.03),cry,Math.cos(a)*.18*s,-1.02-(i%2)*.06,Math.sin(a)*.18*s,g);}
   mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
-  bakeGroup(g,true);pointLight(F,0xffd8a0,x,3.05,z,1.05,10);return g;}
+  bakeGroup(g,true);pointLight(F,0xffd8a0,x,3.05-drop,z,1.05,10);return g;}
 // Gemälde mit Goldrahmen (abstrakte Landschaft, selbst gemalt)
 function luxPainting(F,x,y,z,rotY,w,h,seedN){const tex=upTex(48,32,(g,W,H)=>{seed=seedN||77;
     const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,['#3a5a8a','#8a4a3a','#2a3a2a'][seedN%3]);sky.addColorStop(1,'#e8c890');g.fillStyle=sky;g.fillRect(0,0,W,H);

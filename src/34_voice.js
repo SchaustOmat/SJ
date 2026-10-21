@@ -6,7 +6,8 @@
 const VC={state:0,stream:null,pcs:new Map(),audioEl:new Map()}; // state 0 aus, 1 an, 2 stumm
 const ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'},
   {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}];
-function vcLabel(){const b=$('#micBtn');if(!b)return;b.textContent=['MIC','MIC AN','STUMM'][VC.state];b.classList.toggle('on',VC.state===1);b.classList.toggle('mute',VC.state===2);}
+function vcLabel(){const b=$('#micBtn');if(!b)return;let ph=false;try{ph=!PC;}catch(e){} // PC gibt es erst später im Skript
+  b.textContent=(ph?['Mikrofon','Mikro an','Stumm']:['MIC','MIC AN','STUMM'])[VC.state];b.classList.toggle('on',VC.state===1);b.classList.toggle('mute',VC.state===2);}
 async function vcToggle(){
   if(!STANDALONE||!NET.ok){toast('Voice-Chat geht nur, wenn ihr über MULTI im selben Raum seid.');return;}
   if(VC.state===0){
