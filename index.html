@@ -738,7 +738,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792610217";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792610655";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -6758,11 +6758,18 @@ function itemsPresence(){const C=HD.cig;return (C||HD.drink)?{c:C?(C.where==='ha
 function mpItems(){if(typeof MP!=='undefined'&&MP.room){MP.me.it=itemsPresence();MP.dirty=true;}}
 function avItems(n){ // Anbauten an ein Figuren-Modell (stehend oder sitzend); bei Skelett-Figuren an Kopf- und Handknochen
   if(n.items)return n.items;const rig=!!n.rig;const c=cigMesh(.084);c.visible=false;n.head.add(c);
-  if(rig){c.position.set(.09,.0,.06);c.rotation.set(0,0,-1.55);}else{c.position.set(.018,-.062,.13);c.rotation.set(1.72,0,.1);}
   const ch=cigMesh(.084);ch.visible=false;n.armR.add(ch);
-  if(rig){ch.position.set(.06,.0,.02);ch.rotation.set(0,0,-.4);}else{ch.position.set(0,-.62,.03);ch.rotation.set(-1.2,0,0);}
   const gl=new THREE.Group();gl.visible=false;n.armL.add(gl);
-  if(rig){gl.position.set(.07,-.02,.0);gl.rotation.set(0,0,1.4);}else{gl.position.set(0,-.64,.03);}
+  if(rig){ // Skelett-Figur: Richtungen aus der aktuellen Pose in Knochen-Koordinaten umrechnen (Kopf: vorn/oben, Hand: Richtung Finger)
+    const B=n.rig.bones;n.root.updateMatrixWorld(true);const Y=new THREE.Vector3(0,1,0);
+    const qi=b=>b.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const rootFwd=new THREE.Vector3(0,0,1).applyQuaternion(n.root.getWorldQuaternion(new THREE.Quaternion()));
+    {const q=qi(n.head),fwd=rootFwd.clone().applyQuaternion(q).normalize(),up=Y.clone().applyQuaternion(q).normalize();
+      c.position.copy(up.clone().multiplyScalar(.05)).add(fwd.clone().multiplyScalar(.1));c.quaternion.setFromUnitVectors(Y,fwd.clone().multiplyScalar(.94).add(up.clone().multiplyScalar(-.34)).normalize());}
+    const fingerDir=(hand,mid)=>{const a=hand.getWorldPosition(new THREE.Vector3()),bb=mid.getWorldPosition(new THREE.Vector3());return bb.sub(a).applyQuaternion(qi(hand)).normalize();};
+    if(B.middle_01_r){const fd=fingerDir(B.hand_r,B.middle_01_r);ch.position.copy(fd.clone().multiplyScalar(.075));ch.quaternion.setFromUnitVectors(Y,fd);}
+    if(B.middle_01_l){const fd=fingerDir(B.hand_l,B.middle_01_l),up=Y.clone().applyQuaternion(qi(B.hand_l)).normalize();gl.position.copy(fd.clone().multiplyScalar(.06)).add(up.clone().multiplyScalar(-.03));gl.quaternion.setFromUnitVectors(Y,up);}
+  }else{c.position.set(.018,-.062,.13);c.rotation.set(1.72,0,.1);ch.position.set(0,-.62,.03);ch.rotation.set(-1.2,0,0);gl.position.set(0,-.64,.03);}
   const gm=new THREE.MeshPhongMaterial({color:0xe8f4ff,transparent:true,opacity:.3,shininess:100});mesh(new THREE.CylinderGeometry(.03,.025,.085,12,1,true),gm,0,.04,0,gl);const liq=mesh(new THREE.CylinderGeometry(.026,.022,.06,12),lam({color:0xf0b020,transparent:true,opacity:.9}),0,.035,0,gl);
   return n.items={cm:c,ch,gl,liq};}
 function itemsPeer(a,pr){const it=pr&&pr.it&&typeof pr.it==='object'?pr.it:null;a.it=it?{c:+it.c===2?2:(+it.c===1?1:0),l:it.l?1:0,x:Math.max(0,Math.round(+it.x||0)),d:DRINKS[it.d]?it.d:'',s:Math.max(0,Math.round(+it.s||0))}:null;
