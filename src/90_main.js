@@ -139,7 +139,7 @@ function buildWorld(){
   B.rouletteFans=[v1,v2];
   for(let i=0;i<10;i++){const [id,c]=MROW[(i+4)%5];buildMachine(B,11.6,-2.4+i*1.25,-Math.PI/2,id,c);}
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
-  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 200 €, wenn man pleite ist)
+  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 1.000 €, wenn man unter 100 € hat)
   buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
   npc(B,{x:10.9,z:-6.8,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPERIN',special:'bartender',color:0x1a1a1e,hair:0x8a1a2a,noCol:true});
   npc(B,{x:8.85,z:-5.4,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true,color:0x5a1a6a});
@@ -446,7 +446,7 @@ function interact(act){
 function talk(n){
   SFX.click();
   if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
-  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+20000,true);say(n,'Knapp bei Kasse? Hier, 200 € aufs Haus. Sag\'s keinem.',4);SFX.big();mpWin('holt sich 200 € beim Barkeeper.');return;}
+  if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+BAR_GIFT,true);say(n,"Knapp bei Kasse? Hier, "+fmt(BAR_GIFT)+" aufs Haus. Sag's keinem.",4);SFX.big();mpWin('holt sich '+fmt(BAR_GIFT)+' beim Barkeeper.');return;}
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -530,7 +530,7 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
-const BAR_MIN=2000; // unter 20 € gibt der Barkeeper 200 € (Werte in Cent)
+const BAR_MIN=10000,BAR_GIFT=100000; // unter 100 € gibt der Barkeeper 1.000 € (Werte in Cent), nicht wenn mind. 100 € auf dem Konto liegen
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 const GFX='sharp'; // immer scharf, keine Auswahl mehr
 function resize(){
