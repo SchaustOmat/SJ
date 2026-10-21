@@ -240,7 +240,7 @@ function pressButton(m,key){
   if(s==='menu'||s==='boot'){smPress(m,key);updateButtons(m);return;}
   if(key==='MENU'){smOpen(m);return;}
   if(s==='power'||s==='splash')return;
-  if(s==='poffer'){
+  if(s==='poffer'){m.autoPower=false;
     if(key==='START')startPowerRun(m);
     else if(key==='LINIEN'){m.state='show';m.disp=m.win;m.msg='ANGENOMMEN · RISIKO ODER NEHMEN';SFX.click();m.dirty=true;updateButtons(m);}
     else if(key==='AUTO'||key==='EINSATZ'){const c=pOffer(m);if(key==='EINSATZ'&&c.lo)m.pmult--;if(key==='AUTO'&&c.hi)m.pmult++;SFX.tick();m.dirty=true;updateButtons(m);}
@@ -488,6 +488,8 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
+  // Lucky Pharaoh unbesetzt mit AUTO: Power Spins immer annehmen (Nutzer 2026-10-21); sitzt wieder jemand davor, wartet das Angebot auf ihn
+  if(m.state==='poffer'&&m.autoPower&&!(focus&&focus.m===m)&&m.stateT>1.3){startPowerRun(m);}
   if(m.auto&&m.autoRisk&&m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&!m.gamble.busy&&m.stateT>.4){
     if(m.win<=0||m.gamble.idx>=AUS_I){collect(m);if(m.auto)startSpin(m);}else ladderPress(m);}
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const gm=m.gamble,t=Math.floor((m.stateT-.03)/.185);
@@ -526,7 +528,7 @@ function timerDone(m){
   switch(m.state){
     case 'count':
       if(m.pendingFs){m.pendingFs=false;startFsIntro(m);break;}
-      if(m.G.power&&m.win>=4*totalBet(m)&&!m.fs){m.auto=false;openOffer(m);break;}
+      if(m.G.power&&m.win>=4*totalBet(m)&&!m.fs){m.autoPower=m.auto&&!(focus&&focus.m===m);m.auto=false;openOffer(m);break;} // unbesetzt + AUTO: Angebot wird gleich von selbst angenommen
       m.state='show';m.disp=m.win;updateButtons(m);
       if(m.auto||wwPend(m)){m.timer=wwPend(m)&&!m.auto?1.1:.7;}
       break;
@@ -536,7 +538,7 @@ function timerDone(m){
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
     case 'splash':m.state='idle';slotIdleMsg(m);m.dirty=true;updateButtons(m);break;
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
-    case 'fsWait':if(m.auto)startSpin(m);else{m.state='fsReady';m.msg='START DRÜCKEN · FREISPIEL '+Math.min(m.fs.n+1,m.fs.total)+' VON '+m.fs.total;m.dirty=true;updateButtons(m);}break;
+    case 'fsWait':startSpin(m);break; // Freispiele laufen immer von selbst weiter (Nutzer 2026-10-21), auch ohne AUTO und ohne dass jemand davor sitzt
     case 'fsShow':{
       if(m.ss&&m.ss.i<m.ss.seq.length){// Superspin: Gewinnfelder bleiben rot stehen, der Rest dreht neu
         const st=m.ss.seq[m.ss.i];m.ssHeld=st.held;m.state='ssSpin';m.timer=.95;m.present=null;m.msg='SUPERSPIN!';SFX.reelStart();m.dirty=true;break;}
@@ -618,7 +620,8 @@ function powerStep(m,dt){
 }
 function powerEnd(m){
   if(!m.power||m.power.spinning)return;const sum=m.power.sum;m.power=null;m.auto=false;
-  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;}
+  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;} // bei autoPower wird auch das angenommen
+  if(m.autoPower){m.autoPower=false;m.auto=true;if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);m.timer=.9;}else{m.state='idle';m.timer=.5;}m.dirty=true;m.topDirty=true;updateButtons(m);return;} // weiter im AUTO
   if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);}else{m.state='idle';slotIdleMsg(m);}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }

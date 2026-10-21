@@ -20,6 +20,13 @@ function slotGx(m){{
       cd:m.gamble&&m.gamble.kind==='rb'?[m.gamble.card===null?-1:m.gamble.card].concat(m.history.slice(0,6)):0,
       pw:m.power?{c:m.power.count,l:m.power.left,t:m.power.total,mu:m.power.mult,sp:m.power.spinning?1:0,su:m.power.sum,s:m.power.sets.map(S=>S.stops.slice()),my:m.power.sets.map(S=>S.myst?[S.myst.cells.map(q=>q[0]*5+q[1]),S.myst.sym]:0)}:0};}
   }
+// Weitere eigene Automaten (Karte steckt), die gerade laufen: alle im Raum sehen sie drehen (max. 4, der Hauptautomat steht schon in gx)
+function mpActivityList(){
+  if(typeof RESVS==='undefined'||!RESVS.size)return 0;
+  const main=mpActivity(),mainMi=main&&main.g==='slot'?main.mi:-1,L=allMachines(),out=[];
+  for(const m of RESVS){const mi=L.indexOf(m);if(mi<0||mi===mainMi)continue;if(m.state==='idle'&&!m.auto&&!m.fs)continue;out.push(slotGx(m));if(out.length>=4)break;}
+  return out.length?out:0;
+}
 function mpActivity2(){
   if(focus.type==='poker'){const h=PK.human;return {g:'poker',c:h.hole.slice(0,2),bd:PK.board.slice(0,5),pot:potTotal(),msg:cleanText(PK.info||PK.msg||'',40),f:h.folded?1:0};}
   if(focus.type==='hilo'){return {g:'hilo',o:HL.open===null?-1:HL.open,p:HL.pick>=0&&HL.state!=='pick'?HL.hidden[HL.pick]:-1,pe:HL.pending,msg:cleanText(HL.msg||'',40)};}
@@ -73,9 +80,21 @@ function remotePhase(m){
 // Automat eines Mitspielers in der eigenen Welt nachspielen
 function mirrorSlot(a,gx,credit){
   const list=allMachines(),m=list[gx.mi];
-  if(a.mirror&&a.mirror!==m)releaseMirror(a);
-  if(!m||m.npc||(focus&&focus.m===m))return;
-  a.mirror=m;m.remote={name:a.name,credit};m.demo=true;
+  if(a.mirror&&a.mirror!==m){const old=a.mirror;a.mirror=null;releaseOne(old);}
+  if(!m||m.npc||(focus&&focus.m===m)||isMine(m))return;
+  if(a.mirrors&&a.mirrors.has(m))a.mirrors.delete(m);
+  a.mirror=m;mirrorInto(a,m,gx,credit);
+}
+// weitere laufende Automaten desselben Mitspielers (Presence gl)
+function mirrorExtras(a,list,credit){
+  const L=allMachines(),keep=new Set();
+  (list||[]).forEach(gx=>{const m=L[gx.mi];if(!m||m.npc||m===a.mirror||(focus&&focus.m===m)||isMine(m))return;
+    if(m.remote&&m.remote.peer&&m.remote.peer!==a.peer)return; // gehört gerade einem anderen Mitspieler
+    if(!a.mirrors)a.mirrors=new Set();a.mirrors.add(m);keep.add(m);mirrorInto(a,m,gx,credit);});
+  if(a.mirrors)[...a.mirrors].forEach(m=>{if(!keep.has(m)){a.mirrors.delete(m);releaseOne(m);}});
+}
+function mirrorInto(a,m,gx,credit){
+  m.remote={name:a.name,credit,peer:a.peer};m.demo=true;
   if(gx.gid&&m.G.id!==gx.gid)setMachineGame(m,gx.gid);
   m.lines=m.G.lineOpts.includes(gx.l)?gx.l:m.lines;m.betIdx=Math.min(gx.bi,m.G.betOpts.length-1);
   m.msg=gx.msg;m.disp=gx.w;m.win=gx.w;
@@ -107,7 +126,8 @@ function mirrorSlot(a,gx,credit){
   m.rgx=gx;if(gx.sp===1){m.present=null;m.power=null;m.gamble=null;}else remotePhase(m);
   m.dirty=true;
 }
-function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.ww=[];m.wwc=null;m.wwKey='';m.ssHeld=null;m.ovr=null;m.expand=null;m.dbl=false;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
+function releaseMirror(a){if(a.mirrors){a.mirrors.forEach(releaseOne);a.mirrors.clear();}const m=a.mirror;if(!m)return;a.mirror=null;releaseOne(m);}
+function releaseOne(m){setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.ww=[];m.wwc=null;m.wwKey='';m.ssHeld=null;m.ovr=null;m.expand=null;m.dbl=false;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
 // Roulette eines Mitspielers live mitdrehen (Rad im Zuschauer-Fenster + 3D-Tisch)
 function remoteRoulette(a,gx){
   if(!a.rw)a.rw=newWheel();
@@ -126,8 +146,10 @@ function stepMirrors(dt){
 }
 function mpApplyActivity(a,pr){
   const gx=cleanGx(pr.gx);a.gx=gx;
-  if(gx&&gx.g==='slot'&&a.f===floorIdx)mirrorSlot(a,gx,typeof pr.k==='number'?pr.k:0);
-  else if(a.mirror)releaseMirror(a);
+  const credit=typeof pr.k==='number'?pr.k:0;
+  if(gx&&gx.g==='slot'&&a.f===floorIdx)mirrorSlot(a,gx,credit);
+  else if(a.mirror){const old=a.mirror;a.mirror=null;releaseOne(old);}
+  mirrorExtras(a,a.f===floorIdx&&Array.isArray(pr.gl)?pr.gl.slice(0,4).map(cleanGx).filter(x=>x&&x.g==='slot'):[],credit);
   if(gx&&gx.g==='roulette')remoteRoulette(a,gx);
 }
 // Karte oben: Spiel des nächsten Mitspielers, neben dem du stehst

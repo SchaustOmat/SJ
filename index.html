@@ -720,7 +720,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792597792";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792599524";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1981,7 +1981,7 @@ function pressButton(m,key){
   if(s==='menu'||s==='boot'){smPress(m,key);updateButtons(m);return;}
   if(key==='MENU'){smOpen(m);return;}
   if(s==='power'||s==='splash')return;
-  if(s==='poffer'){
+  if(s==='poffer'){m.autoPower=false;
     if(key==='START')startPowerRun(m);
     else if(key==='LINIEN'){m.state='show';m.disp=m.win;m.msg='ANGENOMMEN · RISIKO ODER NEHMEN';SFX.click();m.dirty=true;updateButtons(m);}
     else if(key==='AUTO'||key==='EINSATZ'){const c=pOffer(m);if(key==='EINSATZ'&&c.lo)m.pmult--;if(key==='AUTO'&&c.hi)m.pmult++;SFX.tick();m.dirty=true;updateButtons(m);}
@@ -2229,6 +2229,8 @@ function collect(m){
 }
 function slotStep(m,dt){
   m.stateT+=dt;fxStep(m,dt);flyStep(m,dt);
+  // Lucky Pharaoh unbesetzt mit AUTO: Power Spins immer annehmen (Nutzer 2026-10-21); sitzt wieder jemand davor, wartet das Angebot auf ihn
+  if(m.state==='poffer'&&m.autoPower&&!(focus&&focus.m===m)&&m.stateT>1.3){startPowerRun(m);}
   if(m.auto&&m.autoRisk&&m.state==='gamble'&&m.gamble&&m.gamble.kind==='ladder'&&!m.gamble.busy&&m.stateT>.4){
     if(m.win<=0||m.gamble.idx>=AUS_I){collect(m);if(m.auto)startSpin(m);}else ladderPress(m);}
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.run){const gm=m.gamble,t=Math.floor((m.stateT-.03)/.185);
@@ -2267,7 +2269,7 @@ function timerDone(m){
   switch(m.state){
     case 'count':
       if(m.pendingFs){m.pendingFs=false;startFsIntro(m);break;}
-      if(m.G.power&&m.win>=4*totalBet(m)&&!m.fs){m.auto=false;openOffer(m);break;}
+      if(m.G.power&&m.win>=4*totalBet(m)&&!m.fs){m.autoPower=m.auto&&!(focus&&focus.m===m);m.auto=false;openOffer(m);break;} // unbesetzt + AUTO: Angebot wird gleich von selbst angenommen
       m.state='show';m.disp=m.win;updateButtons(m);
       if(m.auto||wwPend(m)){m.timer=wwPend(m)&&!m.auto?1.1:.7;}
       break;
@@ -2277,7 +2279,7 @@ function timerDone(m){
     case 'power':if(m.power&&!m.power.spinning){if(m.power.left>0)powerSpin(m);else powerEnd(m);}break;
     case 'splash':m.state='idle';slotIdleMsg(m);m.dirty=true;updateButtons(m);break;
     case 'fsIntro':m.state='fsWait';m.timer=.3;m.topDirty=true;break;
-    case 'fsWait':if(m.auto)startSpin(m);else{m.state='fsReady';m.msg='START DRÜCKEN · FREISPIEL '+Math.min(m.fs.n+1,m.fs.total)+' VON '+m.fs.total;m.dirty=true;updateButtons(m);}break;
+    case 'fsWait':startSpin(m);break; // Freispiele laufen immer von selbst weiter (Nutzer 2026-10-21), auch ohne AUTO und ohne dass jemand davor sitzt
     case 'fsShow':{
       if(m.ss&&m.ss.i<m.ss.seq.length){// Superspin: Gewinnfelder bleiben rot stehen, der Rest dreht neu
         const st=m.ss.seq[m.ss.i];m.ssHeld=st.held;m.state='ssSpin';m.timer=.95;m.present=null;m.msg='SUPERSPIN!';SFX.reelStart();m.dirty=true;break;}
@@ -2359,7 +2361,8 @@ function powerStep(m,dt){
 }
 function powerEnd(m){
   if(!m.power||m.power.spinning)return;const sum=m.power.sum;m.power=null;m.auto=false;
-  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;}
+  if(m.win>=4*totalBet(m)){openOffer(m);m.msg='POWER +'+fmt(sum)+' · NOCHMAL? + ERHÖHT';return;} // bei autoPower wird auch das angenommen
+  if(m.autoPower){m.autoPower=false;m.auto=true;if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);m.timer=.9;}else{m.state='idle';m.timer=.5;}m.dirty=true;m.topDirty=true;updateButtons(m);return;} // weiter im AUTO
   if(m.win>0){m.state='show';m.disp=m.win;m.msg='POWER SPINS ENDE · '+fmt(m.win);}else{m.state='idle';slotIdleMsg(m);}
   m.dirty=true;m.topDirty=true;updateButtons(m);
 }
@@ -4783,7 +4786,7 @@ function mpSync(peers){
     others++;seen.add(p.peer);
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
-    if(!a){const m=makeAvatar(name,color);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
+    if(!a){const m=makeAvatar(name,color);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color,peer:p.peer};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
       if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
@@ -4809,7 +4812,7 @@ function mpLocalState(){
     else if(focus.type==='mtable'){const T=focus.m,si=mtMySeat(T);mt=T.id;if(si>=0){const p=mtSeatPos(T,si,T.R);x=p.x;z=p.z;y=Math.atan2(T.cx-p.x,T.cz-p.z);a='mtable';ms=si;}else{const p=mtSeatPos(T,0,T.R+.9);x=p.x;z=p.z;y=Math.PI;a='mwatch';}}
   } else if(openId==='pRoulette')a='roulette';
   else if(EL.phase==='moving')a='elev';
-  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,rl:[...RESVS].map(m=>allMachines().indexOf(m)),gx:mpActivity(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
+  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,rl:[...RESVS].map(m=>allMachines().indexOf(m)),gx:mpActivity(),gl:mpActivityList(),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
 }
 const EXTRA_SEATS={poker:[[-1.3,-1.95],[1.3,-1.95],[-1.95,-.05],[1.95,-.05]],hilo:[[-1.55,.1],[1.55,.1],[-1.3,-.65],[1.3,-.65]]};
 function seatAvatars(){
@@ -4828,7 +4831,7 @@ function mpStep(dt){
   seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
   if(MP.room&&MP.started){
     const s=mpLocalState();const m=MP.me;
-    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
+    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||JSON.stringify(s.gl)!==JSON.stringify(m.gl)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
     if((ch||MP.dirty)&&now-MP.lastSent>.1){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
       MP.room.presence(Object.assign({},m)).catch(()=>{});}
   }
@@ -4863,7 +4866,7 @@ function netLeave(silent){
   NET.states={};NET.seen={};NET.ok=false;NET.code='';MP.room=null;MP.online=0;mpClear();$('#chatBtn').hidden=true;
   if(!silent)netStatus('Nicht verbunden.');else mpTag();
 }
-function netValid(s){return s&&typeof s==='object'&&!Array.isArray(s)&&JSON.stringify(s).length<4500;}
+function netValid(s){return s&&typeof s==='object'&&!Array.isArray(s)&&JSON.stringify(s).length<14000;} // mehrere laufende Automaten (gl) brauchen Platz
 function netPeers(){const out=[{peer:NET.myId,isMe:true,kind:'viewer',guest:false,presence:NET.mine}];
   for(const id in NET.states)out.push({peer:id,isMe:false,kind:'viewer',guest:false,presence:NET.states[id]});return out;}
 function netTick(){
@@ -5426,6 +5429,13 @@ function slotGx(m){{
       cd:m.gamble&&m.gamble.kind==='rb'?[m.gamble.card===null?-1:m.gamble.card].concat(m.history.slice(0,6)):0,
       pw:m.power?{c:m.power.count,l:m.power.left,t:m.power.total,mu:m.power.mult,sp:m.power.spinning?1:0,su:m.power.sum,s:m.power.sets.map(S=>S.stops.slice()),my:m.power.sets.map(S=>S.myst?[S.myst.cells.map(q=>q[0]*5+q[1]),S.myst.sym]:0)}:0};}
   }
+// Weitere eigene Automaten (Karte steckt), die gerade laufen: alle im Raum sehen sie drehen (max. 4, der Hauptautomat steht schon in gx)
+function mpActivityList(){
+  if(typeof RESVS==='undefined'||!RESVS.size)return 0;
+  const main=mpActivity(),mainMi=main&&main.g==='slot'?main.mi:-1,L=allMachines(),out=[];
+  for(const m of RESVS){const mi=L.indexOf(m);if(mi<0||mi===mainMi)continue;if(m.state==='idle'&&!m.auto&&!m.fs)continue;out.push(slotGx(m));if(out.length>=4)break;}
+  return out.length?out:0;
+}
 function mpActivity2(){
   if(focus.type==='poker'){const h=PK.human;return {g:'poker',c:h.hole.slice(0,2),bd:PK.board.slice(0,5),pot:potTotal(),msg:cleanText(PK.info||PK.msg||'',40),f:h.folded?1:0};}
   if(focus.type==='hilo'){return {g:'hilo',o:HL.open===null?-1:HL.open,p:HL.pick>=0&&HL.state!=='pick'?HL.hidden[HL.pick]:-1,pe:HL.pending,msg:cleanText(HL.msg||'',40)};}
@@ -5479,9 +5489,21 @@ function remotePhase(m){
 // Automat eines Mitspielers in der eigenen Welt nachspielen
 function mirrorSlot(a,gx,credit){
   const list=allMachines(),m=list[gx.mi];
-  if(a.mirror&&a.mirror!==m)releaseMirror(a);
-  if(!m||m.npc||(focus&&focus.m===m))return;
-  a.mirror=m;m.remote={name:a.name,credit};m.demo=true;
+  if(a.mirror&&a.mirror!==m){const old=a.mirror;a.mirror=null;releaseOne(old);}
+  if(!m||m.npc||(focus&&focus.m===m)||isMine(m))return;
+  if(a.mirrors&&a.mirrors.has(m))a.mirrors.delete(m);
+  a.mirror=m;mirrorInto(a,m,gx,credit);
+}
+// weitere laufende Automaten desselben Mitspielers (Presence gl)
+function mirrorExtras(a,list,credit){
+  const L=allMachines(),keep=new Set();
+  (list||[]).forEach(gx=>{const m=L[gx.mi];if(!m||m.npc||m===a.mirror||(focus&&focus.m===m)||isMine(m))return;
+    if(m.remote&&m.remote.peer&&m.remote.peer!==a.peer)return; // gehört gerade einem anderen Mitspieler
+    if(!a.mirrors)a.mirrors=new Set();a.mirrors.add(m);keep.add(m);mirrorInto(a,m,gx,credit);});
+  if(a.mirrors)[...a.mirrors].forEach(m=>{if(!keep.has(m)){a.mirrors.delete(m);releaseOne(m);}});
+}
+function mirrorInto(a,m,gx,credit){
+  m.remote={name:a.name,credit,peer:a.peer};m.demo=true;
   if(gx.gid&&m.G.id!==gx.gid)setMachineGame(m,gx.gid);
   m.lines=m.G.lineOpts.includes(gx.l)?gx.l:m.lines;m.betIdx=Math.min(gx.bi,m.G.betOpts.length-1);
   m.msg=gx.msg;m.disp=gx.w;m.win=gx.w;
@@ -5513,7 +5535,8 @@ function mirrorSlot(a,gx,credit){
   m.rgx=gx;if(gx.sp===1){m.present=null;m.power=null;m.gamble=null;}else remotePhase(m);
   m.dirty=true;
 }
-function releaseMirror(a){const m=a.mirror;if(!m)return;a.mirror=null;setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.ww=[];m.wwc=null;m.wwKey='';m.ssHeld=null;m.ovr=null;m.expand=null;m.dbl=false;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
+function releaseMirror(a){if(a.mirrors){a.mirrors.forEach(releaseOne);a.mirrors.clear();}const m=a.mirror;if(!m)return;a.mirror=null;releaseOne(m);}
+function releaseOne(m){setMachineGame(m,m.defG.id);m.remote=null;m.rgx=null;m.power=null;m.gamble=null;m.present=null;m.myst=null;m.demo=false;m.fs=null;m.ww=[];m.wwc=null;m.wwKey='';m.ssHeld=null;m.ovr=null;m.expand=null;m.dbl=false;m.win=0;m.disp=0;m.state='idle';m.reels.forEach(r=>{if(r.spin){r.spin=false;r.pos=Math.round(r.pos);}});slotIdleMsg(m);m.dirty=true;m.topDirty=true;}
 // Roulette eines Mitspielers live mitdrehen (Rad im Zuschauer-Fenster + 3D-Tisch)
 function remoteRoulette(a,gx){
   if(!a.rw)a.rw=newWheel();
@@ -5532,8 +5555,10 @@ function stepMirrors(dt){
 }
 function mpApplyActivity(a,pr){
   const gx=cleanGx(pr.gx);a.gx=gx;
-  if(gx&&gx.g==='slot'&&a.f===floorIdx)mirrorSlot(a,gx,typeof pr.k==='number'?pr.k:0);
-  else if(a.mirror)releaseMirror(a);
+  const credit=typeof pr.k==='number'?pr.k:0;
+  if(gx&&gx.g==='slot'&&a.f===floorIdx)mirrorSlot(a,gx,credit);
+  else if(a.mirror){const old=a.mirror;a.mirror=null;releaseOne(old);}
+  mirrorExtras(a,a.f===floorIdx&&Array.isArray(pr.gl)?pr.gl.slice(0,4).map(cleanGx).filter(x=>x&&x.g==='slot'):[],credit);
   if(gx&&gx.g==='roulette')remoteRoulette(a,gx);
 }
 // Karte oben: Spiel des nächsten Mitspielers, neben dem du stehst
@@ -6639,7 +6664,7 @@ function leaveFocus(){
   if(!focus)return;UFX.tension('mtable',false);
   const f=focus;
   if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
-    toast(m.auto?'Er spielt weiter und wartet bei Angeboten auf dich.':'Der Automat wartet auf dich.');}
+    toast(m.auto?'Er spielt weiter, Freispiele laufen von selbst, Power Spins nimmt er an.':'Der Automat wartet auf dich. Freispiele laufen von selbst.');}
   else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
