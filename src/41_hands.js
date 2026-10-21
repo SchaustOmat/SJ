@@ -273,10 +273,13 @@ function hdUi(){
 // ---- Mitspieler: Kippe im Mund / in der Hand, Glas, Rauchwölkchen ----
 function itemsPresence(){const C=HD.cig;return (C||HD.drink)?{c:C?(C.where==='hand'?2:1):0,l:C&&C.lit?1:0,x:C?C.x||0:0,d:HD.drink?HD.drink.kind:'',s:HD.drink?HD.drink.sips:0}:0;}
 function mpItems(){if(typeof MP!=='undefined'&&MP.room){MP.me.it=itemsPresence();MP.dirty=true;}}
-function avItems(n){ // Anbauten an ein Figuren-Modell (stehend oder sitzend)
-  if(n.items)return n.items;const c=cigMesh(.084);c.position.set(.018,-.062,.13);c.rotation.set(1.72,0,.1);c.visible=false;n.head.add(c);
-  const ch=cigMesh(.084);ch.position.set(0,-.62,.03);ch.rotation.set(-1.2,0,0);ch.visible=false;n.armR.add(ch);
-  const gl=new THREE.Group();gl.position.set(0,-.64,.03);gl.visible=false;n.armL.add(gl);
+function avItems(n){ // Anbauten an ein Figuren-Modell (stehend oder sitzend); bei Skelett-Figuren an Kopf- und Handknochen
+  if(n.items)return n.items;const rig=!!n.rig;const c=cigMesh(.084);c.visible=false;n.head.add(c);
+  if(rig){c.position.set(.09,.0,.06);c.rotation.set(0,0,-1.55);}else{c.position.set(.018,-.062,.13);c.rotation.set(1.72,0,.1);}
+  const ch=cigMesh(.084);ch.visible=false;n.armR.add(ch);
+  if(rig){ch.position.set(.06,.0,.02);ch.rotation.set(0,0,-.4);}else{ch.position.set(0,-.62,.03);ch.rotation.set(-1.2,0,0);}
+  const gl=new THREE.Group();gl.visible=false;n.armL.add(gl);
+  if(rig){gl.position.set(.07,-.02,.0);gl.rotation.set(0,0,1.4);}else{gl.position.set(0,-.64,.03);}
   const gm=new THREE.MeshPhongMaterial({color:0xe8f4ff,transparent:true,opacity:.3,shininess:100});mesh(new THREE.CylinderGeometry(.03,.025,.085,12,1,true),gm,0,.04,0,gl);const liq=mesh(new THREE.CylinderGeometry(.026,.022,.06,12),lam({color:0xf0b020,transparent:true,opacity:.9}),0,.035,0,gl);
   return n.items={cm:c,ch,gl,liq};}
 function itemsPeer(a,pr){const it=pr&&pr.it&&typeof pr.it==='object'?pr.it:null;a.it=it?{c:+it.c===2?2:(+it.c===1?1:0),l:it.l?1:0,x:Math.max(0,Math.round(+it.x||0)),d:DRINKS[it.d]?it.d:'',s:Math.max(0,Math.round(+it.s||0))}:null;
@@ -288,9 +291,9 @@ function itemsAvatarsStep(dt){
   MP.avatars.forEach(a=>{[a.m.st,a.m.si].forEach(n=>{const I=avItems(n);const it=a.it;const vis=n.root.visible;
     I.cm.visible=!!(it&&it.c===1)&&vis;I.ch.visible=!!(it&&it.c===2)&&vis;I.gl.visible=!!(it&&it.d)&&vis;
     if(it&&it.d){I.liq.material.color.setHex(DRINKS[it.d].c);}
-    if(it&&it.l&&vis){const g=it.c===2?I.ch:I.cm;cigApply(g,.3,.3,.3+.2*Math.sin(now*6),true);if(it.c===2&&n===a.n){n.armR.rotation.x=a.itDrag&&now-a.itDrag<1.3?-2.3:-1.35;n.armR.rotation.z=.25;}}
-    else if(it&&it.c===2&&n===a.n){n.armR.rotation.x=-1.35;n.armR.rotation.z=.25;}
-    if(it&&it.d&&n===a.n&&n.anim!=='drink'){n.armL.rotation.x=-1.2;}});
+    if(it&&it.l&&vis){const g=it.c===2?I.ch:I.cm;cigApply(g,.3,.3,.3+.2*Math.sin(now*6),true);if(it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=a.itDrag&&now-a.itDrag<1.3?-2.3:-1.35;n.armR.rotation.z=.25;}}
+    else if(it&&it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=-1.35;n.armR.rotation.z=.25;}
+    if(it&&it.d&&n===a.n&&n.anim!=='drink'&&!n.rig){n.armL.rotation.x=-1.2;}});
     if(a.it&&a.it.l&&a.f===floorIdx&&Math.random()<dt*2.5){const n=a.n;const g=a.it.c===2?n.items.ch:n.items.cm;const P=g.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*.7,0);g.updateMatrixWorld();g.localToWorld(hdTmp);smokePuff(hdTmp,new THREE.Vector3(0,.18,0),1,.02,.1,2,.06,.3);}});
 }
 // ---- pro Bild: Posen, Brennen, Rauch, Leiste; am Ende Hände über die Welt zeichnen ----

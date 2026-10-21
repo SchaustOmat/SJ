@@ -192,11 +192,13 @@ function npc(F,o){
   bakeGroup(root);bakeGroup(head);bakeGroup(armL);bakeGroup(armR);
   const n={root,head,armL,armR,torso,anim:o.anim||'idle',baseAnim:o.anim||'idle',t:Math.random()*10,ph:Math.random()*6,lines:o.lines||LINES.generic,special:o.special,F,bubbleEl:null,bubbleUntil:0,name:o.name||'GAST'};
   const act={type:'npc',npc:n,label:o.name||'GAST',sub:'Ansprechen',pos:new THREE.Vector3(o.x,1.4,o.z),reach:2.2};
-  if(!o.noTag)tagAct(F,root,act);F.npcs.push(n);
+  if(!o.noTag)tagAct(F,root,act);F.npcs.push(n);n.act=o.noTag?null:act;
   if(!o.noCol)col(F,o.x,o.z,.55,.55);
+  if(typeof chAttach==='function')chAttach(n,o); // Skelett-Figur (Quaternius) ersetzt die Klötzchen, sobald geladen
   return n;
 }
 function animNPC(n,dt){
+  if(n.rig){chAnimate(n,dt);return;}
   n.t+=dt;const t=n.t,p=n.ph;
   n.armL.rotation.z=0;n.armR.rotation.z=0;
   switch(n.anim){

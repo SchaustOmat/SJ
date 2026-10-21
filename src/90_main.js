@@ -615,7 +615,7 @@ function frame(){
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
-    else{tp=tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
+    else{if(!(typeof chEye==='function'&&chEye(tmpV)))tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);tp=tmpV;ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
     if(camAnim){camAnim.t+=dt;const k=ease(Math.min(1,camAnim.t/camAnim.dur));
       camera.position.lerpVectors(camAnim.fromPos,tp,k);camera.rotation.set(camAnim.fromPitch+(tpi-camAnim.fromPitch)*k,angLerp(camAnim.fromYaw,ty,k),0);camera.fov=camAnim.fromFov+(tf-camAnim.fromFov)*k;
       if(camAnim.t>=camAnim.dur)camAnim=null;}
@@ -629,7 +629,7 @@ function frame(){
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
-    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);
+    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);if(typeof chFPStep==='function')chFPStep(dt);
     if(!locked&&!focus){chatterT-=dt;if(chatterT<=0){chatterT=6+Math.random()*6;const near=F.npcs.filter(n=>Math.hypot(n.root.position.x-P.x,n.root.position.z-P.z)<9&&n.bubbleUntil<now);
       if(near.length){const n=near[Math.random()*near.length|0];say(n,n.lines[Math.random()*n.lines.length|0]);}}}
     const lw=LW(),lh=LH();

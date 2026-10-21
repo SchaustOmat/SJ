@@ -16,7 +16,7 @@ const dir=(process.env.SHOT_DIR||path.join(os.tmpdir(),'sj_shots')).split(path.s
 const steps=JSON.parse(fs.readFileSync(stepsFile,'utf8'));
 const port=9300+Math.floor(Math.random()*500),prof=dir+'/prof'+port;
 {const h=fs.readFileSync(path.join(repo,'index.html'),'utf8');const i=h.lastIndexOf('})();');
- const inj='<head><script>window.NK_HS_LOCAL=true;try{localStorage.setItem("nk_pw","sjs1")}catch(e){}</script>';
+ const inj='<head><script>window.NK_HS_LOCAL=true;window.NK_ASSET_BASE="file:///'+repo.split(path.sep).join('/')+'/";try{localStorage.setItem("nk_pw","sjs1")}catch(e){}</script>';
  const h2=h.replace('<head>',inj);const i2=h2.lastIndexOf('})();');
  fs.writeFileSync(dir+'/t.html',h2.slice(0,i2)+'window.__ev=s=>eval(s);'+String.fromCharCode(10)+h2.slice(i2));}
 const edge=spawn('C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',['--headless=new','--mute-audio','--remote-debugging-port='+port,'--user-data-dir='+prof,'--use-angle=swiftshader','--enable-unsafe-swiftshader','--allow-file-access-from-files','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--disable-background-timer-throttling','--window-size='+W+','+H,'about:blank'],{stdio:'ignore'});
