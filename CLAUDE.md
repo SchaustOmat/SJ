@@ -13,6 +13,8 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - `python build.py --artifact PFAD` → Claude-Version.
 - Nie `index.html` direkt bearbeiten, immer `src/`.
 - Deploy: bauen, Syntax prüfen (`node --check` auf das Script aus index.html), committen, pushen. Pages baut automatisch.
+- Testen (stumm, ohne Browserfenster): `node tools/headless_shot.mjs <prefix> <breite> <hoehe> <schritte.json>` – Beispiel `tools/headless_steps_beispiel.json`. Schritte sind JS im Spiel-Scope (alle Variablen erreichbar), `shot` = Screenshot, `dump` = Canvas als PNG; Bilder liegen in %TEMP%/sj_shots. Hochformat = Handy-Emulation, für Handy-Oberfläche zusätzlich `PC=false;pcUi()` setzen. Nicht `allMachines()[0]` blind nehmen, sondern `allMachines().find(x=>!x.npc)`. Nach Tests prüfen, dass keine `msedge --headless` Prozesse übrig sind (sie fressen CPU). Nie gegen die echte Highscore-Tafel testen (das Skript setzt NK_HS_LOCAL automatisch).
+- Git: nur eigene Dateien adden, vor dem Push `git pull --rebase` (es arbeiten manchmal mehrere Sitzungen am Repo).
 
 ## Dateien (src/)
 - 00_slotengine.js: Walzen-Engine (Strips, Linien, Wild/Scatter, Freispiele, bothWays, wildStack, wildMult, walk, superspin). Im Menü nur echte Merkur-Spiele: pharao (Lucky Pharaoh Wild), spitze (Alles Spitze), zent (Zentaurus, 20 Linien, lineDiv 2 = 0,10 €), tizona, doppel (Doppel Buch). book/fruit/viking/mine/reef/temple sind alt und nicht mehr im Menü. Gewinnpläne = echte Merkur-Tabellen (Pharao bei 0,20 €, Tizona/Zentaurus/Doppel Buch bei 0,10 €).
@@ -26,6 +28,11 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - 35_save.js: Spielstand (localStorage nk_*, Cloud-Save in Artifact-Version). 36_bank.js: Geldautomaten/Konto/Überweisungen.
 - 38_friends.js: Freunde (Code = Kontonummer, MQTT sinanskeller/u|fq|fi, 2 Server gleichzeitig). 39_remote.js: Handy-Tastenleiste für eigene Automaten im Stehen. 40_highscore.js: Highscore-Tafel (EG-Nordwand, Flughafen-Optik; Woche/Vorwoche/Rekorde; retained MQTT sinanskeller/hs/<KW>|all, Vereinigung nach Eintrags-ID). Tests: window.NK_HS_LOCAL=true (nichts senden) bzw. NK_HS_TOPIC='sinanskeller/hstest/' – nie gegen die echte Tafel testen.
 - 90_main.js: Welt, Kamera, Steuerung, Panels, Roulette-Tisch.
+
+## Stand 2026-10-21 (große Überarbeitung) und offene Punkte
+- Umgesetzt: edle HD-Halle, Geräteschrift, Leiter nach Nutzer-Videos, Alles Spitze neu, Freunde, Highscore-Tafel, mehrere Automaten gleichzeitig, Strg-Mauszeiger am PC, Handy-Tastenleiste, Passwort SJS, Handy-HUD mit ≡-Menü, Barkeeper 1.000 € unter 100 €.
+- Offen/Wünsche des Nutzers (siehe auch Memory): Inventarsystem; Portemonnaie-System (Geld rausnehmen, werfen/ablegen); realistisch weiches Umschauen; Freispiel-Intros und Gewinn-Animationen je Spiel aufwerten; Zentaurus-Säulen „LINIEN 20“ schöner (Marmor/Gold) oder weg; Spielnamen/Merkur-Sonne ggf. durch eigene ersetzen (Markenrecht).
+- Der Nutzer testet selbst am Handy und am PC und meldet sich mit Screenshots/Videos; immer danach nachbauen, nie Merkur-Dateien übernehmen.
 
 ## Regeln vom Nutzer
 - Geld intern in Cent (fmt zeigt 20000 als 200,00 €). Start 200 €, Barkeeper (EG und VIP) gibt 1.000 € unter 100 € (nicht wenn mind. 100 € auf dem Konto) – seit 2026-10-21, vorher 200 € unter 20 €.

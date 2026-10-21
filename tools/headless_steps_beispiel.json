@@ -1,0 +1,7 @@
+[{"js":"document.querySelector('#startGo').click()","wait":1500},
+ {"js":"closePanel();PC=false;pcUi();return_=1","wait":600,"shot":"halle"},
+ {"js":"(()=>{const m=allMachines().find(x=>!x.npc);enterFocus('slot',m);cardIn(m,true);svGate(m);setMachineGame(m,'pharao');m.booted=true;m.state='idle';updateButtons(m);return m.G.id})()","wait":1800,"shot":"automat"},
+ {"js":"focus.m.scr.image.toDataURL()","dump":"bildschirm"},
+ {"js":"(()=>{const m=focus.m;startSpin(m);m.reels.forEach(r=>r.stopAt=now);return m.state})()","wait":2500},
+ {"js":"(()=>{const m=focus.m;return [m.state,m.win,chips]})()"}
+]
