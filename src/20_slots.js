@@ -11,10 +11,13 @@ const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
   SlotEngine.setup('tizona',TIZ_ROWS.map(a=>R_(a,TK)),706);
   // gekaufte Freispiele: mehr Schwerter (1-1-2-2-2), sonst gleiche Walzen -> 10 Freispiele im Schnitt ~98 % von 100× Einsatz (tools: tzbuy3.js)
   SlotEngine.setBuy('tizona',[1,1,2,2,2].map(k=>{const a=TIZ_ROWS[0].slice();a[10]=k;return R_(a,TK);}),706);
-  SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
+  // Doppel Buch (2026-10-21, Spielplan doppelt wie am echten Gerät): Grundspiel-Walzen schlank (links 10/J-lastig, rechts Q/K/A-lastig, Buch 2-1-1-1-2),
+  // Freispiel-Walzen eigene, ungestapelt (Sondersymbol trifft oft). Quote per tools/doppel_sim.js: Einzelbuch ~98 %, Doppelbuch ~95 %, Freispiele alle ~93 Dreher.
+  SlotEngine.setup('doppel',[[13,13,1,1,1,1,1,1,1,2],[13,13,1,1,1,2,1,0,0,1],[1,1,11,11,11,1,1,1,1,1],[1,1,11,11,11,2,1,1,1,1],[1,1,11,11,11,1,1,1,1,2]].map(a=>R_(a,DK)),706,
+    [[5,5,5,5,5,2,2,2,2,1],[5,5,5,5,5,2,2,2,2,1],[6,6,6,6,6,2,2,2,2,1],[5,5,5,5,5,2,2,2,2,1],[5,5,5,5,5,2,2,2,2,1]].map(a=>R_(a,DK)));
   SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,0],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,0],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
 })();
-const GAMEINFO={pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
+const GAMEINFO={pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'98 / 95',fs:'93',hit:'7'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,m.useFs==='buy'?'buy':!!m.useFs);
 const LINECOL=['#ffd23a','#ff3a3a','#3adf5a','#4af0ff','#ff5ab0','#ff8a1a','#b07aff','#e8e8e8','#7aff5a','#5a8aff'];
 
@@ -164,7 +167,9 @@ function buildMachine(F,x,z,rotY,gameId,accent){
 function slotIdleMsg(m){const G=m.G;m.msg=G.special?'KLEE · MÜNZE · KÄFER · SONNE':G.power?'AB 4× EINSATZ GEWINN: POWER SPINS':G.walkWild?'3/4/5 SCHILDE = 10/15/20 FREISPIELE':G.free?'3 '+({MÜNZE:'MÜNZEN',BUCH:'BÜCHER'}[SYMNAME[G.scatter]]||SYMNAME[G.scatter])+' = '+G.free.count+' FREISPIELE':'VIEL GLÜCK';}
 function betLine(m){return m.G.betOpts[m.betIdx];}
 function totalBet(m){return betLine(m)*m.lines*(m.G.doppel&&m.dbl?2:1)/(m.G.lineDiv||1);}
-function payLine(m){return betLine(m)*(m.G.doppel&&m.dbl?1.39:1)/(m.G.lineDiv||1);}
+// Doppel Buch (Nutzer 2026-10-21, wie am Gerät): Einzelbuch zahlt den Spielplan doppelt (2 Forscherinnen bei 0,10 € = 0,20 €, 5 = 100 €),
+// Doppelbuch kostet den doppelten Einsatz und zahlt im Grundspiel die Hälfte davon, in den Freispielen voll
+function payLine(m){return betLine(m)*(m.G.doppel?(m.dbl&&!m.fs?1:2):1)/(m.G.lineDiv||1);}
 function wwPend(m){return !!(m.G.walkWild&&SlotEngine.wwPending(m.ww));}
 function wwCells(ww){const o={};(ww||[]).forEach(w=>{const hh=Math.min(3,w.h),r0=Math.max(0,Math.min(3-hh,w.r-(hh>1?1:0)));for(let i=0;i<hh;i++)o[(r0+i)+','+w.c]=1;});return o;}
 
@@ -250,7 +255,7 @@ function pressButton(m,key){
   }
   switch(key){
     case 'INFO':m.info=!m.info;m.dirty=true;break;
-    case 'LINIEN':{if(m.G.special){spitzeTake(m);break;}if(m.G.doppel){m.dbl=!m.dbl;m.msg=m.dbl?'DOPPELBUCH: 15 FREISPIELE, 2 SONDERSYMBOLE':'EINZELBUCH: 10 FREISPIELE, 1 SONDERSYMBOL';m.dirty=true;m.topDirty=true;break;}const o=m.G.lineOpts;m.lines=o[(o.indexOf(m.lines)+1)%o.length];m.info=false;m.msg='LINIEN: '+m.lines;m.dirty=true;break;}
+    case 'LINIEN':{if(m.G.special){spitzeTake(m);break;}if(m.G.doppel){m.dbl=!m.dbl;m.msg=m.dbl?'DOPPELBUCH: 2× EINSATZ, GRUNDSPIEL HALBE GEWINNE, 15 FREISPIELE MIT 2 SONDERSYMBOLEN':'EINZELBUCH: 10 FREISPIELE, 1 SONDERSYMBOL';m.dirty=true;m.topDirty=true;break;}const o=m.G.lineOpts;m.lines=o[(o.indexOf(m.lines)+1)%o.length];m.info=false;m.msg='LINIEN: '+m.lines;m.dirty=true;break;}
     case 'EINSATZ':{if(m.G.special&&!spEmpty(m)){m.msg='EINSATZ NUR BEI LEEREN LEITERN';SFX.click();m.dirty=true;break;}m.betIdx=(m.betIdx+1)%m.G.betOpts.length;m.info=false;m.msg='EINSATZ: '+fmt(totalBet(m));m.dirty=true;break;}
     case 'AUTO':m.auto=!m.auto;if(m.auto&&s==='idle')startSpin(m);else if(m.auto&&s==='show'){collect(m);startSpin(m);}break;
     case 'KARTE':case 'LEITER':
@@ -1043,7 +1048,7 @@ function drawInfo(m,g){
   if(!sc){g.drawImage(symCanvas(G.wild),RX+4,y-4,22,22);fitL(g,'PHARAO ERSETZT ALLE · LINKS, RECHTS, MITTE',RX+30,y+7,246,6);}
   else{g.drawImage(symCanvas(sc),RX+4,y-4,22,22);
     if(!G.scatterPay[5]&&G.free)fitL(g,(G.free.byCount?'3/4/5× = '+G.free.byCount.slice(3).join('/'):G.free.trigger+'× = '+G.free.count)+' FREISPIELE'+(G.wildMult?' · WILD ×2 JE ZENTAUR':G.walkWild?' · SCHWERT = GRATIS-SPINS':''),RX+30,y+7,246,6);
-    else fitL(g,'SCATTER: 5×'+e(G.scatterPay[5]*tb)+' 4×'+e(G.scatterPay[4]*tb)+(G.scatterPay[3]?' 3×'+e(G.scatterPay[3]*tb):''),RX+30,y+7,246,6);}
+    else fitL(g,'SCATTER: 5×'+e(G.scatterPay[5]*bl*m.lines)+' 4×'+e(G.scatterPay[4]*bl*m.lines)+(G.scatterPay[3]?' 3×'+e(G.scatterPay[3]*bl*m.lines):'')+(G.doppel&&m.dbl?' · GRUNDSPIEL HALB':''),RX+30,y+7,246,6);}
   g.fillStyle='#9b8fb3';const I=GAMEINFO[G.id];
   fitL(g,'QUOTE '+I.rtp+'% · GEWINN JEDES '+I.hit+'. SPIEL'+(I.fs?' · FREISPIELE 1:'+I.fs:'')+(I.power?' · POWER 1:'+I.power:''),RX+4,y+22,CW*5-8,6);
 }

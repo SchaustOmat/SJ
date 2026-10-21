@@ -40,7 +40,8 @@ var SlotEngine=(function(){
       pay:{'10':[0,0,0,5,25,100],'J':[0,0,0,5,25,100],'Q':[0,0,0,5,25,100],'K':[0,0,0,10,40,150],'A':[0,0,0,10,40,150],
            'TRUHE':[0,0,0,20,75,500],'HANDS':[0,0,0,20,75,500],'BURG':[0,0,10,50,500,1000],'ROSS':[0,0,10,50,500,1000],'RITTER':[0,0,10,100,1000,3000]},
       scatterPay:[0,0,0,0,0,0],free:{count:10,byCount:[0,0,0,10,15,20],trigger:3,shields:true,desc:['10-20 FREISPIELE','4 SCHILDE = GRÖSSERES SCHWERT']},counts:null},
-    // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen
+    // Doppel Buch: 5 Linien, Buch = Wild + Scatter; Einzelbuch 10 Freispiele mit 1 Sondersymbol, Doppelbuch (doppelter Einsatz) 15 Freispiele mit 2 Sondersymbolen.
+    // Spielplan-Werte unten gelten bei Einzelbuch 0,10 € je Cent Linieneinsatz × 2 (payLine in 20_slots.js): 2 Forscherinnen = 0,20 €, 5 = 100 €; Doppelbuch zahlt im Grundspiel die Hälfte, in Freispielen voll
     doppel:{id:'doppel',title:'DOPPEL BUCH',sub:'EINZEL ODER DOPPEL',lines:LINES10.slice(0,5),lineOpts:[5],betOpts:[2,4,8,12,16,20,40,80,120,160,200,400,600,800,1000,2000],
       wild:'BUCH',scatter:'BUCH',doppel:true,stack:3,fsNoStack:true,
       // Echter Merkur-Spielplan (Werte gelten bei 0,20 € = Level 20), hier pro Cent Linieneinsatz; Forscherin 5× = 10 Action Games -> hier 5× der 4er-Gewinn
@@ -54,7 +55,7 @@ var SlotEngine=(function(){
   function setup(id,counts,seed,fsCounts,payScale){var G=GAMES[id];
     if(payScale&&!G.scaled){G.scaled=1;Object.keys(G.pay).forEach(function(k){G.pay[k]=G.pay[k].map(function(v){return Math.round(v*payScale);});});}SCAT_TMP=G.scatter;G.counts=counts;G.strips=buildStrips(counts,seed,G.stack,[G.wild]);G.syms=Object.keys(counts[0]);
     if(G.wildStack){G.strips.forEach(function(st,ri){var ws=Array.isArray(G.wildStack)?G.wildStack[ri]:G.wildStack,idx=[];st.forEach(function(s,i){if(s===G.wild)idx.push(i);});idx.forEach(function(i){for(var k=1;k<ws;k++)st[(i+k)%st.length]=G.wild;});});}
-    G.fsStrips=fsCounts?buildStrips(fsCounts,seed+999,G.stack,[G.wild]):(G.stack&&G.fsNoStack?buildStrips(counts,seed,0,[G.wild]):null); /* Freispiele ungestapelt (Sondersymbole/Superspin) */return G;}
+    G.fsStrips=fsCounts?buildStrips(fsCounts,seed+999,G.fsNoStack?0:G.stack,[G.wild]):(G.stack&&G.fsNoStack?buildStrips(counts,seed,0,[G.wild]):null); /* Freispiele ungestapelt (Sondersymbole/Superspin) */return G;}
   function stripsOf(G,fs){return fs==='buy'&&G.buyStrips?G.buyStrips:(fs&&G.fsStrips?G.fsStrips:G.strips);}
   // eigene Walzen für gekaufte Freispiele (Tizona)
   function setBuy(id,counts,seed){var G=GAMES[id];G.buyStrips=buildStrips(counts,seed,G.stack,[G.wild]);return G;}
