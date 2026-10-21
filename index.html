@@ -173,7 +173,8 @@ body:not(.pcmode) #hudTop{align-items:center;gap:6px}
 body:not(.pcmode) #hudTop .tag{font-size:12px;padding:8px 9px;max-width:none}
 body:not(.pcmode) #hudTop .mid{order:0;width:auto;flex:1 1 auto;min-width:0;flex-direction:row;justify-content:center;gap:4px}
 body:not(.pcmode) #hudTop .mid .tag{padding:8px 9px;font-size:11px;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
-body:not(.pcmode) #menuBtn{display:grid;flex:none;font-size:20px;line-height:1}
+body:not(.pcmode) #menuBtn{display:grid;flex:none;font-size:20px;line-height:1;pointer-events:auto}
+#hudTop .ibtn{pointer-events:auto}
 body:not(.pcmode) #menuBtn[aria-expanded="true"]{color:var(--gold);border-color:var(--gold)}
 body:not(.pcmode) #hudTop .icons{display:none;position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 56px);flex-direction:column;gap:2px;min-width:200px;padding:6px;background:rgba(10,7,14,.94);border:1.5px solid var(--gold);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 body:not(.pcmode) #hudTop .icons.open{display:flex}
@@ -708,7 +709,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792572820";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792574824";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
