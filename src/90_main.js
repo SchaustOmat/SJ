@@ -194,12 +194,12 @@ joyRest();
 // PC: kein Joystick, Klick fängt die Maus (Umschauen mit der Maus), beim Spielen/Esc ist sie wieder frei
 let PC=matchMedia('(hover:hover) and (pointer:fine)').matches,lockFail=false,lockOK=false,lockErrT=0;
 const pcHint=$('#pcHint'),cross=$('#cross');
-// Freier Zeiger am PC: der Punkt wandert mit der Maus, die Kamera zieht weich hinterher.
-// Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
+// Standard am PC (seit 2026-10-21, Wunsch des Nutzers): echter Mauszeiger, Klick auf Tasten/Automaten/Boden,
+// umschauen durch Ziehen mit gedrückter Maustaste (links oder rechts) – nicht direkt mit der Mausbewegung.
+const CUR={on:true,x:0,y:0};
+// Strg: Maus fangen (fester Blick, Punkt wandert mit der Maus, Kamera zieht weich hinterher); Strg oder Esc = zurück zum Zeiger.
 const AIM={x:0,y:0,sx:0,sy:0,hot:false};
-// Strg: Maus frei (echter Zeiger) zum Klicken auf Tasten und Automaten; Strg oder Esc = zurück zum Umschauen. Rechte Maustaste gedrückt = umschauen.
-const CUR={on:false,x:0,y:0};
-function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;if(CUR.on){freeMouse();AIM.x=AIM.y=0;}else grabMouse();pcUi();}
+function curToggle(){if(!PC||focus||locked||!started)return;if(CUR.on)grabMouse();else freeMouse();pcUi();}
 function aimPos(){return aimActive()?[AIM.sx,AIM.sy]:CUR.on?[CUR.x,CUR.y]:[LW()/2,LH()/2];}
 const aimEul=new THREE.Euler(0,0,0,'YXZ'),aimV=new THREE.Vector3();
 function aimActive(){return PC&&mouseLocked()&&!locked&&!focus;}
@@ -226,11 +226,11 @@ function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerL
 function pcUi(){
   document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
   {const mb=$('#menuBtn');if(mb&&mb.hidden!==(PC||!started))mb.hidden=PC||!started;}
-  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId&&!CUR.on,ch=PC&&CUR.on&&started&&!focus&&!openId;
-  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
+  const lk=mouseLocked(),ch=PC&&CUR.on&&!lk&&started&&!focus&&!openId;
+  if(cross.hidden===lk)cross.hidden=!lk;if(!pcHint.hidden)pcHint.hidden=true;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
   const cs=CUR.on&&!lk?(AIM.hot?'pointer':'crosshair'):'';if(cv.style.cursor!==cs)cv.style.cursor=cs;
 }
-document.addEventListener('pointerlockchange',()=>{if(mouseLocked()){lockOK=true;CUR.on=false;}pointers.clear();AIM.x=AIM.y=0;pcUi();});
+document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;CUR.on=!mouseLocked();pointers.clear();AIM.x=AIM.y=0;pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
 // Hat es schon einmal geklappt, ist ein Fehler nur die Sperrzeit des Browsers direkt nach Esc: einfach nochmal klicken lassen
 document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi();return;}
@@ -287,7 +287,7 @@ function bubTop(){let t=60;['#hudTop','#standBtn','#svStand'].forEach(q=>{const 
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
-  focus={type,m,ly:0,lp:0};CUR.on=false;freeMouse();
+  focus={type,m,ly:0,lp:0};freeMouse();
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
@@ -320,12 +320,10 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
-  if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button!==0)return;
-    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);return;}
-    if(CUR.on){const [lx,ly]=toLocal(e.clientX,e.clientY);if(!tapAt(lx,ly,false)&&curAct)interact(curAct);return;}
-    grabMouse();return;}
-  if(PC&&CUR.on&&e.pointerType==='mouse'&&e.button===2&&!focus){ // rechte Maustaste: umschauen im Zeiger-Modus
-    try{cv.setPointerCapture(e.pointerId);}catch(_){}const [lx,ly]=toLocal(e.clientX,e.clientY);pointers.set(e.pointerId,{x:lx,y:ly,t:performance.now(),mode:'look',moved:0,type:'mouse',btn:2});return;}
+  if(PC&&e.pointerType==='mouse'&&!focus&&mouseLocked()){if(e.button===0&&!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);return;}
+  if(PC&&e.pointerType==='mouse'&&!focus){ // Zeiger-Modus: Ziehen (links oder rechts) = umschauen, kurzer Klick = anklicken (beim Loslassen)
+    if(e.button!==0&&e.button!==2)return;
+    try{cv.setPointerCapture(e.pointerId);}catch(_){}const [lx,ly]=toLocal(e.clientX,e.clientY);pointers.set(e.pointerId,{x:lx,y:ly,t:performance.now(),mode:'look',moved:0,type:'mouse',btn:e.button});return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   const [lx,ly]=toLocal(e.clientX,e.clientY);
   const leftSide=!focus&&lx<LW()*.45&&e.pointerType!=='mouse';
@@ -346,14 +344,14 @@ cv.addEventListener('pointermove',e=>{
 function endPtr(e){
   const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);
   if(p.mode==='joy'){joy.active=false;joy.id=null;joy.vx=joy.vy=0;joyRest();}
-  if(!locked&&e.type==='pointerup'&&p.btn!==2&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
+  if(!locked&&e.type==='pointerup'&&p.btn!==2&&p.moved<14&&performance.now()-p.t<420){if(!tapAt(p.x,p.y,false,p.type==='touch')&&p.type==='mouse'&&PC&&!focus&&curAct)interact(curAct);}
 }
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
   if((e.code==='ControlLeft'||e.code==='ControlRight')&&!e.repeat&&PC&&!focus&&!locked&&started){e.preventDefault();curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
-  if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on)curToggle();
+  if(e.code==='Escape'&&focus)leaveFocus();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
 // Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
 const SVKEY_CODES={Space:'START',Enter:'START',KeyA:'AUTO',KeyK:'KARTE',KeyL:'LEITER',KeyE:'EINSATZ',KeyN:'LINIEN',KeyI:'INFO',KeyM:'MENU'};

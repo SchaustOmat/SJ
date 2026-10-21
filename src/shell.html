@@ -548,7 +548,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
-<div id="curHint" hidden>MAUS FREI · TASTEN UND AUTOMATEN ANKLICKEN · RECHTE MAUSTASTE = UMSCHAUEN · STRG = ZURÜCK</div>
+<div id="curHint" hidden>WASD LAUFEN · MAUS ZIEHEN = UMSCHAUEN · KLICK ODER E = BENUTZEN · STRG = MAUS FANGEN</div>
 <div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · STRG = MAUS FREI ZUM KLICKEN AUF TASTEN · SHIFT SPRINTEN</small></div>
 <button id="prompt" hidden></button>
 <div id="rmBar" hidden></div>
@@ -672,14 +672,14 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <label class="sens"><span>UMSCHAUEN</span><input type="range" id="sensIn" min="0.2" max="3" step="0.1" value="1"><b id="sensVal">1.0×</b></label>
   <div class="help" style="display:flex;flex-direction:column;gap:10px">
     <p><b>Links:</b> Daumen ziehen zum Laufen. <b>Rechts:</b> wischen zum Umschauen.</p>
-    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen, Shift sprintet, mit der Maus umschauen (Empfindlichkeit oben bei UMSCHAUEN). Klick oder E benutzt. Beim Spielen und mit Esc ist die Maus wieder frei.</p>
+    <p><b>Am PC:</b> WASD laufen, Shift sprintet, Maus mit gedrückter Taste ziehen = umschauen (Empfindlichkeit oben bei UMSCHAUEN). Klick oder E benutzt. Strg fängt die Maus (fester Blick, Maus dreht direkt), Strg oder Esc gibt sie wieder frei.</p>
     <p><b>Antippen:</b> Automat, Tisch, Aufzug oder Person. Ist es weiter weg, läufst du hin.</p>
     <p><b>Automaten &amp; Tische:</b> Du setzt dich hin und drückst die großen Knöpfe unten. Oben links: Aufstehen.</p>
     <p><b>Aufzug:</b> grünen Knopf rufen, rein, in der Kabine 2 oder EG drücken.</p>
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
-    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC mit Strg die Maus freigeben und die Tasten am Pult anklicken (oder direkt mit dem Punkt, der zeigt, wo du hinguckst), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC einfach die Tasten am Pult anklicken, am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
     <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
