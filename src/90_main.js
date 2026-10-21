@@ -365,7 +365,7 @@ function endPtr(e){
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
-  if(typeof handsKey==='function'&&started&&!focus&&!locked&&handsKey(e)){e.preventDefault();return;} // R/F/Q/H/X/V/T: Rauchen und Trinken
+  if(typeof handsKey==='function'&&started&&(!focus||focus.type==='slot')&&!locked&&handsKey(e)){e.preventDefault();return;} // R/F/Q/H/X/V/T: Rauchen und Trinken (auch am Automaten)
   if(e.code==='Tab'&&PC&&started){e.preventDefault();if(!e.repeat&&!focus&&!locked)curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(focus&&focus.type==='crash'&&(e.code==='Space'||e.code==='Enter')&&!e.repeat&&!locked){e.preventDefault();crKey();}
@@ -379,7 +379,7 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
 function tapAt(x,y,noWalk,fat){
-  if(typeof handsTap==='function'&&!focus&&handsTap(x,y))return true; // Schachtel offen: Klick/Tipp geht an die Kippen
+  if(typeof handsTap==='function'&&(!focus||focus.type==='slot')&&handsTap(x,y))return true; // Schachtel offen: Klick/Tipp geht an die Kippen
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
   let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
   {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}

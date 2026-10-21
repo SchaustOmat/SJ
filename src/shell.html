@@ -106,6 +106,7 @@ body.pcmode #itBar{display:none}
 @media (max-height:460px){#itBar{left:auto;right:max(10px,env(safe-area-inset-right,0px));transform:none;top:calc(env(safe-area-inset-top,0px) + 54px);flex-direction:column;max-width:150px}}
 #itHint{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;pointer-events:none;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);background:rgba(10,6,16,.7);padding:5px 10px;border:1px solid rgba(214,160,42,.4);border-radius:6px;white-space:nowrap}
 body:not(.pcmode) #itHint{display:none}
+#itBar.fc{top:calc(env(safe-area-inset-top,0px) + 8px);z-index:16}#itHint.fc{z-index:16;bottom:auto;top:8px}
 #barList{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}#barList .btn b{color:var(--gold);margin-left:6px}
 @media (max-width:400px){.rm-n{display:none}.rm-row button{min-width:40px;height:34px;font-size:10px}}
 @media (max-height:460px){#rmBar{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:auto;left:50%;transform:translateX(-50%);flex-direction:row;align-items:flex-end;gap:5px;max-width:calc(100vw - 300px)}}
