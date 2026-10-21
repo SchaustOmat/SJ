@@ -455,7 +455,7 @@ function updReels(m,dt){
     if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=MY_T0+m.myst.cells.length*MY_DT+.45;m.msg='ZUFALLSSYMBOLE!';SFX.tease(3);SFX.whoosh();updateButtons(m);}
     else onResult(m);}
   if(any)m.dirty=true;
-  if(!m.demo&&focus&&focus.m===m)SFX.reelRun(any&&m.reels.some(r=>r.spin&&!(r.land&&r.land.back)));
+  // kein Laufgeräusch beim Drehen (Nutzer 2026-10-21: das Summen/Schleifen weg), nur die Stopp-Klacks
 }
 const REEL_V=10,REEL_RAMP=.2,REEL_OVER=.27,REEL_BACK=.27; // Walzen wie im Nutzer-Video (2026-10-21): 10 Felder/s, Anlauf 0,2 s, Überschwingen 0,27 Feld, 0,27 s zurück
 function onResult(m){
