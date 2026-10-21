@@ -103,7 +103,7 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .rm-row button.down{transform:translateY(2px);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
 body.pcmode #rmBar{display:none}
 @media (max-width:400px){.rm-n{display:none}.rm-row button{min-width:40px;height:34px;font-size:10px}}
-@media (max-height:460px){#rmBar{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:max(10px,env(safe-area-inset-right,0px));flex-direction:row;align-items:flex-end;gap:5px}}
+@media (max-height:460px){#rmBar{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:auto;left:50%;transform:translateX(-50%);flex-direction:row;align-items:flex-end;gap:5px;max-width:calc(100vw - 300px)}}
 #joyHint{position:fixed;z-index:5;pointer-events:none;font-family:var(--f-title);font-size:11.2px;color:var(--dim);letter-spacing:.1em;text-align:center;width:124px}
 
 .bubble{max-width:min(240px,70vw);overflow-wrap:anywhere;position:fixed;z-index:5;left:0;top:0;transform:translate(-50%,-100%);background:var(--paper);color:var(--paperInk);font-family:var(--f-body);font-size:19px;line-height:1.05;padding:4px 8px 5px;max-width:200px;text-align:center;box-shadow:0 0 0 2px #000,3px 3px 0 #000;pointer-events:none}
@@ -656,7 +656,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792570112";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792570189";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
