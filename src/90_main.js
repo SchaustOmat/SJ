@@ -218,7 +218,8 @@ function aimStep(dt){
 }
 // Punkt auf dem Bildschirm (nach dem Kamera-Update)
 function aimScreen(){
-  if(!aimActive()){AIM.sx=LW()/2;AIM.sy=LH()/2;cross.style.transform='';return;}
+  if(!aimActive()){if(typeof handsCursorActive==='function'&&handsCursorActive()){AIM.sx=HD.cx;AIM.sy=HD.cy;cross.style.transform='translate('+(HD.cx-LW()/2).toFixed(1)+'px,'+(HD.cy-LH()/2).toFixed(1)+'px)';return;}
+    AIM.sx=LW()/2;AIM.sy=LH()/2;cross.style.transform='';return;}
   aimEul.set(P.pitch+AIM.y,P.yaw-AIM.x,0);aimV.set(0,0,-1).applyEuler(aimEul).multiplyScalar(4).add(camera.position);
   camera.updateMatrixWorld();aimV.project(camera);
   AIM.sx=(aimV.x*.5+.5)*LW();AIM.sy=(-aimV.y*.5+.5)*LH();
@@ -241,6 +242,7 @@ document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi
   if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
 document.addEventListener('mousemove',e=>{if(!mouseLocked()){const [lx,ly]=toLocal(e.clientX,e.clientY);CUR.x=lx;CUR.y=ly;return;}
   if(!mouseLocked()||locked||focus)return;
+  if(typeof handsCursorActive==='function'&&handsCursorActive()){handsMouse(e.movementX,e.movementY);return;} // offene Schachtel: Maus bewegt den Zeiger, nicht die Kamera
   if(aimActive()){AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();}
   else{P.yaw-=e.movementX*.0024*SENS;P.pitch=clamp(P.pitch-e.movementY*.0024*SENS,-1.2,1.1);}});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();if(typeof mpTag==='function')mpTag();if(typeof vcLabel==='function')vcLabel();}},true);
@@ -363,6 +365,7 @@ function endPtr(e){
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
+  if(typeof handsKey==='function'&&started&&!focus&&!locked&&handsKey(e)){e.preventDefault();return;} // R/F/Q/H/X/V/T: Rauchen und Trinken
   if(e.code==='Tab'&&PC&&started){e.preventDefault();if(!e.repeat&&!focus&&!locked)curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(focus&&focus.type==='crash'&&(e.code==='Space'||e.code==='Enter')&&!e.repeat&&!locked){e.preventDefault();crKey();}
@@ -376,6 +379,7 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
 function tapAt(x,y,noWalk,fat){
+  if(typeof handsTap==='function'&&!focus&&handsTap(x,y))return true; // Schachtel offen: Klick/Tipp geht an die Kippen
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
   let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
   {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}
@@ -462,6 +466,7 @@ function talk(n){
   SFX.click();
   if(n.special==='bartender'&&chips<BAR_MIN&&BANK.bal>=BAR_MIN){say(n,'Du hast doch noch '+fmt(BANK.bal)+' auf der Bank. Geh zum Geldautomaten.',4);return;}
   if(n.special==='bartender'&&chips<BAR_MIN){setChips(chips+BAR_GIFT,true);say(n,"Knapp bei Kasse? Hier, "+fmt(BAR_GIFT)+" aufs Haus. Sag's keinem.",4);SFX.big();mpWin('holt sich '+fmt(BAR_GIFT)+' beim Barkeeper.');return;}
+  if(n.special==='bartender'&&typeof barMenu==='function'){barMenu(n);return;} // Getränke und Zigaretten kaufen
   say(n,n.lines[Math.random()*n.lines.length|0]);
 }
 let toastT=null;
@@ -635,7 +640,8 @@ function frame(){
     if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=(aimActive()||CUR.on)?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
-  renderer.render(scene,camera);
+  if(typeof handsStep==='function')handsStep(dt);
+  renderer.clear();renderer.render(scene,camera);if(typeof handsRender==='function')handsRender(); // Hände/Kippe/Glas über der Welt
 }
 
 /* ---------- boot ---------- */

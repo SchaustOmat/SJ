@@ -99,6 +99,14 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .rm-row button{min-width:46px;height:38px;border:2px solid #000;border-radius:19px;font-family:var(--f-dev);font-weight:700;font-size:11px;letter-spacing:.02em;padding:0 7px;box-shadow:0 2px 0 #000,inset 0 2px 4px rgba(255,255,255,.4);white-space:nowrap}
 .rm-row button.down{transform:translateY(2px);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
 body.pcmode #rmBar{display:none}
+#itBar{position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 210px);pointer-events:auto}
+.itb{font-family:var(--f-title);font-size:11px;letter-spacing:.06em;padding:9px 11px;border:1px solid rgba(214,160,42,.55);border-radius:8px;background:rgba(10,6,16,.78);color:var(--gold);box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.itb.down{transform:translateY(2px);background:rgba(214,160,42,.3)}
+body.pcmode #itBar{display:none}
+@media (max-height:460px){#itBar{left:auto;right:max(10px,env(safe-area-inset-right,0px));transform:none;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);flex-direction:column;max-width:150px}}
+#itHint{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;pointer-events:none;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);background:rgba(10,6,16,.7);padding:5px 10px;border:1px solid rgba(214,160,42,.4);border-radius:6px;white-space:nowrap}
+body:not(.pcmode) #itHint{display:none}
+#barList{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}#barList .btn b{color:var(--gold);margin-left:6px}
 @media (max-width:400px){.rm-n{display:none}.rm-row button{min-width:40px;height:34px;font-size:10px}}
 @media (max-height:460px){#rmBar{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:auto;left:50%;transform:translateX(-50%);flex-direction:row;align-items:flex-end;gap:5px;max-width:calc(100vw - 300px)}}
 #joyHint{position:fixed;z-index:5;pointer-events:none;font-family:var(--f-title);font-size:11.2px;color:var(--dim);letter-spacing:.1em;text-align:center;width:124px}
@@ -555,6 +563,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · TAB ODER RECHTE MAUSTASTE = ZEIGER-KREIS ZUM ANKLICKEN VON TASTEN · SHIFT SPRINTEN</small></div>
 <button id="prompt" hidden></button>
 <div id="rmBar" hidden></div>
+<div id="itBar" hidden></div>
+<div id="itHint" hidden></div>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
 
 <div id="slotView" hidden>
@@ -606,6 +616,12 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="bubbles"></div>
 <div id="veil" hidden></div>
 
+<section id="pBar" class="panel" hidden aria-label="Bar">
+  <header><h2>BAR</h2><button class="x" data-close>ZURÜCK</button></header>
+  <p id="barInv"></p>
+  <div id="barList"></div>
+  <p style="color:var(--dim)">Glas in der Hand: T = trinken (Handy: TRINKEN unten). Zigaretten: R = Schachtel, Maus auf die Schachtel öffnet sie, Maus auf eine Kippe hebt sie an, Klick nimmt sie in den Mund. F = Feuerzeug, Q = ziehen, H = Hand oder Mund, X = abaschen, V = wegwerfen.</p>
+</section>
 <section id="pRoulette" class="panel" hidden aria-label="Roulette">
   <header><h2 id="rTitle">ROULETTE</h2><button class="x" data-close>ZURÜCK</button></header>
   <div class="rwrap"><canvas id="rCan" width="400" height="400"></canvas><div class="res" id="rRes">SETZ DEINE CHIPS</div></div>
@@ -689,6 +705,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
     <p><b>Crash</b> (EG, Ostwand): Einsatz setzen, START, und die Kurve steigt (×1,00 → ×2 → ×10 …). Sie kann jederzeit crashen. Wer vorher AUSZAHLEN drückt (am PC auch Leertaste), bekommt Einsatz × aktuellen Wert, sonst ist der Einsatz weg. AUTO zahlt von selbst bei einem festen Wert aus. Quote 97 %. Im Raum (MULTI) läuft eine gemeinsame Runde für alle am Terminal: alle 8 Sekunden eine neue, man sieht, wer mitsetzt und wer wo ausgestiegen ist.</p>
+    <p><b>Rauchen &amp; Trinken:</b> R holt die Zigarettenschachtel raus (20 Stück, Nachschub an der Bar). Maus auf die Schachtel = Deckel auf, Maus auf eine Kippe = sie kommt hoch, Klick = in den Mund. F = Feuerzeug, Q = ziehen, H = in die Hand oder zurück in den Mund, X = abaschen, V = wegwerfen. Die Kippe brennt von selbst langsam runter. An der Bar gibt es Bier, Cola, Whisky, Sekt und Wasser, T = trinken; mit Alkohol schwankt der Blick ein bisschen. Am Handy stehen die Tasten unten in der Mitte. Die anderen im Raum sehen deine Kippe und dein Glas.</p>
     <p><b>Sprachchat:</b> MIC oben einschalten, alle im selben Raum hören dich. Klang wie bei Discord: 96 kbit/s, dazu eine Rauschunterdrückung mit neuronalem Netz (RNNoise), die Tastatur, Lüfter und Straße wegfiltert. Sie wird beim Einschalten einmal kurz geladen (120 KB).</p>
     <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC mit Tab oder rechter Maustaste in den Zeiger-Modus und die Tasten am Pult mit dem Kreis anklicken, am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
     <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>
