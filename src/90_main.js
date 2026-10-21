@@ -102,6 +102,7 @@ function buildWorld(){
   for(let i=0;i<6;i++){const [id,c]=MROW[(i+2)%5];buildMachine(A,-10.3+i*1.25,-11.6,0,id,c);}
   buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHighBoard(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:500,bb:1000,buy:5000,color:0xd6a02a,stool:0x6a1020});
+  buildCrash(A,11.3,5.6,-Math.PI/2);sign(A,'CRASH','#ff5ab0',11.9,3.3,5.6,-Math.PI/2,.5);
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
   sign(A,'SJ SPIELBANK','#ffcf3a',-3.2,3.45,-11.9,0,.6);
@@ -259,6 +260,12 @@ function focusPose(){
     let cy=(sp?1.76:1.47)+shift*vis;const cyTop=2.47-vis*(.5-top/LHv);
     if(asp<1&&cyTop+vis*(.5-(LHv-bh)/LHv)<=1.17)cy=cyTop;
     g.localToWorld(out.pos.set(0,cy,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
+  } else if(f.type==='crash'){
+    const g=CR.group,bar=$('#crBar'),top=asp<1?64:12,LHv=LH(),bh=bar&&!bar.hidden?bar.offsetHeight+10:150;
+    const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
+    const v=asp<1?60:50,tv=Math.tan(v*Math.PI/360),th=tv*asp;
+    const H=1.02,W=.76,d=Math.max(H/(2*tv*free),W/(2*th))+.05,vis=2*d*tv;
+    g.localToWorld(out.pos.set(0,CR_SCR_Y+shift*vis,CR_SCR_Z+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
   } else if(f.type==='poker'||f.type==='hilo'||f.type==='mtable'){
     const cx=f.type==='poker'?PK.cx:HL.cx,cz=f.type==='poker'?PK.cz:HL.cz;
     const bar=f.type==='poker'?$('#pkBar'):f.type==='hilo'?$('#hlBar'):$('#mtBar');const top=110;
@@ -299,6 +306,7 @@ function enterFocus(type,m){
   if(type==='slot'&&m.group.userData.chair)m.group.userData.chair.visible=false; // Stuhl nicht im Bild beim Sitzen
   if(type==='slot'){setHD(m,true);if(!m.booted&&!isMine(m))smOpen(m);else updateButtons(m);m.dirty=true;svCardSync();}
   if(type==='hilo'){HL.state='bet';hlUpdate();say(HL.dealer,'Einsatz wählen, dann GEBEN.',2.5);}
+  if(type==='crash')crEnter();
   if(type==='mtable'){const V=m.view;const free=V?V.seats.filter(x=>!x).length:MT_N;if(!MT.tok&&free>0&&chips>=m.bb*5)mtRequestSeat(m);MT.feed=[];mtBarSync();}
   resize();
 }
@@ -312,6 +320,7 @@ function leaveFocus(){
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
   else if(f.type==='hilo'){if(['deal','pick','reveal'].includes(HL.state)){toast('Erst eine Karte wählen.');return;}hlLeave();P.x=HL.cx;P.z=HL.cz+1.95;P.yaw=0;}
+  else if(f.type==='crash'){crLeave();P.x=CR.cx+Math.sin(CR.rot)*1.3;P.z=CR.cz+Math.cos(CR.rot)*1.3;P.yaw=CR.rot;}
   else if(f.type==='mtable'){const T=f.m,si=mtMySeat(T);mtLeaveSeat();const p=mtSeatPos(T,si>=0?si:0,T.R+.95);P.x=p.x;P.z=p.z;P.yaw=Math.atan2(-(T.cx-p.x),-(T.cz-p.z));}
   P.pitch=-.05;
   camAnim={t:0,dur:.5,fromPos:camera.position.clone(),fromYaw:camera.rotation.y,fromPitch:camera.rotation.x,fromFov:camera.fov,dir:-1};
@@ -356,6 +365,7 @@ cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endP
 addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='Tab'&&PC&&started){e.preventDefault();if(!e.repeat&&!focus&&!locked)curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
+  if(focus&&focus.type==='crash'&&(e.code==='Space'||e.code==='Enter')&&!e.repeat&&!locked){e.preventDefault();crKey();}
   if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on&&lockFail)curToggle();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
 // Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
@@ -374,6 +384,7 @@ function tapAt(x,y,noWalk,fat){
       if(focus.type==='slot'&&h.object===focus.m.scrMesh&&smTap(focus.m,h.uv))return true;
       if(focus.type==='slot'&&a.type==='mbtn'&&a.m===focus.m){pressButton(a.m,a.key);return true;}
       if(focus.type==='hilo'&&a.type==='hlcard'){hlPick(a.idx);return true;}
+      if(focus.type==='crash'&&a.type==='crash'){crKey();return true;}
       if(a.type==='npc'){talk(a.npc);return true;}
       if(h.distance>.3)break;}
     return true;
@@ -437,6 +448,7 @@ function interact(act){
       else if(machineHeld(act.m)){toast(machineHeld(act.m)+' hat hier eine Karte stecken.');SFX.click();}else if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
     case 'poker':enterFocus('poker');break;
     case 'hilo':enterFocus('hilo');break;
+    case 'crash':enterFocus('crash');break;
     case 'mtable':enterFocus('mtable',act.T);break;
     case 'ecall':elevCall();break;
     case 'ebtn':elevGo(act.dest,act);break;
@@ -543,7 +555,7 @@ function resize(){
     let pr=Math.min(window.devicePixelRatio||1,2);while(pr>1&&w*h*pr*pr>3.2e6)pr-=.25;
     iw=Math.round(w*pr);ih=Math.round(h*pr);
   } else {
-    let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable')?1:Math.max(1,s-1);
+    let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable'||focus.type==='crash')?1:Math.max(1,s-1);
     iw=Math.ceil(w/s);ih=Math.ceil(h/s);
   }
   renderer.setSize(iw,ih,false);document.body.classList.toggle('gfx-sharp',GFX==='sharp');
@@ -612,7 +624,7 @@ function frame(){
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
-    pokerStep(dt);hilloStep(dt);mpStep(dt);
+    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);
     if(!locked&&!focus){chatterT-=dt;if(chatterT<=0){chatterT=6+Math.random()*6;const near=F.npcs.filter(n=>Math.hypot(n.root.position.x-P.x,n.root.position.z-P.z)<9&&n.bubbleUntil<now);
       if(near.length){const n=near[Math.random()*near.length|0];say(n,n.lines[Math.random()*n.lines.length|0]);}}}
     const lw=LW(),lh=LH();

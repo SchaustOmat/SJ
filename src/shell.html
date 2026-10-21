@@ -397,6 +397,8 @@ body.pcmode .svb .key{display:block;font-family:var(--f-body);font-size:15px;let
 .tb-info{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--f-title);font-size:14px;letter-spacing:.05em;color:var(--ink);line-height:1.5}
 .tb-info span:last-child{color:var(--dim)}.tb-info .go{color:#3adf5a!important}
 .tb-row{display:flex;gap:7px}
+#crList{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--f-title);font-size:12px;letter-spacing:.04em}
+.crp{padding:3px 8px;border:1px solid #3a2c52;border-radius:4px;color:#9b8fb3;background:rgba(7,4,12,.6)}.crp b{color:#ffcf3a}.crp.me{border-color:#3adf5a;color:#f4f0e8}.crp.out{color:#3adf5a}.crp.lost{color:#ff3a5a}
 .tbb.sm{flex:.55;font-size:18px}
 #mpCode{flex:1;min-width:0;background:var(--black);color:var(--gold);border:2px solid var(--line);font-family:var(--f-title);font-size:28px;padding:10px;text-align:center;letter-spacing:.3em;user-select:text;-webkit-user-select:text}
 .mps{margin:0;font-size:22px;line-height:1.15}
@@ -593,6 +595,12 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <div class="tb-row" id="hlRow"><button class="tbb c-white sm" id="hl-MINUS">−</button><button class="tbb c-white sm" id="hl-PLUS">+</button><button class="tbb c-green" id="hl-GEBEN">GEBEN</button><button class="tbb c-yellow" id="hl-NEHMEN">NEHMEN</button><button class="tbb c-red" id="hl-WEITER">WEITER</button></div>
   <div class="tb-row" id="hlCards" hidden><button class="tbb c-amber lit" id="hlc-0">KARTE 1</button><button class="tbb c-amber lit" id="hlc-1">KARTE 2</button><button class="tbb c-amber lit" id="hlc-2">KARTE 3</button><button class="tbb c-amber lit" id="hlc-3">KARTE 4</button></div>
 </div>
+<div id="crBar" class="tbar" hidden>
+  <div class="tb-info"><span id="crInfo"></span><span id="crMsg"></span></div>
+  <div id="crList" hidden></div>
+  <div class="tb-row"><button class="tbb c-white sm" id="cr-MINUS">−</button><button class="tbb c-white sm" id="cr-PLUS">+</button><button class="tbb c-blue" id="cr-AUTOM">AUTO −</button><button class="tbb c-blue" id="cr-AUTOP">AUTO +</button></div>
+  <div class="tb-row"><button class="tbb c-green" id="cr-START">START</button><button class="tbb c-yellow" id="cr-NEHMEN">AUSZAHLEN</button></div>
+</div>
 <div id="watchCard" hidden><div id="wcBody"></div><canvas id="wcWheel" width="240" height="240" hidden></canvas></div>
 <div id="toast" hidden></div>
 <div id="bubbles"></div>
@@ -680,6 +688,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
+    <p><b>Crash</b> (EG, Ostwand): Einsatz setzen, START, und die Kurve steigt (×1,00 → ×2 → ×10 …). Sie kann jederzeit crashen. Wer vorher AUSZAHLEN drückt (am PC auch Leertaste), bekommt Einsatz × aktuellen Wert, sonst ist der Einsatz weg. AUTO zahlt von selbst bei einem festen Wert aus. Quote 97 %. Im Raum (MULTI) läuft eine gemeinsame Runde für alle am Terminal: alle 8 Sekunden eine neue, man sieht, wer mitsetzt und wer wo ausgestiegen ist.</p>
     <p><b>Sprachchat:</b> MIC oben einschalten, alle im selben Raum hören dich. Klang wie bei Discord: 96 kbit/s, dazu eine Rauschunterdrückung mit neuronalem Netz (RNNoise), die Tastatur, Lüfter und Straße wegfiltert. Sie wird beim Einschalten einmal kurz geladen (120 KB).</p>
     <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC mit Tab oder rechter Maustaste in den Zeiger-Modus und die Tasten am Pult mit dem Kreis anklicken, am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
     <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>

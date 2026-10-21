@@ -100,4 +100,4 @@ function hlBarSync(){
   }
   const el=$('#hlView');if(el.innerHTML!==html)el.innerHTML=html;el.hidden=!html;
 }
-function barsFor(type){if(PK.console)PK.console.visible=type!=='poker';if(HL.cg)HL.cg.visible=type!=='hilo';$('#pkBar').hidden=type!=='poker';$('#hlBar').hidden=type!=='hilo';$('#mtBar').hidden=type!=='mtable';if(type==='mtable')mtBarSync();if(type==='poker')pkBarSync();if(type==='hilo')hlBarSync();}
+function barsFor(type){if(PK.console)PK.console.visible=type!=='poker';if(HL.cg)HL.cg.visible=type!=='hilo';if(CR.cg)CR.cg.visible=type!=='crash';$('#pkBar').hidden=type!=='poker';$('#hlBar').hidden=type!=='hilo';$('#mtBar').hidden=type!=='mtable';$('#crBar').hidden=type!=='crash';if(type==='crash')crBarSync();if(type==='mtable')mtBarSync();if(type==='poker')pkBarSync();if(type==='hilo')hlBarSync();}

@@ -69,6 +69,8 @@ function mpLocalState(){
     if(focus.type==='slot'){const p=focus.m.group.localToWorld(new THREE.Vector3(0,0,1.0));x=p.x;z=p.z;y=focus.m.group.rotation.y+Math.PI;a='slot';}
     else if(focus.type==='poker'){x=PK.cx;z=PK.cz+2.75;y=Math.PI;a='poker';}
     else if(focus.type==='hilo'){x=HL.cx;z=HL.cz+1.35;y=Math.PI;a='hilo';}
+    else if(focus.type==='crash'){let h=0;for(const ch of String(MP.myPeer||''))h=(h*31+ch.charCodeAt(0))>>>0;const off=((h%3)-1)*.55;
+      x=CR.cx+Math.sin(CR.rot)*1.3+Math.cos(CR.rot)*off;z=CR.cz+Math.cos(CR.rot)*1.3-Math.sin(CR.rot)*off;y=CR.rot+Math.PI;a='crash';}
     else if(focus.type==='mtable'){const T=focus.m,si=mtMySeat(T);mt=T.id;if(si>=0){const p=mtSeatPos(T,si,T.R);x=p.x;z=p.z;y=Math.atan2(T.cx-p.x,T.cz-p.z);a='mtable';ms=si;}else{const p=mtSeatPos(T,0,T.R+.9);x=p.x;z=p.z;y=Math.PI;a='mwatch';}}
   } else if(openId==='pRoulette')a='roulette';
   else if(EL.phase==='moving')a='elev';
