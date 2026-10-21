@@ -720,7 +720,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792594878";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792596064";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -748,7 +748,7 @@ var SlotEngine=(function(){
   var GAMES={
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200,300,400,500,1000],
-      wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],stack:3,
+      wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[3,1,3,1,3],stack:3, // Pharao nur auf Walze 1, 3, 5 als Dreierblock (wie beim Original, Nutzer 2026-10-21)
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
       mystery:{chance:1/70,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
       // Gewinnplan wie der echte Merkur-Spielplan bei 0,20 € (Diamant 2/10/100 €, Rubin 1,40/4/8 €, Saphir/Smaragd 1/2/6 €, A/K 0,40/1/4 €, Q/J/10 0,20/0,60/2 €), pro Linie bei 1 Cent je Linie
@@ -1058,7 +1058,10 @@ const SFX={
   gambleTick(on){ // Leiter-Blinken nach dem Video: Hoch-Phase A6 mit kurzem H5, Runter-Phase schnelle Folge D6-A5-C6-D6-F5-D6-A5 und D6
     if(on){soft(NOTE(93),.16,.05,0,'square');soft(NOTE(71),.035,.03,.07,'square');return;}
     [[86,.05],[81,.012],[84,.015],[86,.012],[77,.04],[86,.03],[81,.08],[86,.14]].reduce((t,[n,d])=>{soft(NOTE(n),d+.01,.045,t,'square');return t+d;},0);},
-  reelStop(i){tone(150-i*6,.09,'sine',.22,0,70);noise(.025,.12,1800+i*120);}, // dumpfes Holz-Tock wie beim Walzenstopp
+  reelStop(i){noise(.03,.16,2600+i*150);tone(170-i*8,.07,'triangle',.18,0,80);noise(.05,.08,500,.005);}, // Klack beim Aufschlag der Walze (hell + Holz)
+  // Pharao-Block landet: satter Schlag und Gong (n = Anzahl Pharaos auf der Walze)
+  pharaoLand(n){tone(110,.35,'sine',.3,0,55);noise(.12,.1,300);bell(NOTE(67),.9,.12,.02,1.5);bell(NOTE(74),.6,.08,.1);if(n>=3){bell(NOTE(79),.8,.08,.2);noise(.12,.06,4000,.2);}},
+  reelRun(on){reelRunSet(on);}, // Laufgeräusch der Walzen (Motor-Surren), solange eine läuft
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
   sparkle(){[2093,2637,3136,4186].forEach((f,i)=>tone(f,.07,'square',.025,i*.035));},
@@ -1084,8 +1087,23 @@ const SFX={
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){bell(NOTE(67),.8,.12,0,1.5);bell(NOTE(91),.4,.05,.04);noise(.1,.06,4000);},
-  spinTick(){noise(.018,.035,2600);} // leises Rattern der laufenden Walzen
+  spinTick(){noise(.018,.035,2600);} // leises Rattern (alt)
 };
+// Walzen-Laufgeräusch: gefiltertes Rauschen + tiefes Surren, weich ein- und ausgeblendet
+let reelRunN=null;
+function reelRunSet(on){
+  if(!AC||muted){if(reelRunN&&!on){try{reelRunN.g.gain.cancelScheduledValues(AC.currentTime);reelRunN.g.gain.setTargetAtTime(.0001,AC.currentTime,.03);reelRunN.stop(AC.currentTime+.25);}catch(e){}reelRunN=null;}return;}
+  const t=AC.currentTime;
+  if(on){if(reelRunN)return;
+    if(!noiseBuf){noiseBuf=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate);const a=noiseBuf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;}
+    const s=AC.createBufferSource();s.buffer=noiseBuf;s.loop=true;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1100;f.Q.value=.7;
+    const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=52;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
+    const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.045,t+.12);
+    const og=AC.createGain();og.gain.value=.5;
+    s.connect(f);f.connect(g);o.connect(lp);lp.connect(og);og.connect(g);g.connect(master);s.start(t);o.start(t);
+    reelRunN={g,stop(at){try{s.stop(at);o.stop(at);}catch(e){}}};
+  } else if(reelRunN){const n=reelRunN;reelRunN=null;n.g.gain.cancelScheduledValues(t);n.g.gain.setValueAtTime(n.g.gain.value,t);n.g.gain.linearRampToValueAtTime(.0001,t+.15);n.stop(t+.2);}
+}
 let beatTimer=null,beatN=0;
 function setBeat(on){
   if(beatTimer){clearInterval(beatTimer);beatTimer=null;}
@@ -1734,7 +1752,7 @@ const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
   // gekaufte Freispiele: mehr Schwerter (1-1-2-2-2), sonst gleiche Walzen -> 10 Freispiele im Schnitt ~98 % von 100× Einsatz (tools: tzbuy3.js)
   SlotEngine.setBuy('tizona',[1,1,2,2,2].map(k=>{const a=TIZ_ROWS[0].slice();a[10]=k;return R_(a,TK);}),706);
   SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
-  SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,1],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,1],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
+  SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,0],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,0],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
 })();
 const GAMEINFO={pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,m.useFs==='buy'?'buy':!!m.useFs);
@@ -2134,7 +2152,7 @@ function startSpin(m,demo){
   else m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m),m.fs?m.fs.special:null,m.useFs);
   if(m.G.walkWild&&!demo)m.ev.trigger=m.shN>=3;
   const fast=m.auto?.75:1;
-  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=28;r.t0=now+i*.045;r.land=null;r.vel=0;});
+  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.18)*fast;r.teased=false;r.speed=REEL_V;r.t0=now+i*.02;r.land=null;r.vel=0;});
   if(m.G.special){m.reels.forEach((r,i)=>{if(i!==2)r.spin=false;});m.reels[2].stopAt=now+.75*fast;m.reels[2].t0=now;}
   m.state='spin';m.present=null;m.expand=null;m.msg=m.rsp?'SCHWERT WANDERT · GRATIS':m.fs?('FREISPIEL '+(m.fs.n+1)+' VON '+m.fs.total):m.demo?'':'VIEL GLÜCK!';
   if(!demo)SFX.reelStart();
@@ -2147,18 +2165,23 @@ function updReels(m,dt){
   m.reels.forEach((r,i)=>{
     if(r.bounce>0)r.bounce=Math.max(0,r.bounce-dt*6);
     if(!r.spin)return;any=true;
-    if(!r.land){const t=now-(r.t0||0);r.vel=t<0?0:t<.08?-6:r.speed*Math.min(1,(t-.08)/.14)*(r.teased?1.4:1);r.pos-=r.vel*dt;
+    if(!r.land){const t=now-(r.t0||0);r.vel=t<0?0:r.speed*Math.min(1,t/REEL_RAMP)*(r.teased?1.4:1);r.pos-=r.vel*dt;
       if(r.teased&&Math.random()<dt*25)fxBurst(m,RX+i*CW+CW/2,RY+CH*3,2,{spd:30,up:90,g:-20,life:.6,w:CW-8});
-      if(now>=r.stopAt){const v=Math.max(8,r.vel),d=2+(((r.pos-r.target-2)%1)+1)%1;r.land={t0:now,d,dur:clamp(4.25*d/v,.24,.5)};r.pos=r.target+d;
+      if(now>=r.stopAt){ // Landung: mit voller Fahrt bis knapp über das Ziel hinaus, dann weich zurück (gemessen am Original)
+        const v=Math.max(6,r.vel);let d=(((r.pos-r.target)%1)+1)%1;if(d<.5)d+=1;r.pos=r.target+d;
+        r.land={t0:now,d:d+REEL_OVER,v,dur:(d+REEL_OVER)/v,back:false,t1:0};
         // Spannung schon beim Abbremsen entscheiden, damit die nächsten Walzen noch laufen
         if(!m.demo&&m.G.free&&i<4){let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
           if(sc>=2){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=.9;SFX.tease(sc);m.msg='SPANNUNG...';}}}}
       return;}
-    {const L=r.land,t=(now-L.t0)/L.dur;if(t<1){r.pos=r.target+L.d*(1-easeBack(t));r.vel=0;return;}}
+    {const L=r.land,t=now-L.t0;
+      if(t<L.dur){r.pos=r.target+L.d-L.v*t;r.vel=L.v;return;}          // Phase 1: volle Fahrt bis 0,27 Feld hinter das Ziel
+      if(!L.back){L.back=true;L.t1=now;if(!m.demo)SFX.reelStop(i);}      // Aufschlag: Klack
+      const u=(now-L.t1)/REEL_BACK;if(u<1){const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;r.pos=r.target-REEL_OVER*(1-e);r.vel=0;return;}} // Phase 2: weich zurück aufs Ziel
     {r.spin=false;r.land=null;r.pos=r.target;r.vel=0;
-      if(!m.demo){SFX.reelStop(i);
+      if(!m.demo){
         if(m.grid&&m.G.wild&&m.state==='spin'&&!(m.myst&&m.myst.cells.some(q=>q[1]===i))){let wc=0;for(let k=0;k<3;k++)if(m.grid[k][i]===m.G.wild){wc++;const [cx,cy]=cellXY(k,i);fxBurst(m,cx,cy,10,{spd:70,up:20,life:.6});}
-          if(wc){SFX.wildLand();fxFlash(m,.18,'255,220,120');}}}
+          if(wc){if(m.G.id==='pharao')SFX.pharaoLand(wc);else SFX.wildLand();fxFlash(m,.18,'255,220,120');}}}
       let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
       if(scatterOnReel(m,i)&&!m.demo)SFX.scatter(sc);
     }
@@ -2166,8 +2189,10 @@ function updReels(m,dt){
   if(!any&&m.state==='spin'){
     if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=MY_T0+m.myst.cells.length*MY_DT+.45;m.msg='ZUFALLSSYMBOLE!';SFX.tease(3);SFX.whoosh();updateButtons(m);}
     else onResult(m);}
-  if(any){m.dirty=true;if(!m.demo&&((focus&&focus.m===m))&&now-(m.spinTk||0)>.075){m.spinTk=now;SFX.spinTick();}}
+  if(any)m.dirty=true;
+  if(!m.demo&&focus&&focus.m===m)SFX.reelRun(any&&m.reels.some(r=>r.spin&&!(r.land&&r.land.back)));
 }
+const REEL_V=10,REEL_RAMP=.2,REEL_OVER=.27,REEL_BACK=.27; // Walzen wie im Nutzer-Video (2026-10-21): 10 Felder/s, Anlauf 0,2 s, Überschwingen 0,27 Feld, 0,27 s zurück
 function onResult(m){
   if(m.G.special==='spitze'){if(m.demo){m.state='idle';m.demo=false;m.dirty=true;return;}spitzeResult(m);return;}
   const ev=m.ev;
@@ -2604,10 +2629,12 @@ function drawReelArea(m,g){
         if(m.ovr&&cur!==sym){g.drawImage(symCanvas(cur),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}}
       if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
       if(k<3&&!r.spin&&mystHas(m.myst,k,i)){drawMystCell(m,g,x+1,y,CW-2,CH,k,i);g.globalAlpha=1;continue;}
+      if(sym===G.wild&&G.id==='pharao'&&!hl){ // Pharao-Block: zusammenhängende Pharaos als ein hohes Bild (Kopf oben, WILD unten), auch im Lauf
+        let s0=0;while(s0<L-1&&S[((idx-s0-1)%L+L)%L]===G.wild)s0++;let len=s0+1;while(len<L&&S[((idx-s0+len)%L+L)%L]===G.wild)len++;
+        const pp=s0%3,n=Math.min(3,len-(s0-pp));
+        if(n>=2){const tc=lpTall(),si=n===3?pp:(pp===0?0:2);g.drawImage(tc,0,si*144,144,144,x+(CW-46)/2,y,46,CH);g.globalAlpha=1;continue;}}
       const im=symCanvas(sym);
-      if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.28;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-18,46,70);g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2+4,46,70);
-        g.globalAlpha=.8;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-8,46,62);}
-      else if(hl){const pl=Math.abs(Math.sin(now*7)),z=46*(1+pl*.12);
+      if(hl){const pl=Math.abs(Math.sin(now*7)),z=46*(1+pl*.12);
         g.globalCompositeOperation='lighter';g.globalAlpha=.25+pl*.3;g.drawImage(im,x+(CW-z*1.18)/2,y+(CH-z*1.18)/2,z*1.18,z*1.18);
         g.globalCompositeOperation='source-over';g.globalAlpha=1;g.drawImage(im,x+(CW-z)/2,y+(CH-z)/2,z,z);}
       else g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2,46,46);
@@ -3989,8 +4016,9 @@ const LP_SYM={
     for(let i=0;i<4;i++){g.moveTo(o[i][0],o[i][1]);g.lineTo(t[i][0],t[i][1]);}g.stroke();
     lpPoly(g,o,null,'#06104a',2);lpSpark(g,58,16,6);lpSpark(g,32,58,3);
   },
-  PHARAO(g){
-    lpRedTile(g);
+  PHARAO(g){lpRedTile(g);lpPharaoHead(g);lpWildText(g,82,25);}
+};
+function lpPharaoHead(g){
     g.save();g.beginPath();g.rect(7,7,82,74);g.clip();
     // Kopftuch (Nemes) blau-gold gestreift
     const nem=[[30,12],[66,12],[74,26],[84,82],[60,70],[36,70],[12,82],[22,26]];
@@ -4012,12 +4040,33 @@ const LP_SYM={
     g.fillStyle='#ffcc30';g.fillRect(44,62,8,12);g.fillStyle='#1a40d8';g.fillRect(44,65,8,2);g.fillRect(44,70,8,2);
     ['#1a40d8','#ffcc30','#c01818','#ffcc30'].forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=3;g.beginPath();g.arc(48,60,24+i*3,.25*Math.PI,.75*Math.PI);g.stroke();});
     g.restore();
-    // WILD
-    g.font='italic bold 25px '+LP_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
-    g.lineWidth=6;g.strokeStyle='#2a0800';g.strokeText('WILD',48,82);g.lineWidth=3;g.strokeStyle=lpGold(g,72,92);g.strokeText('WILD',48,82);
-    const wg=g.createLinearGradient(0,72,0,92);wg.addColorStop(0,'#ff6a5a');wg.addColorStop(1,'#a00010');g.fillStyle=wg;g.fillText('WILD',48,82);
-  }
-};
+}
+function lpWildText(g,y,size){
+    g.font='italic bold '+size+'px '+LP_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
+    g.lineWidth=size*.24;g.strokeStyle='#2a0800';g.strokeText('WILD',48,y);g.lineWidth=size*.12;g.strokeStyle=lpGold(g,y-size*.4,y+size*.4);g.strokeText('WILD',48,y);
+    const wg=g.createLinearGradient(0,y-size*.4,0,y+size*.4);wg.addColorStop(0,'#ff6a5a');wg.addColorStop(1,'#a00010');g.fillStyle=wg;g.fillText('WILD',48,y);
+}
+// Pharao-Block (Walze 1, 3, 5 wie beim Original): drei Felder hoch als EIN Bild – großer Kopf oben, breiter Kragen, WILD-Band unten.
+// 144x432 (je Feld 144 hoch); beim Zeichnen wird je Feld der passende Streifen genommen, auch wenn der Block nur halb im Fenster steht.
+let lpTallC=null;
+function lpTall(){
+  if(lpTallC)return lpTallC;const c=document.createElement('canvas');c.width=144;c.height=432;const g=c.getContext('2d');g.scale(1.5,1.5);
+  const bg=g.createRadialGradient(48,120,10,48,150,230);bg.addColorStop(0,'#e02020');bg.addColorStop(.6,'#a00808');bg.addColorStop(1,'#4a0000');g.fillStyle=bg;g.fillRect(3,3,90,282);
+  g.strokeStyle=lpGold(g,0,288);g.lineWidth=4;g.strokeRect(4,4,88,280);g.strokeStyle='rgba(60,20,0,.8)';g.lineWidth=1;g.strokeRect(7,7,82,274);
+  // Kopf größer (1,3-fach), oben
+  g.save();g.beginPath();g.rect(7,7,82,150);g.clip();g.translate(48,10);g.scale(1.3,1.3);g.translate(-48,-7);lpPharaoHead(g);g.restore();
+  // breiter Kragen (Usech) unter dem Kopf
+  g.save();g.beginPath();g.rect(7,7,82,236);g.clip();
+  ['#1a40d8','#ffcc30','#c01818','#ffcc30','#1a40d8','#ffcc30','#2a9a4a','#ffcc30'].forEach((col,i)=>{g.strokeStyle=col;g.lineWidth=5;g.beginPath();g.arc(48,96,38+i*5.5,.2*Math.PI,.8*Math.PI);g.stroke();});
+  g.strokeStyle='rgba(40,20,0,.5)';g.lineWidth=1;for(let i=0;i<8;i++){g.beginPath();g.arc(48,96,36+i*5.5,.2*Math.PI,.8*Math.PI);g.stroke();}
+  // Ankh in der Mitte
+  g.strokeStyle=lpGold(g,150,230);g.lineWidth=5;g.lineCap='round';g.beginPath();g.ellipse(48,172,9,12,0,0,TAU);g.stroke();g.beginPath();g.moveTo(48,184);g.lineTo(48,226);g.moveTo(32,198);g.lineTo(64,198);g.stroke();
+  g.restore();
+  // Ornamentband und WILD unten
+  g.fillStyle=lpGold(g,236,246);g.fillRect(6,236,84,9);g.fillStyle='#5a2a00';for(let x=9;x<88;x+=6){g.fillRect(x,238,2,5);g.fillRect(x+3,240,2,1);}
+  lpWildText(g,264,36);
+  return lpTallC=c;
+}
 // Sandstein mit Hieroglyphen als Walzen-Hintergrund
 let lpSandC=null;
 function lpSand(){

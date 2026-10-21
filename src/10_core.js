@@ -125,7 +125,10 @@ const SFX={
   gambleTick(on){ // Leiter-Blinken nach dem Video: Hoch-Phase A6 mit kurzem H5, Runter-Phase schnelle Folge D6-A5-C6-D6-F5-D6-A5 und D6
     if(on){soft(NOTE(93),.16,.05,0,'square');soft(NOTE(71),.035,.03,.07,'square');return;}
     [[86,.05],[81,.012],[84,.015],[86,.012],[77,.04],[86,.03],[81,.08],[86,.14]].reduce((t,[n,d])=>{soft(NOTE(n),d+.01,.045,t,'square');return t+d;},0);},
-  reelStop(i){tone(150-i*6,.09,'sine',.22,0,70);noise(.025,.12,1800+i*120);}, // dumpfes Holz-Tock wie beim Walzenstopp
+  reelStop(i){noise(.03,.16,2600+i*150);tone(170-i*8,.07,'triangle',.18,0,80);noise(.05,.08,500,.005);}, // Klack beim Aufschlag der Walze (hell + Holz)
+  // Pharao-Block landet: satter Schlag und Gong (n = Anzahl Pharaos auf der Walze)
+  pharaoLand(n){tone(110,.35,'sine',.3,0,55);noise(.12,.1,300);bell(NOTE(67),.9,.12,.02,1.5);bell(NOTE(74),.6,.08,.1);if(n>=3){bell(NOTE(79),.8,.08,.2);noise(.12,.06,4000,.2);}},
+  reelRun(on){reelRunSet(on);}, // Laufgeräusch der Walzen (Motor-Surren), solange eine läuft
   boom(){noise(.5,.22,160);tone(80,.55,'sine',.3,0,32);},
   whoosh(){noise(.3,.12,1800);tone(300,.3,'sawtooth',.03,0,1200);},
   sparkle(){[2093,2637,3136,4186].forEach((f,i)=>tone(f,.07,'square',.025,i*.035));},
@@ -151,8 +154,23 @@ const SFX={
   ausFan(){tone(1760,.06,'square',.06);[[587,.06],[698,.06],[880,.09],[1175,.12]].reduce((t,[f,d])=>{tone(f,d,'square',.07,t);return t+d+.005;},.07);}, // hoher Pieps, dann D-F-A-D
   unlock(){tone(523,.08,'square',.07);tone(784,.08,'square',.07,.08);tone(1046,.18,'square',.08,.16);noise(.08,.12,2500,.02);},
   wildLand(){bell(NOTE(67),.8,.12,0,1.5);bell(NOTE(91),.4,.05,.04);noise(.1,.06,4000);},
-  spinTick(){noise(.018,.035,2600);} // leises Rattern der laufenden Walzen
+  spinTick(){noise(.018,.035,2600);} // leises Rattern (alt)
 };
+// Walzen-Laufgeräusch: gefiltertes Rauschen + tiefes Surren, weich ein- und ausgeblendet
+let reelRunN=null;
+function reelRunSet(on){
+  if(!AC||muted){if(reelRunN&&!on){try{reelRunN.g.gain.cancelScheduledValues(AC.currentTime);reelRunN.g.gain.setTargetAtTime(.0001,AC.currentTime,.03);reelRunN.stop(AC.currentTime+.25);}catch(e){}reelRunN=null;}return;}
+  const t=AC.currentTime;
+  if(on){if(reelRunN)return;
+    if(!noiseBuf){noiseBuf=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate);const a=noiseBuf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;}
+    const s=AC.createBufferSource();s.buffer=noiseBuf;s.loop=true;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1100;f.Q.value=.7;
+    const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=52;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
+    const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.045,t+.12);
+    const og=AC.createGain();og.gain.value=.5;
+    s.connect(f);f.connect(g);o.connect(lp);lp.connect(og);og.connect(g);g.connect(master);s.start(t);o.start(t);
+    reelRunN={g,stop(at){try{s.stop(at);o.stop(at);}catch(e){}}};
+  } else if(reelRunN){const n=reelRunN;reelRunN=null;n.g.gain.cancelScheduledValues(t);n.g.gain.setValueAtTime(n.g.gain.value,t);n.g.gain.linearRampToValueAtTime(.0001,t+.15);n.stop(t+.2);}
+}
 let beatTimer=null,beatN=0;
 function setBeat(on){
   if(beatTimer){clearInterval(beatTimer);beatTimer=null;}

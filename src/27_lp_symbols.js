@@ -77,8 +77,9 @@ const LP_SYM={
     for(let i=0;i<4;i++){g.moveTo(o[i][0],o[i][1]);g.lineTo(t[i][0],t[i][1]);}g.stroke();
     lpPoly(g,o,null,'#06104a',2);lpSpark(g,58,16,6);lpSpark(g,32,58,3);
   },
-  PHARAO(g){
-    lpRedTile(g);
+  PHARAO(g){lpRedTile(g);lpPharaoHead(g);lpWildText(g,82,25);}
+};
+function lpPharaoHead(g){
     g.save();g.beginPath();g.rect(7,7,82,74);g.clip();
     // Kopftuch (Nemes) blau-gold gestreift
     const nem=[[30,12],[66,12],[74,26],[84,82],[60,70],[36,70],[12,82],[22,26]];
@@ -100,12 +101,33 @@ const LP_SYM={
     g.fillStyle='#ffcc30';g.fillRect(44,62,8,12);g.fillStyle='#1a40d8';g.fillRect(44,65,8,2);g.fillRect(44,70,8,2);
     ['#1a40d8','#ffcc30','#c01818','#ffcc30'].forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=3;g.beginPath();g.arc(48,60,24+i*3,.25*Math.PI,.75*Math.PI);g.stroke();});
     g.restore();
-    // WILD
-    g.font='italic bold 25px '+LP_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
-    g.lineWidth=6;g.strokeStyle='#2a0800';g.strokeText('WILD',48,82);g.lineWidth=3;g.strokeStyle=lpGold(g,72,92);g.strokeText('WILD',48,82);
-    const wg=g.createLinearGradient(0,72,0,92);wg.addColorStop(0,'#ff6a5a');wg.addColorStop(1,'#a00010');g.fillStyle=wg;g.fillText('WILD',48,82);
-  }
-};
+}
+function lpWildText(g,y,size){
+    g.font='italic bold '+size+'px '+LP_SERIF;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
+    g.lineWidth=size*.24;g.strokeStyle='#2a0800';g.strokeText('WILD',48,y);g.lineWidth=size*.12;g.strokeStyle=lpGold(g,y-size*.4,y+size*.4);g.strokeText('WILD',48,y);
+    const wg=g.createLinearGradient(0,y-size*.4,0,y+size*.4);wg.addColorStop(0,'#ff6a5a');wg.addColorStop(1,'#a00010');g.fillStyle=wg;g.fillText('WILD',48,y);
+}
+// Pharao-Block (Walze 1, 3, 5 wie beim Original): drei Felder hoch als EIN Bild – großer Kopf oben, breiter Kragen, WILD-Band unten.
+// 144x432 (je Feld 144 hoch); beim Zeichnen wird je Feld der passende Streifen genommen, auch wenn der Block nur halb im Fenster steht.
+let lpTallC=null;
+function lpTall(){
+  if(lpTallC)return lpTallC;const c=document.createElement('canvas');c.width=144;c.height=432;const g=c.getContext('2d');g.scale(1.5,1.5);
+  const bg=g.createRadialGradient(48,120,10,48,150,230);bg.addColorStop(0,'#e02020');bg.addColorStop(.6,'#a00808');bg.addColorStop(1,'#4a0000');g.fillStyle=bg;g.fillRect(3,3,90,282);
+  g.strokeStyle=lpGold(g,0,288);g.lineWidth=4;g.strokeRect(4,4,88,280);g.strokeStyle='rgba(60,20,0,.8)';g.lineWidth=1;g.strokeRect(7,7,82,274);
+  // Kopf größer (1,3-fach), oben
+  g.save();g.beginPath();g.rect(7,7,82,150);g.clip();g.translate(48,10);g.scale(1.3,1.3);g.translate(-48,-7);lpPharaoHead(g);g.restore();
+  // breiter Kragen (Usech) unter dem Kopf
+  g.save();g.beginPath();g.rect(7,7,82,236);g.clip();
+  ['#1a40d8','#ffcc30','#c01818','#ffcc30','#1a40d8','#ffcc30','#2a9a4a','#ffcc30'].forEach((col,i)=>{g.strokeStyle=col;g.lineWidth=5;g.beginPath();g.arc(48,96,38+i*5.5,.2*Math.PI,.8*Math.PI);g.stroke();});
+  g.strokeStyle='rgba(40,20,0,.5)';g.lineWidth=1;for(let i=0;i<8;i++){g.beginPath();g.arc(48,96,36+i*5.5,.2*Math.PI,.8*Math.PI);g.stroke();}
+  // Ankh in der Mitte
+  g.strokeStyle=lpGold(g,150,230);g.lineWidth=5;g.lineCap='round';g.beginPath();g.ellipse(48,172,9,12,0,0,TAU);g.stroke();g.beginPath();g.moveTo(48,184);g.lineTo(48,226);g.moveTo(32,198);g.lineTo(64,198);g.stroke();
+  g.restore();
+  // Ornamentband und WILD unten
+  g.fillStyle=lpGold(g,236,246);g.fillRect(6,236,84,9);g.fillStyle='#5a2a00';for(let x=9;x<88;x+=6){g.fillRect(x,238,2,5);g.fillRect(x+3,240,2,1);}
+  lpWildText(g,264,36);
+  return lpTallC=c;
+}
 // Sandstein mit Hieroglyphen als Walzen-Hintergrund
 let lpSandC=null;
 function lpSand(){

@@ -12,7 +12,7 @@ const R_=(a,k)=>{const o={};k.forEach((s,i)=>o[s]=a[i]);return o;};
   // gekaufte Freispiele: mehr Schwerter (1-1-2-2-2), sonst gleiche Walzen -> 10 Freispiele im Schnitt ~98 % von 100× Einsatz (tools: tzbuy3.js)
   SlotEngine.setBuy('tizona',[1,1,2,2,2].map(k=>{const a=TIZ_ROWS[0].slice();a[10]=k;return R_(a,TK);}),706);
   SlotEngine.setup('doppel',[[4,2,6,4,2,1,1,4,3,1],[4,6,6,7,5,2,1,3,6,1],[7,6,6,6,5,4,1,2,3,2],[9,6,8,4,4,2,4,2,3,1],[6,7,7,6,5,2,2,2,1,1]].map(a=>R_(a,DK)),706);
-  SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,1],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,1],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
+  SlotEngine.setup('pharao',[[8,10,10,10,5,18,12,1,3,1],[15,16,16,0,15,1,1,4,3,0],[16,8,18,18,16,1,1,3,5,1],[1,21,2,14,0,9,11,1,3,0],[19,3,14,0,9,1,2,4,3,1]].map(a=>R_(a,PH)),401);
 })();
 const GAMEINFO={pharao:{rtp:'97',fs:null,hit:'6',power:'12'},spitze:{rtp:'97',fs:null,hit:'2,6'},zent:{rtp:'98',fs:'150',hit:'4'},tizona:{rtp:'97',fs:'170',hit:'3'},doppel:{rtp:'97',fs:'148',hit:'3'}};
 const stripsFor=m=>SlotEngine.stripsOf(m.G,m.useFs==='buy'?'buy':!!m.useFs);
@@ -412,7 +412,7 @@ function startSpin(m,demo){
   else m.ev=SlotEngine.evaluate(m.G,m.grid,m.lines,payLine(m),m.fs?m.fs.special:null,m.useFs);
   if(m.G.walkWild&&!demo)m.ev.trigger=m.shN>=3;
   const fast=m.auto?.75:1;
-  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.2)*fast;r.teased=false;r.speed=28;r.t0=now+i*.045;r.land=null;r.vel=0;});
+  m.reels.forEach((r,i)=>{r.spin=true;r.target=m.stops[i];r.stopAt=now+(.55+i*.18)*fast;r.teased=false;r.speed=REEL_V;r.t0=now+i*.02;r.land=null;r.vel=0;});
   if(m.G.special){m.reels.forEach((r,i)=>{if(i!==2)r.spin=false;});m.reels[2].stopAt=now+.75*fast;m.reels[2].t0=now;}
   m.state='spin';m.present=null;m.expand=null;m.msg=m.rsp?'SCHWERT WANDERT · GRATIS':m.fs?('FREISPIEL '+(m.fs.n+1)+' VON '+m.fs.total):m.demo?'':'VIEL GLÜCK!';
   if(!demo)SFX.reelStart();
@@ -425,18 +425,23 @@ function updReels(m,dt){
   m.reels.forEach((r,i)=>{
     if(r.bounce>0)r.bounce=Math.max(0,r.bounce-dt*6);
     if(!r.spin)return;any=true;
-    if(!r.land){const t=now-(r.t0||0);r.vel=t<0?0:t<.08?-6:r.speed*Math.min(1,(t-.08)/.14)*(r.teased?1.4:1);r.pos-=r.vel*dt;
+    if(!r.land){const t=now-(r.t0||0);r.vel=t<0?0:r.speed*Math.min(1,t/REEL_RAMP)*(r.teased?1.4:1);r.pos-=r.vel*dt;
       if(r.teased&&Math.random()<dt*25)fxBurst(m,RX+i*CW+CW/2,RY+CH*3,2,{spd:30,up:90,g:-20,life:.6,w:CW-8});
-      if(now>=r.stopAt){const v=Math.max(8,r.vel),d=2+(((r.pos-r.target-2)%1)+1)%1;r.land={t0:now,d,dur:clamp(4.25*d/v,.24,.5)};r.pos=r.target+d;
+      if(now>=r.stopAt){ // Landung: mit voller Fahrt bis knapp über das Ziel hinaus, dann weich zurück (gemessen am Original)
+        const v=Math.max(6,r.vel);let d=(((r.pos-r.target)%1)+1)%1;if(d<.5)d+=1;r.pos=r.target+d;
+        r.land={t0:now,d:d+REEL_OVER,v,dur:(d+REEL_OVER)/v,back:false,t1:0};
         // Spannung schon beim Abbremsen entscheiden, damit die nächsten Walzen noch laufen
         if(!m.demo&&m.G.free&&i<4){let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
           if(sc>=2){const nx=m.reels[i+1];if(!nx.teased){nx.teased=true;for(let k=i+1;k<5;k++)m.reels[k].stopAt+=.9;SFX.tease(sc);m.msg='SPANNUNG...';}}}}
       return;}
-    {const L=r.land,t=(now-L.t0)/L.dur;if(t<1){r.pos=r.target+L.d*(1-easeBack(t));r.vel=0;return;}}
+    {const L=r.land,t=now-L.t0;
+      if(t<L.dur){r.pos=r.target+L.d-L.v*t;r.vel=L.v;return;}          // Phase 1: volle Fahrt bis 0,27 Feld hinter das Ziel
+      if(!L.back){L.back=true;L.t1=now;if(!m.demo)SFX.reelStop(i);}      // Aufschlag: Klack
+      const u=(now-L.t1)/REEL_BACK;if(u<1){const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;r.pos=r.target-REEL_OVER*(1-e);r.vel=0;return;}} // Phase 2: weich zurück aufs Ziel
     {r.spin=false;r.land=null;r.pos=r.target;r.vel=0;
-      if(!m.demo){SFX.reelStop(i);
+      if(!m.demo){
         if(m.grid&&m.G.wild&&m.state==='spin'&&!(m.myst&&m.myst.cells.some(q=>q[1]===i))){let wc=0;for(let k=0;k<3;k++)if(m.grid[k][i]===m.G.wild){wc++;const [cx,cy]=cellXY(k,i);fxBurst(m,cx,cy,10,{spd:70,up:20,life:.6});}
-          if(wc){SFX.wildLand();fxFlash(m,.18,'255,220,120');}}}
+          if(wc){if(m.G.id==='pharao')SFX.pharaoLand(wc);else SFX.wildLand();fxFlash(m,.18,'255,220,120');}}}
       let sc=0;for(let k=0;k<=i;k++)if(scatterOnReel(m,k))sc++;
       if(scatterOnReel(m,i)&&!m.demo)SFX.scatter(sc);
     }
@@ -444,8 +449,10 @@ function updReels(m,dt){
   if(!any&&m.state==='spin'){
     if(m.myst&&!m.myst.open){m.state='myst';m.stateT=0;m.timer=MY_T0+m.myst.cells.length*MY_DT+.45;m.msg='ZUFALLSSYMBOLE!';SFX.tease(3);SFX.whoosh();updateButtons(m);}
     else onResult(m);}
-  if(any){m.dirty=true;if(!m.demo&&((focus&&focus.m===m))&&now-(m.spinTk||0)>.075){m.spinTk=now;SFX.spinTick();}}
+  if(any)m.dirty=true;
+  if(!m.demo&&focus&&focus.m===m)SFX.reelRun(any&&m.reels.some(r=>r.spin&&!(r.land&&r.land.back)));
 }
+const REEL_V=10,REEL_RAMP=.2,REEL_OVER=.27,REEL_BACK=.27; // Walzen wie im Nutzer-Video (2026-10-21): 10 Felder/s, Anlauf 0,2 s, Überschwingen 0,27 Feld, 0,27 s zurück
 function onResult(m){
   if(m.G.special==='spitze'){if(m.demo){m.state='idle';m.demo=false;m.dirty=true;return;}spitzeResult(m);return;}
   const ev=m.ev;
@@ -882,10 +889,12 @@ function drawReelArea(m,g){
         if(m.ovr&&cur!==sym){g.drawImage(symCanvas(cur),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}}
       if(k<3&&!r.spin&&m.ovr&&m.ovr[k][i]!==sym){g.drawImage(symCanvas(m.ovr[k][i]),x+(CW-46)/2,y+(CH-46)/2,46,46);g.globalAlpha=1;continue;}
       if(k<3&&!r.spin&&mystHas(m.myst,k,i)){drawMystCell(m,g,x+1,y,CW-2,CH,k,i);g.globalAlpha=1;continue;}
+      if(sym===G.wild&&G.id==='pharao'&&!hl){ // Pharao-Block: zusammenhängende Pharaos als ein hohes Bild (Kopf oben, WILD unten), auch im Lauf
+        let s0=0;while(s0<L-1&&S[((idx-s0-1)%L+L)%L]===G.wild)s0++;let len=s0+1;while(len<L&&S[((idx-s0+len)%L+L)%L]===G.wild)len++;
+        const pp=s0%3,n=Math.min(3,len-(s0-pp));
+        if(n>=2){const tc=lpTall(),si=n===3?pp:(pp===0?0:2);g.drawImage(tc,0,si*144,144,144,x+(CW-46)/2,y,46,CH);g.globalAlpha=1;continue;}}
       const im=symCanvas(sym);
-      if(r.spin&&Math.abs(r.vel||0)>9){g.globalAlpha=.28;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-18,46,70);g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2+4,46,70);
-        g.globalAlpha=.8;g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2-8,46,62);}
-      else if(hl){const pl=Math.abs(Math.sin(now*7)),z=46*(1+pl*.12);
+      if(hl){const pl=Math.abs(Math.sin(now*7)),z=46*(1+pl*.12);
         g.globalCompositeOperation='lighter';g.globalAlpha=.25+pl*.3;g.drawImage(im,x+(CW-z*1.18)/2,y+(CH-z*1.18)/2,z*1.18,z*1.18);
         g.globalCompositeOperation='source-over';g.globalAlpha=1;g.drawImage(im,x+(CW-z)/2,y+(CH-z)/2,z,z);}
       else g.drawImage(im,x+(CW-46)/2,y+(CH-46)/2,46,46);

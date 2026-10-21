@@ -20,7 +20,7 @@ var SlotEngine=(function(){
   var GAMES={
     // Gewinne in beide Richtungen + 3 in der Mitte, Pharao ersetzt alles, POWER SPINS ab 4-fachem Einsatz
     pharao:{id:'pharao',title:'PHARAO WILD',sub:'DIE SCHATZKAMMER',lines:LINES_LP,lineOpts:[10],betOpts:[1,2,4,6,8,10,20,40,60,80,100,200,300,400,500,1000],
-      wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[1,1,3,1,1],stack:3,
+      wild:'PHARAO',scatter:null,bothWays:true,power:true,top:'BRILLANT',wildStack:[3,1,3,1,3],stack:3, // Pharao nur auf Walze 1, 3, 5 als Dreierblock (wie beim Original, Nutzer 2026-10-21)
       // Zufallssymbole: manchmal werden Felder verdeckt und öffnen alle dasselbe zufällige Symbol
       mystery:{chance:1/70,shape:[.3,.25,.25],w:{'10':7,'J':7,'Q':7,'K':5,'A':5,'SMARAGD':2,'SAPHIR':2,'RUBIN':.4,'BRILLANT':.3,'PHARAO':.3}},
       // Gewinnplan wie der echte Merkur-Spielplan bei 0,20 € (Diamant 2/10/100 €, Rubin 1,40/4/8 €, Saphir/Smaragd 1/2/6 €, A/K 0,40/1/4 €, Q/J/10 0,20/0,60/2 €), pro Linie bei 1 Cent je Linie
