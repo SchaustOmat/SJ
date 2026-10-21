@@ -269,7 +269,7 @@ function nextStage(){
 function endUncontested(){
   collectBets();const w=inHand()[0];const amt=potTotal();
   w.stack+=amt;PK.msg=w.name+' GEWINNT '+fmt(amt);w.last='GEWINNT';
-  if(w.human){SFX.win();PK.info='ALLE GEPASST · +'+fmt(amt);UFX.banner('GEWONNEN',amt,0,'ALLE GEPASST');}else if(w.npc){w.npc.anim='cheer';setTimeout(()=>{if(w.npc.anim==='cheer')w.npc.anim='cards';},1500);}
+  if(w.human){SFX.win();hsReport('TEXAS HOLD\'EM',amt);PK.info='ALLE GEPASST · +'+fmt(amt);UFX.banner('GEWONNEN',amt,0,'ALLE GEPASST');}else if(w.npc){w.npc.anim='cheer';setTimeout(()=>{if(w.npc.anim==='cheer')w.npc.anim='cards';},1500);}
   finishHand();
 }
 function showdown(){
@@ -285,7 +285,7 @@ function showdown(){
   ih.forEach(s=>{s.last=PokerCore.handName(scores[PK.seats.indexOf(s)]);});
   won.forEach((w,i)=>{if(w>0)PK.seats[i].last='+'+fmt(w)+' '+PokerCore.handName(scores[i]);});
   const W=PK.seats[bi];PK.msg=(W.human?'DU GEWINNST':W.name+' GEWINNT')+' · '+PokerCore.handName(best);
-  if(won[0]>0){SFX.big();if(won[0]>=200)mpWin('gewinnt '+fmt(won[0])+' beim Poker mit '+PokerCore.handName(scores[0])+'!');PK.info='GEWONNEN +'+fmt(won[0])+' · '+PokerCore.handName(scores[0]);
+  if(won[0]>0){SFX.big();hsReport('TEXAS HOLD\'EM',won[0]);if(won[0]>=200)mpWin('gewinnt '+fmt(won[0])+' beim Poker mit '+PokerCore.handName(scores[0])+'!');PK.info='GEWONNEN +'+fmt(won[0])+' · '+PokerCore.handName(scores[0]);
     UFX.banner('DU GEWINNST',won[0],won[0]>=PK.bb*40?2:won[0]>=PK.bb*10?1:0,PokerCore.handName(scores[0]));}
   else if(!PK.human.folded){SFX.lose();PK.info='VERLOREN · '+(PK.human.out?'':PokerCore.handName(scores[0]));UFX.flash(.4,'255,40,40');UFX.shake(.35);}
   if(W.npc){W.npc.anim='cheer';say(W.npc,['Danke für die Spende.','So spielt man das.','Ha!','Lesen und weinen.'][Math.random()*4|0],2.6);setTimeout(()=>{if(W.npc.anim==='cheer')W.npc.anim='cards';},1800);}

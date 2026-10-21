@@ -146,7 +146,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
     const tex=canvasTex(256,160,null,0,0,true);
     const top=bas({map:tex,color:0x666666});
     box(bw,.028,.085,side,bx,.033,.03,deck);
-    const b=mesh(new THREE.PlaneGeometry(bw*.96,.081),top,bx,.0485,.03,deck);b.rotation.x=-Math.PI/2;
+    const b=mesh(new THREE.PlaneGeometry(bw*.96,.081),top,bx,.052,.03,deck);b.rotation.x=-Math.PI/2;
     const act={type:'mbtn',m,key};b.userData.act=act;F.hits.push(b);
     m.btns[key]={mesh:b,tex,mat:top,label:'',color:'',lit:false,blink:false,press:0};
   });
@@ -470,6 +470,7 @@ function onResult(m){
 }
 function describeWin(m,it){if(!it)return '';if(it.scatter)return it.count+'× '+SYMNAME[m.G.scatter]+' = '+fmt(it.amount);return 'LINIE '+(it.line+1)+': '+it.count+'× '+SYMNAME[it.sym]+' = '+fmt(it.amount);}
 function collect(m){
+  if(m.win>0&&!m.remote&&!m.demo&&typeof hsReport==='function')hsReport(m.G.title,m.win,totalBet(m)); // Highscore-Tafel
   if(m.win>0){setChips(chips+m.win,true);startFly(m,m.win);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
   m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);slotPendSave();
 }
@@ -507,7 +508,7 @@ function slotStep(m,dt){
   else if(hot){const h=(now*(m.state==='count'?2:.6))%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
   // button blink & press
   for(const k in m.btns){const b=m.btns[k];const on=b.lit&&(!b.blink||Math.floor(now*3)%2===0);b.mat.color.setHex(on?0xffffff:b.lit?0xaaaaaa:0x3a3a3a);
-    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.0485-b.press*.012;}
+    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.052-b.press*.012;}
 }
 function timerDone(m){
   switch(m.state){

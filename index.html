@@ -95,6 +95,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   font-family:var(--f-title);font-size:19.6px;color:#fff;text-align:center;letter-spacing:.08em;line-height:1.5}
 #pcHint small{display:block;margin-top:8px;font-family:var(--f-body);font-size:16px;letter-spacing:0;opacity:.85}
 body.pcmode #joyBase,body.pcmode #joyHint{display:none}
+#curHint{position:fixed;z-index:5;left:50%;top:calc(env(safe-area-inset-top,0px) + 112px);transform:translateX(-50%);pointer-events:none;max-width:calc(100% - 32px);padding:7px 12px;background:rgba(10,6,16,.78);border:2px solid var(--gold);box-shadow:0 0 0 2px #000;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);text-align:center}
 /* Handy: Tastenleiste für eigene Automaten in Reichweite (im Stehen) */
 #rmBar{position:fixed;z-index:6;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 136px);display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none;max-width:calc(100vw - 20px)}
 .rm-row{display:flex;align-items:center;gap:5px;background:rgba(7,5,12,.84);border:2px solid var(--line);box-shadow:0 0 0 2px #000;padding:5px 6px;pointer-events:auto}
@@ -157,6 +158,14 @@ body.pcmode #rmBar{display:none}
 .bc-logo{position:absolute;right:8px;bottom:6px;display:flex}.bc-logo i{width:20px;height:20px;border-radius:50%;background:#ff3a3a;opacity:.9}.bc-logo i+i{background:#ffcf3a;margin-left:-8px}
 .mprooms{display:flex;flex-direction:column;gap:6px}
 .mproom{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+/* Highscore */
+.hs-list{display:flex;flex-direction:column;gap:4px}
+.hs-row{display:grid;grid-template-columns:30px 1fr auto;gap:0 8px;align-items:center;background:var(--black);border:2px solid var(--line);padding:5px 8px;min-width:0}
+.hs-row .hs-r{grid-row:1/3;font-family:var(--f-dev);font-size:18px;color:var(--dim)}
+.hs-row b{font-family:var(--f-dev);font-size:18px;letter-spacing:.03em;color:var(--ink);font-weight:700;overflow-wrap:anywhere}
+.hs-row .hs-g{grid-column:2;font-size:14px;color:var(--dim);overflow-wrap:anywhere}
+.hs-row .hs-a{grid-row:1/3;font-family:var(--f-dev);font-size:21px;color:var(--gold);white-space:nowrap}
+.hs-row.top{border-color:var(--gold)}.hs-row.top .hs-a{color:#ffe08a}
 /* Freunde */
 #friendBtn{width:auto;min-width:0;padding:0 7px;font-size:8px;position:relative}
 #friendBtn.on::after{content:attr(data-n);position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;border-radius:8px;background:#e8182c;color:#fff;font-family:var(--f-dev);font-size:11px;line-height:16px;text-align:center;box-shadow:0 0 0 2px #000}
@@ -514,7 +523,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
-<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · TASTEN AM AUTOMATEN ANKLICKEN · SHIFT SPRINTEN · ESC MAUS FREI</small></div>
+<div id="curHint" hidden>MAUS FREI · TASTEN UND AUTOMATEN ANKLICKEN · RECHTE MAUSTASTE = UMSCHAUEN · STRG = ZURÜCK</div>
+<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · STRG = MAUS FREI ZUM KLICKEN AUF TASTEN · SHIFT SPRINTEN</small></div>
 <button id="prompt" hidden></button>
 <div id="rmBar" hidden></div>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
@@ -608,6 +618,16 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <p class="mps" id="frMsg"></p>
   <p class="mps" style="color:var(--dim)">Dein Code ist deine Kontonummer. Schick ihn deinen Kollegen. Wer online ist, steht oben – mit BEITRETEN gehst du direkt in seinen Raum, mit EINLADEN holst du ihn zu dir.</p>
 </section>
+<section id="pHigh" class="panel" hidden aria-label="Highscore">
+  <header><h2>HIGHSCORE-TAFEL</h2><button class="x" data-close>ZURÜCK</button></header>
+  <div class="lbl" id="hsWeekLbl">DIESE WOCHE</div>
+  <div id="hsWeek" class="hs-list"></div>
+  <div class="lbl" id="hsPrevLbl">LETZTE WOCHE</div>
+  <div id="hsPrev" class="hs-list"></div>
+  <div class="lbl">REKORDE ALLER ZEITEN</div>
+  <div id="hsAll" class="hs-list"></div>
+  <p class="mps" style="color:var(--dim)">Gezählt wird jeder gebuchte Gewinn: Automaten, Roulette, Höher/Tiefer, Poker. Die Tafel ist für alle gleich – die Woche beginnt montags neu.</p>
+</section>
 <section id="pAtm" class="panel atm" hidden aria-label="Geldautomat">
   <header><h2>GELDAUTOMAT</h2><button class="x" data-close>KARTE RAUS</button></header>
   <div class="atmFront"><div class="atmScr" id="atmScr"></div><div class="atmSlot"><i></i></div></div>
@@ -634,7 +654,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
-    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC die Tasten am Pult anklicken (der Punkt zeigt, wo du hinguckst), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC mit Strg die Maus freigeben und die Tasten am Pult anklicken (oder direkt mit dem Punkt, der zeigt, wo du hinguckst), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
     <p><b>⟲ oben:</b> Querformat, falls sich die App nicht mitdreht.</p>
@@ -656,7 +677,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792570189";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792571735";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -1803,7 +1824,7 @@ function buildMachine(F,x,z,rotY,gameId,accent){
     const tex=canvasTex(256,160,null,0,0,true);
     const top=bas({map:tex,color:0x666666});
     box(bw,.028,.085,side,bx,.033,.03,deck);
-    const b=mesh(new THREE.PlaneGeometry(bw*.96,.081),top,bx,.0485,.03,deck);b.rotation.x=-Math.PI/2;
+    const b=mesh(new THREE.PlaneGeometry(bw*.96,.081),top,bx,.052,.03,deck);b.rotation.x=-Math.PI/2;
     const act={type:'mbtn',m,key};b.userData.act=act;F.hits.push(b);
     m.btns[key]={mesh:b,tex,mat:top,label:'',color:'',lit:false,blink:false,press:0};
   });
@@ -2127,6 +2148,7 @@ function onResult(m){
 }
 function describeWin(m,it){if(!it)return '';if(it.scatter)return it.count+'× '+SYMNAME[m.G.scatter]+' = '+fmt(it.amount);return 'LINIE '+(it.line+1)+': '+it.count+'× '+SYMNAME[it.sym]+' = '+fmt(it.amount);}
 function collect(m){
+  if(m.win>0&&!m.remote&&!m.demo&&typeof hsReport==='function')hsReport(m.G.title,m.win,totalBet(m)); // Highscore-Tafel
   if(m.win>0){setChips(chips+m.win,true);startFly(m,m.win);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
   m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);slotPendSave();
 }
@@ -2164,7 +2186,7 @@ function slotStep(m,dt){
   else if(hot){const h=(now*(m.state==='count'?2:.6))%1;m.ledMat.color.setHSL(h,1,.55);}else m.ledMat.color.setHex(m.accent);
   // button blink & press
   for(const k in m.btns){const b=m.btns[k];const on=b.lit&&(!b.blink||Math.floor(now*3)%2===0);b.mat.color.setHex(on?0xffffff:b.lit?0xaaaaaa:0x3a3a3a);
-    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.0485-b.press*.012;}
+    if(b.press>0){b.press=Math.max(0,b.press-dt*7);}b.mesh.position.y=.052-b.press*.012;}
 }
 function timerDone(m){
   switch(m.state){
@@ -3159,7 +3181,7 @@ function nextStage(){
 function endUncontested(){
   collectBets();const w=inHand()[0];const amt=potTotal();
   w.stack+=amt;PK.msg=w.name+' GEWINNT '+fmt(amt);w.last='GEWINNT';
-  if(w.human){SFX.win();PK.info='ALLE GEPASST · +'+fmt(amt);UFX.banner('GEWONNEN',amt,0,'ALLE GEPASST');}else if(w.npc){w.npc.anim='cheer';setTimeout(()=>{if(w.npc.anim==='cheer')w.npc.anim='cards';},1500);}
+  if(w.human){SFX.win();hsReport('TEXAS HOLD\'EM',amt);PK.info='ALLE GEPASST · +'+fmt(amt);UFX.banner('GEWONNEN',amt,0,'ALLE GEPASST');}else if(w.npc){w.npc.anim='cheer';setTimeout(()=>{if(w.npc.anim==='cheer')w.npc.anim='cards';},1500);}
   finishHand();
 }
 function showdown(){
@@ -3175,7 +3197,7 @@ function showdown(){
   ih.forEach(s=>{s.last=PokerCore.handName(scores[PK.seats.indexOf(s)]);});
   won.forEach((w,i)=>{if(w>0)PK.seats[i].last='+'+fmt(w)+' '+PokerCore.handName(scores[i]);});
   const W=PK.seats[bi];PK.msg=(W.human?'DU GEWINNST':W.name+' GEWINNT')+' · '+PokerCore.handName(best);
-  if(won[0]>0){SFX.big();if(won[0]>=200)mpWin('gewinnt '+fmt(won[0])+' beim Poker mit '+PokerCore.handName(scores[0])+'!');PK.info='GEWONNEN +'+fmt(won[0])+' · '+PokerCore.handName(scores[0]);
+  if(won[0]>0){SFX.big();hsReport('TEXAS HOLD\'EM',won[0]);if(won[0]>=200)mpWin('gewinnt '+fmt(won[0])+' beim Poker mit '+PokerCore.handName(scores[0])+'!');PK.info='GEWONNEN +'+fmt(won[0])+' · '+PokerCore.handName(scores[0]);
     UFX.banner('DU GEWINNST',won[0],won[0]>=PK.bb*40?2:won[0]>=PK.bb*10?1:0,PokerCore.handName(scores[0]));}
   else if(!PK.human.folded){SFX.lose();PK.info='VERLOREN · '+(PK.human.out?'':PokerCore.handName(scores[0]));UFX.flash(.4,'255,40,40');UFX.shake(.35);}
   if(W.npc){W.npc.anim='cheer';say(W.npc,['Danke für die Spende.','So spielt man das.','Ha!','Lesen und weinen.'][Math.random()*4|0],2.6);setTimeout(()=>{if(W.npc.anim==='cheer')W.npc.anim='cards';},1800);}
@@ -3272,7 +3294,7 @@ function hlPress(key){
   else if(key==='NEHMEN'){hlCollect();}
   else if(key==='WEITER'){hlDeal();}
 }
-function hlCollect(){if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';
+function hlCollect(){if(HL.pending>0)hsReport('HÖHER/TIEFER',HL.pending);if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';
   UFX.burst(LW()/2,LH()*.6,24,{coin:true,sz:9,spd:300,up:260,life:1.3});UFX.flyChips(LW()/2,LH()*.5,HL.pending);}HL.pending=0;store('nk_hlpend',null);HL.state='bet';hlClearCards();hlUpdate();}
 function hlPick(i){
   if(HL.state!=='pick')return;HL.pick=i;HL.state='reveal';
@@ -5006,7 +5028,7 @@ function mtBarSync(){
   const turn=!!(s&&V.toAct===my&&isBetting(V));
   // Effekte wie am Bot-Tisch: Sieg-Banner, Verlust-Blitz, Herzschlag bei All-in
   if(V&&V.stage==='show'&&s&&MT.fxKey!==V.next){MT.fxKey=V.next;
-    if(s.l&&s.l[0]==='+'){SFX.big();UFX.banner('DU GEWINNST',0,1);UFX.float(LW()/2,LH()*.56,cleanText(s.l,30),'#ffd23a');UFX.burst(LW()/2,LH()*.5,40,{coin:true,sz:9,spd:380,up:240,life:1.5});}
+    if(s.l&&s.l[0]==='+'){SFX.big();hsReport('SPIELERTISCH',hsParseEuro(s.l));UFX.banner('DU GEWINNST',0,1);UFX.float(LW()/2,LH()*.56,cleanText(s.l,30),'#ffd23a');UFX.burst(LW()/2,LH()*.5,40,{coin:true,sz:9,spd:380,up:240,life:1.5});}
     else if(s.c&&!s.f){SFX.lose();UFX.flash(.4,'255,40,40');UFX.shake(.35);}}
   UFX.tension('mtable',!!(s&&isBetting(V)&&s.c&&!s.f&&V.seats.some(x=>x&&x.a&&!x.f)));
   const toCall=s?Math.max(0,V.curBet-s.b):0,minTo=s?Math.min(s.b+s.st,V.curBet+V.minRaise):0,maxTo=s?s.b+s.st:0;
@@ -5602,7 +5624,7 @@ function frStart(){
       will:{topic:'sinanskeller/u/'+me,payload:JSON.stringify({n:MP.name||'GAST',on:0,t:Date.now()}),qos:0,retain:true}});}catch(e){return;}
     C.cli=cli;
     cli.on('connect',()=>{C.ok=true;FR.ok=true;
-      cli.subscribe('sinanskeller/fq/'+me+'/+',{qos:0});cli.subscribe('sinanskeller/fi/'+me,{qos:0});
+      cli.subscribe('sinanskeller/fq/'+me+'/+',{qos:0});cli.subscribe('sinanskeller/fi/'+me,{qos:0});cli.subscribe(HS_TOPIC+'+',{qos:0});if(typeof hsConnected==='function')hsConnected();
       FR.list.forEach(f=>cli.subscribe('sinanskeller/u/'+f.id,{qos:0}));
       FR.lastKey='';frTick();frRender();});
     cli.on('close',()=>{C.ok=false;FR.ok=FR.clis.some(x=>x.ok);});
@@ -5619,6 +5641,7 @@ function frTick(){if(!FR.ok)return;const s=frStatus(),k=s.n+'|'+s.r+'|'+s.b+'|'+
   if(openId==='pFriends')frRender();frBadge();}
 function frMsg(topic,txt){
   const p=topic.split('/'),me=frMe();let d=null;if(txt){try{d=JSON.parse(txt);}catch(e){return;}if(!d||typeof d!=='object')return;}
+  if(topic.startsWith(HS_TOPIC)){if(typeof hsMsg==='function')hsMsg(topic.slice(HS_TOPIC.length),d);return;}
   if(p[1]==='u'&&/^\d{8}$/.test(p[2]||'')){const f=frFind(p[2]);if(!f)return;
     if(!d){delete FR.st[p[2]];}else{const prev=FR.st[p[2]],cur={n:cleanText(d.n,14)||f.n,r:/^\d{4}$/.test(d.r||'')?d.r:'',b:frB(d.b),f:+d.f===1?1:0,t:Math.min(+d.t||0,Date.now()),on:d.on?1:0};
       if(cur.t&&(!prev||cur.t>=prev.t)){const was=frOnline(prev);FR.st[p[2]]=cur;if(cur.n&&cur.n!=='GAST'&&cur.n!==f.n){f.n=cur.n;frSave();}
@@ -5732,6 +5755,165 @@ function rmUpdate(){
 }
 
 
+/* ---- 40_highscore.js ---- */
+/* =========================================================
+   HIGHSCORE-TAFEL (EG, Nordwand): elektrische Anzeigetafel wie am Flughafen.
+   Zeigt die höchsten gebuchten Gewinne der Woche: Spieler, Spiel, Zeit, Betrag (Top 6 auf der Tafel, Top 10 im Panel),
+   dazu Laufschrift mit Vorwoche und Rekord. Die Woche beginnt montags neu (Kalenderwoche).
+   Geteilt über die Freunde-Server (retained MQTT): sinanskeller/hs/<KW-Schlüssel> und sinanskeller/hs/all.
+   Jeder Spieler mischt die Liste, die er kennt, mit der vom Server (Vereinigung nach Eintrags-ID, Top 10) – so landen alle beim selben Stand.
+   Lokal in nk_hs gespeichert, läuft also auch ohne Verbindung.
+   ========================================================= */
+const HS={cur:{k:'',l:[]},prev:{k:'',l:[]},all:[],board:null,disp:[],target:[],flip:[],pub:{},pubT:null,tick:0,lastDraw:0,lastMin:-1,sfxT:0,active:false,tickTxt:'',tickW:0,dirtyStatic:true,ready:false};
+const HS_N=10,HS_ROWS=6,HS_MIN=50; // ab 0,50 € zählt ein Gewinn
+// Tests: window.NK_HS_LOCAL = nichts senden/empfangen; window.NK_HS_TOPIC = eigenes Testthema statt der echten Tafel
+const HS_TOPIC=(typeof window!=='undefined'&&window.NK_HS_TOPIC)||'sinanskeller/hs/';const hsLocal=()=>!!(typeof window!=='undefined'&&window.NK_HS_LOCAL);
+const HS_DAYS=['SO','MO','DI','MI','DO','FR','SA'];
+function hsWeekKey(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()+3-((x.getDay()+6)%7));const w1=new Date(x.getFullYear(),0,4);
+  return x.getFullYear()+'-W'+String(1+Math.round(((x-w1)/86400000-3+((w1.getDay()+6)%7))/7)).padStart(2,'0');}
+const hsKw=k=>k?'KW '+String(+k.slice(-2)):'';
+function hsPad(n){return String(n).padStart(2,'0');}
+function hsWhen(t,full){const d=new Date(t);return full?hsPad(d.getDate())+'.'+hsPad(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2):HS_DAYS[d.getDay()]+' '+hsPad(d.getHours())+':'+hsPad(d.getMinutes());}
+function hsMe(){const k=String((typeof BANK!=='undefined'&&BANK.konto)||'').replace(/\D/g,'').slice(0,8);return /^\d{8}$/.test(k)?k:'';}
+function hsName(){const n=cleanText((typeof MP!=='undefined'&&MP.name)||'',14).trim().toUpperCase();if(n&&n!=='GAST')return n;const k=hsMe();return 'GAST'+(k?' '+k.slice(4):'');}
+// Einträge prüfen (auch die vom Server), kaputte oder doppelte raus
+function hsClean(list){const out=[],seen={},tn=Date.now()+120000;
+  (Array.isArray(list)?list:[]).slice(0,40).forEach(e=>{if(!e||typeof e!=='object')return;const i=String(e.i||'');if(!/^[a-z0-9]{6,16}$/.test(i)||seen[i])return;
+    const a=Math.round(+e.a),t=+e.t;if(!(a>0&&a<=1e9)||!(t>0&&t<tn))return;seen[i]=1;
+    out.push({i,k:/^\d{8}$/.test(String(e.k||''))?String(e.k):'',n:cleanText(e.n,14).toUpperCase()||'GAST',g:cleanText(e.g,18).toUpperCase()||'?',a,b:Math.max(0,Math.round(+e.b)||0),t});});
+  return out;}
+const hsSort=(x,y)=>y.a-x.a||x.t-y.t;
+// Vereinigung zweier Listen -> Top N. Meldet, ob sich dst geändert hat und ob dst etwas hatte, das src fehlte
+function hsMerge(dst,src){const by={};dst.forEach(e=>by[e.i]=e);const srcIds={};src.forEach(e=>{srcIds[e.i]=1;if(!by[e.i])by[e.i]=e;});
+  const list=Object.values(by).sort(hsSort).slice(0,HS_N),extra=list.some(e=>!srcIds[e.i]);
+  const changed=list.length!==dst.length||list.some((e,i)=>e.i!==dst[i].i);return {list,changed,extra};}
+function hsLoad(){try{const d=JSON.parse(localStorage.getItem('nk_hs')||'null');if(d&&typeof d==='object'){
+    if(d.cur&&typeof d.cur.k==='string')HS.cur={k:d.cur.k,l:hsClean(d.cur.l).sort(hsSort).slice(0,HS_N)};
+    if(d.prev&&typeof d.prev.k==='string')HS.prev={k:d.prev.k,l:hsClean(d.prev.l).sort(hsSort).slice(0,HS_N)};
+    HS.all=hsClean(d.all).sort(hsSort).slice(0,HS_N);}}catch(e){}
+  hsRoll();HS.ready=true;}
+function hsSave(){try{localStorage.setItem('nk_hs',JSON.stringify({cur:HS.cur,prev:HS.prev,all:HS.all}));}catch(e){}HS.dirtyStatic=true;}
+// Wochenwechsel: aktuelle Woche wird Vorwoche
+function hsRoll(){const k=hsWeekKey(Date.now());if(HS.cur.k===k)return;
+  if(HS.cur.k&&HS.cur.l.length&&HS.cur.k>HS.prev.k)HS.prev=HS.cur;HS.cur={k,l:[]};hsSave();}
+// Gewinn melden (Cent). Wird von Automaten, Roulette, Höher/Tiefer, Poker und Spielertisch gerufen.
+function hsReport(game,amount,bet){amount=Math.round(+amount||0);if(!(amount>=HS_MIN)||!HS.ready)return;hsRoll();
+  const e={i:Math.random().toString(36).slice(2,10),k:hsMe(),n:hsName(),g:cleanText(game,18).toUpperCase()||'?',a:amount,b:Math.max(0,Math.round(+bet||0)),t:Date.now()};
+  const r1=hsMerge(HS.cur.l,[e]);if(r1.changed){HS.cur.l=r1.list;hsQueue(HS.cur.k);}
+  const r2=hsMerge(HS.all,[e]);if(r2.changed){HS.all=r2.list;hsQueue('all');}
+  if(r1.changed||r2.changed){hsSave();if(r1.changed&&r1.list[0]===e&&typeof toast==='function'&&started)toast('Neuer Wochen-Highscore: '+fmt(amount)+' an '+e.g+'!');}
+  if(openId==='pHigh')hsRender();}
+// ---- Server: senden (gebündelt, leicht zufällig verzögert) und empfangen ----
+function hsQueue(key){HS.pub[key]=1;if(HS.pubT)return;HS.pubT=setTimeout(()=>{HS.pubT=null;hsFlush();},1500+Math.random()*1500);}
+function hsFlush(){if(hsLocal()||typeof FR==='undefined'||!FR.ok)return;for(const key in HS.pub){delete HS.pub[key];
+  const l=key==='all'?HS.all:key===HS.cur.k?HS.cur.l:key===HS.prev.k?HS.prev.l:null;if(!l||!l.length)continue;
+  frPub(HS_TOPIC+key,{w:key,l:l.slice(0,HS_N),t:Date.now()},true);}}
+function hsConnected(){clearTimeout(HS.conT);HS.conT=setTimeout(()=>{if(HS.cur.l.length)HS.pub[HS.cur.k]=1;if(HS.all.length)HS.pub.all=1;hsFlush();},4000);}
+function hsMsg(key,d){if(!HS.ready||hsLocal())return;key=String(key||'');if(!/^(\d{4}-W\d{2}|all)$/.test(key))return;
+  const src=d&&Array.isArray(d.l)?hsClean(d.l):[];if(!src.length)return;hsRoll();
+  let r;
+  if(key==='all'){r=hsMerge(HS.all,src);HS.all=r.list;}
+  else if(key===HS.cur.k){r=hsMerge(HS.cur.l,src);HS.cur.l=r.list;}
+  else if(key===HS.prev.k){r=hsMerge(HS.prev.l,src);HS.prev.l=r.list;}
+  else if(key>HS.cur.k){if(HS.cur.l.length)HS.prev=HS.cur;HS.cur={k:key,l:src.sort(hsSort).slice(0,HS_N)};r={changed:true,extra:false};} // andere Uhr ist schon in der neuen Woche
+  else if(key>HS.prev.k){HS.prev={k:key,l:src.sort(hsSort).slice(0,HS_N)};r={changed:true,extra:false};}
+  else{if(typeof FR!=='undefined'&&FR.ok)frPub(HS_TOPIC+key,null,true);return;} // uralte Woche: vom Server räumen
+  if(r.changed){hsSave();if(openId==='pHigh')hsRender();}
+  if(r.extra)hsQueue(key); // wir wissen mehr als der Server -> nachreichen
+}
+function hsParseEuro(s){const m=/([\d.]+),(\d{2})/.exec(String(s||''));return m?(+m[1].replace(/\./g,''))*100+(+m[2]):0;}
+
+/* ---------- 3D-Tafel ---------- */
+const HSW=1024,HSH=448;
+function buildHighBoard(F){
+  const g=new THREE.Group();g.position.set(1.2,2.55,-11.9);F.group.add(g);
+  const dark=new THREE.MeshPhongMaterial({color:0x17171c,shininess:50,specular:0x3a3a44}),gold=lam({color:0xd6a02a,emissive:0x3a2400}),glow=bas({color:0xffc870});
+  box(4.64,2.02,.12,dark,0,0,-.04,g);
+  box(4.7,.05,.16,gold,0,1.02,-.02,g);box(4.7,.05,.16,gold,0,-1.02,-.02,g);box(.05,2.06,.16,gold,-2.34,0,-.02,g);box(.05,2.06,.16,gold,2.34,0,-.02,g);
+  box(4.3,.03,.08,glow,0,1.09,.03,g); // Lichtleiste oben
+  const c=document.createElement('canvas');c.width=HSW;c.height=HSH;const ctx=c.getContext('2d');
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearMipmapLinearFilter;tex.magFilter=THREE.LinearFilter;tex.generateMipmaps=true;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  mesh(new THREE.PlaneGeometry(4.4,4.4*HSH/HSW),bas({map:tex}),0,0,.025,g);
+  const sc=document.createElement('canvas');sc.width=HSW;sc.height=HSH;
+  const led=document.createElement('canvas');led.width=led.height=3;const lc=led.getContext('2d');lc.fillStyle='rgba(0,0,0,.62)';lc.fillRect(2,0,1,3);lc.fillRect(0,2,3,1);
+  HS.board={g,tex,ctx,sc,sctx:sc.getContext('2d'),pat:ctx.createPattern(led,'repeat'),x:1.2,z:-11.9};
+  const act={type:'board',label:'HIGHSCORE-TAFEL',sub:'Gewinne der Woche ansehen',pos:new THREE.Vector3(1.2,1.4,-11.2),reach:3.4};tagAct(F,g,act);
+  pointLight(F,0xffb040,1.2,2.4,-10.6,.6,5);
+  HS.dirtyStatic=true;
+}
+function hsRowStrings(e,i){if(!e)return [String(i+1),'','','',''];return [String(i+1),e.n,e.g,hsWhen(e.t),fmt(e.a)];}
+function hsFit(c,t,x,y,w,align){const mw=c.measureText(t).width;c.textAlign=align;if(mw<=w){c.fillText(t,x,y);return;}c.save();c.translate(x,y);c.scale(w/mw,1);c.fillText(t,0,0);c.restore();}
+const HS_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',HS_DIG='0123456789';
+// Buchstaben klappern wie bei einer Fallblattanzeige: erst Zufall, dann von links nach rechts das Ziel
+function hsShown(target,col,t0){if(t0===undefined)return target;let out='';const alpha=col===4?HS_DIG:HS_ALPHA;
+  for(let i=0;i<target.length;i++){const ch=target[i],settle=t0+.1+col*.07+i*.03;if(now<settle&&/[A-Z0-9ÄÖÜ]/i.test(ch))out+=alpha[Math.floor(Math.random()*alpha.length)];else out+=ch;}return out;}
+function hsFlipDone(i){const t0=HS.flip[i];if(t0===undefined)return true;const len=Math.max(...HS.target[i].map(s=>s.length));return now>t0+.1+4*.07+len*.03+.05;}
+function hsDrawStatic(){
+  const B=HS.board,c=B.sctx,AMB='#ffb300',DIM='#9a7418';
+  c.setTransform(1,0,0,1,0,0);c.fillStyle='#06050a';c.fillRect(0,0,HSW,HSH);
+  const vg=c.createRadialGradient(HSW/2,HSH*.4,60,HSW/2,HSH*.4,HSW*.7);vg.addColorStop(0,'rgba(60,40,10,.35)');vg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=vg;c.fillRect(0,0,HSW,HSH);
+  c.textBaseline='middle';
+  c.font='700 40px '+SCR_FONT;c.fillStyle='#f4efe4';c.textAlign='left';c.shadowColor='rgba(255,230,160,.5)';c.shadowBlur=10;c.fillText('GEWINNE DER WOCHE',28,34);c.shadowBlur=0;
+  c.fillStyle=AMB;c.textAlign='center';c.fillText(hsKw(HS.cur.k),600,34);
+  c.fillStyle='rgba(255,179,0,.35)';c.fillRect(20,62,984,2);c.fillRect(20,98,984,1);
+  c.font='700 22px '+SCR_FONT;c.fillStyle=DIM;c.textAlign='right';c.fillText('#',60,82);c.textAlign='left';c.fillText('SPIELER',84,82);c.fillText('SPIEL',430,82);c.fillText('ZEIT',724,82);c.textAlign='right';c.fillText('GEWINN',998,82);
+  // Zeilen (Top 6), mit Klapp-Animation bei Änderung
+  for(let i=0;i<HS_ROWS;i++){const e=HS.cur.l[i],tg=hsRowStrings(e,i),key=tg.join('|');
+    if(!HS.target[i]||HS.target[i].join('|')!==key){HS.target[i]=tg;if(HS.disp[i]!==undefined)HS.flip[i]=now;HS.disp[i]=key;}
+    const t0=HS.flip[i],y=104+i*48+24,top=i===0&&e;
+    if(i%2){c.fillStyle='rgba(255,179,0,.045)';c.fillRect(20,y-24,984,48);}
+    c.font='700 34px '+SCR_FONT;
+    if(!e){c.fillStyle='rgba(154,116,24,.45)';c.textAlign='right';c.fillText(tg[0]+'.',60,y);c.textAlign='left';c.fillText('· · ·',84,y);continue;}
+    c.fillStyle=top?'#ffe27a':AMB;if(top){c.shadowColor='rgba(255,210,80,.55)';c.shadowBlur=8;}
+    c.textAlign='right';c.fillText(hsShown(tg[0],0,t0)+'.',60,y);
+    hsFit(c,hsShown(tg[1],1,t0),84,y,330,'left');hsFit(c,hsShown(tg[2],2,t0),430,y,280,'left');
+    c.fillStyle=top?'#ffe27a':'#e0a428';hsFit(c,hsShown(tg[3],3,t0),724,y,150,'left');
+    c.fillStyle=top?'#fff0b0':'#ffc93a';c.font='800 36px '+SCR_FONT;hsFit(c,hsShown(tg[4],4,t0),998,y,200,'right');c.shadowBlur=0;}
+  c.fillStyle='rgba(255,179,0,.35)';c.fillRect(20,393,984,1);
+  // Laufschrift-Text
+  const best=HS.prev.l[0],rec=HS.all[0],parts=[];
+  if(best)parts.push('LETZTE WOCHE ('+hsKw(HS.prev.k)+'): '+best.n+' · '+best.g+' · '+fmt(best.a));
+  if(rec)parts.push('REKORD: '+rec.n+' · '+rec.g+' · '+fmt(rec.a)+' ('+hsWhen(rec.t,true)+')');
+  parts.push(HS.cur.l.length?HS.cur.l.length+' GEWINNE DIESE WOCHE AUF DER TAFEL':'NOCH KEIN GEWINN DIESE WOCHE – DER ERSTE GEHÖRT DIR');
+  parts.push('WILLKOMMEN IN DER SJ SPIELBANK · VIEL GLÜCK');
+  const txt=parts.join('     ◆     ')+'     ◆     ';c.font='700 30px '+SCR_FONT;HS.tickTxt=txt;HS.tickW=Math.ceil(c.measureText(txt).width);
+  HS.dirtyStatic=!HS.flip.every((t,i)=>hsFlipDone(i));
+}
+function hsDraw(){
+  const B=HS.board;if(!B)return;if(HS.dirtyStatic)hsDrawStatic();
+  const c=B.ctx;c.setTransform(1,0,0,1,0,0);c.drawImage(B.sc,0,0);
+  // Uhr (Doppelpunkt blinkt)
+  const d=new Date();c.font='700 40px '+SCR_FONT;c.textBaseline='middle';c.textAlign='right';c.fillStyle='#ffb300';c.fillText(hsPad(d.getHours())+(d.getSeconds()%2?':':' ')+hsPad(d.getMinutes()),996,34);
+  // Laufschrift
+  c.fillStyle='#0b0910';c.fillRect(0,396,HSW,HSH-396);c.font='700 30px '+SCR_FONT;c.fillStyle='#ffb300';c.textAlign='left';
+  const span=HS.tickW||HSW,x=HSW-((HS.tick*90)%(span+HSW));c.fillText(HS.tickTxt,x,422);if(x+span<HSW)c.fillText(HS.tickTxt,x+span,422);
+  // LED-Raster und Glasglanz
+  c.fillStyle=B.pat;c.fillRect(0,0,HSW,HSH);const gl=c.createLinearGradient(0,0,HSW,HSH);gl.addColorStop(0,'rgba(255,255,255,.05)');gl.addColorStop(.5,'rgba(255,255,255,0)');gl.addColorStop(1,'rgba(255,255,255,.03)');c.fillStyle=gl;c.fillRect(0,0,HSW,HSH);
+  B.tex.needsUpdate=true;HS.lastDraw=now;HS.lastMin=d.getMinutes();
+}
+function hsStep(dt){
+  if(!HS.ready)hsLoad();const B=HS.board;if(!B)return;
+  if((HS.rollT=(HS.rollT||0)+dt)>30){HS.rollT=0;hsRoll();}
+  const onEG=typeof floorIdx!=='undefined'&&floorIdx===0,dist=onEG?Math.hypot(P.x-B.x,P.z-B.z):99;
+  HS.active=onEG&&dist<22&&started&&!openId;
+  const flipping=HS.flip.some((t,i)=>t!==undefined&&!hsFlipDone(i));
+  if(flipping){HS.dirtyStatic=true;if(dist<9&&now-HS.sfxT>.045){HS.sfxT=now;if(typeof noise==='function')noise(.014,.04,2400+Math.random()*900);}}
+  if(HS.active)HS.tick+=dt;
+  const due=flipping?now-HS.lastDraw>1/20:HS.active?now-HS.lastDraw>1/12:(HS.dirtyStatic||new Date().getMinutes()!==HS.lastMin);
+  if(due)hsDraw();
+}
+/* ---------- Panel ---------- */
+function hsRender(){
+  const mk=(el,list,full)=>{el.innerHTML='';if(!list.length){el.innerHTML='<p class="mps" style="color:var(--dim)">Noch nichts eingetragen.</p>';return;}
+    list.forEach((e,i)=>{const row=document.createElement('div');row.className='hs-row'+(i===0?' top':'');
+      const r=document.createElement('span');r.className='hs-r';r.textContent=(i+1)+'.';const n=document.createElement('b');n.textContent=e.n;
+      const g=document.createElement('span');g.className='hs-g';g.textContent=e.g+' · '+hsWhen(e.t,full)+(e.b?' · Einsatz '+fmt(e.b):'');const a=document.createElement('span');a.className='hs-a';a.textContent=fmt(e.a);
+      row.append(r,n,a,g);el.appendChild(row);});};
+  hsRoll();$('#hsWeekLbl').textContent='DIESE WOCHE · '+hsKw(HS.cur.k);mk($('#hsWeek'),HS.cur.l,false);
+  $('#hsPrevLbl').textContent='LETZTE WOCHE'+(HS.prev.k?' · '+hsKw(HS.prev.k):'');mk($('#hsPrev'),HS.prev.l,false);mk($('#hsAll'),HS.all,true);
+}
+
+
 /* ---- 90_main.js ---- */
 /* =========================================================
    AUFZUG
@@ -5835,7 +6017,7 @@ function buildWorld(){
   for(let i=0;i<10;i++){const [id,c]=MROW[i%5];buildMachine(A,-11.6,-9.8+i*1.25,Math.PI/2,id,c);}
   // vier Freispiel-Automaten um die Ecke an der Nordwand
   for(let i=0;i<6;i++){const [id,c]=MROW[(i+2)%5];buildMachine(A,-10.3+i*1.25,-11.6,0,id,c);}
-  buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
+  buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHighBoard(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:500,bb:1000,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
@@ -5932,6 +6114,10 @@ const pcHint=$('#pcHint'),cross=$('#cross');
 // Freier Zeiger am PC: der Punkt wandert mit der Maus, die Kamera zieht weich hinterher.
 // Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
 const AIM={x:0,y:0,sx:0,sy:0,hot:false};
+// Strg: Maus frei (echter Zeiger) zum Klicken auf Tasten und Automaten; Strg oder Esc = zurück zum Umschauen. Rechte Maustaste gedrückt = umschauen.
+const CUR={on:false,x:0,y:0};
+function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;if(CUR.on){freeMouse();AIM.x=AIM.y=0;}else grabMouse();pcUi();}
+function aimPos(){return aimActive()?[AIM.sx,AIM.sy]:CUR.on?[CUR.x,CUR.y]:[LW()/2,LH()/2];}
 const aimEul=new THREE.Euler(0,0,0,'YXZ'),aimV=new THREE.Vector3();
 function aimActive(){return PC&&mouseLocked()&&!locked&&!focus;}
 function aimClamp(){const t=Math.tan(camera.fov*Math.PI/360),mx=Math.atan(.86*t*camera.aspect),my=Math.atan(.78*t);AIM.x=clamp(AIM.x,-mx,mx);AIM.y=clamp(AIM.y,-my,my);}
@@ -5956,15 +6142,17 @@ function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 function pcUi(){
   document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
-  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
-  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
+  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId&&!CUR.on,ch=PC&&CUR.on&&started&&!focus&&!openId;
+  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
+  const cs=CUR.on&&!lk?(AIM.hot?'pointer':'crosshair'):'';if(cv.style.cursor!==cs)cv.style.cursor=cs;
 }
-document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;pointers.clear();AIM.x=AIM.y=0;pcUi();});
+document.addEventListener('pointerlockchange',()=>{if(mouseLocked()){lockOK=true;CUR.on=false;}pointers.clear();AIM.x=AIM.y=0;pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
 // Hat es schon einmal geklappt, ist ein Fehler nur die Sperrzeit des Browsers direkt nach Esc: einfach nochmal klicken lassen
 document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi();return;}
   if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
-document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
+document.addEventListener('mousemove',e=>{if(CUR.on&&!mouseLocked()){const [lx,ly]=toLocal(e.clientX,e.clientY);CUR.x=lx;CUR.y=ly;return;}
+  if(!mouseLocked()||locked||focus)return;
   AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
 
@@ -6015,7 +6203,7 @@ function bubTop(){let t=60;['#hudTop','#standBtn','#svStand'].forEach(q=>{const 
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
-  focus={type,m,ly:0,lp:0};freeMouse();
+  focus={type,m,ly:0,lp:0};CUR.on=false;freeMouse();
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
@@ -6049,9 +6237,11 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
   if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button!==0)return;
-    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);}
-    else grabMouse();
-    return;}
+    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);return;}
+    if(CUR.on){const [lx,ly]=toLocal(e.clientX,e.clientY);if(!tapAt(lx,ly,false)&&curAct)interact(curAct);return;}
+    grabMouse();return;}
+  if(PC&&CUR.on&&e.pointerType==='mouse'&&e.button===2&&!focus){ // rechte Maustaste: umschauen im Zeiger-Modus
+    try{cv.setPointerCapture(e.pointerId);}catch(_){}const [lx,ly]=toLocal(e.clientX,e.clientY);pointers.set(e.pointerId,{x:lx,y:ly,t:performance.now(),mode:'look',moved:0,type:'mouse',btn:2});return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   const [lx,ly]=toLocal(e.clientX,e.clientY);
   const leftSide=!focus&&lx<LW()*.45&&e.pointerType!=='mouse';
@@ -6072,12 +6262,14 @@ cv.addEventListener('pointermove',e=>{
 function endPtr(e){
   const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);
   if(p.mode==='joy'){joy.active=false;joy.id=null;joy.vx=joy.vy=0;joyRest();}
-  if(!locked&&e.type==='pointerup'&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
+  if(!locked&&e.type==='pointerup'&&p.btn!==2&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
 }
+cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
+  if((e.code==='ControlLeft'||e.code==='ControlRight')&&!e.repeat&&PC&&!focus&&!locked&&started){e.preventDefault();curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
-  if(e.code==='Escape'&&focus)leaveFocus();
+  if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on)curToggle();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
 // Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
 const SVKEY_CODES={Space:'START',Enter:'START',KeyA:'AUTO',KeyK:'KARTE',KeyL:'LEITER',KeyE:'EINSATZ',KeyN:'LINIEN',KeyI:'INFO',KeyM:'MENU'};
@@ -6089,6 +6281,7 @@ function hitList(){return F.hits.concat(globalHits);}
 function tapAt(x,y,noWalk,fat){
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
   let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
+  {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}
   if(focus){
     for(const h of hits){const a=h.object.userData.act;if(!a)continue;
       if(focus.type==='slot'&&h.object===focus.m.scrMesh&&smTap(focus.m,h.uv))return true;
@@ -6134,9 +6327,10 @@ const promptEl=$('#prompt');
 promptEl.addEventListener('click',()=>{if(curAct&&!locked&&!focus)interact(curAct);});
 function updatePrompt(){
   let best=null;AIM.hot=false;
-  if(aimActive())v2.set(AIM.sx/LW()*2-1,-(AIM.sy/LH())*2+1);else v2.set(0,0);
+  const ap=aimPos();v2.set(ap[0]/LW()*2-1,-(ap[1]/LH())*2+1);
   ray.setFromCamera(v2,camera);ray.far=4.2;
-  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];
+  const hl=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);
+  const h=hl.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hl[0].distance+.03)||hl[0];
   if(h&&h.object.userData.act){const a=h.object.userData.act;
     if(a.type==='mbtn'){const m=a.m;
       if(isMine(m)&&h.distance<3.6){const bm=m.btnModel||btnModel(m),d=bm[a.key==='RISIKO'?'KARTE':a.key];a.label=(d&&d.label)||a.key;a.sub=m.G.title+(d&&!d.lit?' · gerade ohne Funktion':'');best=a;AIM.hot=true;}
@@ -6162,6 +6356,7 @@ function interact(act){
     case 'npc':talk(act.npc);break;
     case 'atm':atmOpen();break;
     case 'mbtn':pressStanding(act,0);break;
+    case 'board':openPanel('pHigh');hsRender();break;
   }
 }
 function talk(n){
@@ -6223,7 +6418,7 @@ function finishSpin(n){
   let win=0,stake=0;for(const k in R.bets){stake+=R.bets[k];win+=R.bets[k]*payMult(k,n);}
   R.last=Object.assign({},R.bets);R.bets={};
   const cname=n===0?'GRÜN':REDS.has(n)?'ROT':'SCHWARZ';
-  if(win>0){if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
+  if(win>0){hsReport('ROULETTE',win,stake);if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
     const x=win/stake,[wx,wy]=UFX.elXY(rCan);
     if(x>=3){UFX.banner(x>=10?'MEGA GEWINN':'GROSSER GEWINN',win,x>=10?2:1,n+' '+cname);UFX.flyChips(LW()/2,LH()*.55,win,x>=10?2.6:2);}
     else{UFX.flash(.35,'255,230,140');UFX.burst(wx,wy,30,{coin:true,sz:8,spd:300,up:200,life:1.2});UFX.flyChips(wx,wy,win);}}
@@ -6321,7 +6516,7 @@ function frame(){
     camera.updateProjectionMatrix();aimScreen();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
-    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);
+    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);hsStep(dt);
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
@@ -6333,7 +6528,7 @@ function frame(){
       n.head.getWorldPosition(tmpV);tmpV.y+=.42;const dist=tmpV.distanceTo(camera.position);tmpV.project(camera);
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
       n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,bubTop(),lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
-    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=aimActive()?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
+    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=(aimActive()||CUR.on)?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
   renderer.render(scene,camera);

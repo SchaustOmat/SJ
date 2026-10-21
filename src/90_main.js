@@ -100,7 +100,7 @@ function buildWorld(){
   for(let i=0;i<10;i++){const [id,c]=MROW[i%5];buildMachine(A,-11.6,-9.8+i*1.25,Math.PI/2,id,c);}
   // vier Freispiel-Automaten um die Ecke an der Nordwand
   for(let i=0;i<6;i++){const [id,c]=MROW[(i+2)%5];buildMachine(A,-10.3+i*1.25,-11.6,0,id,c);}
-  buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
+  buildBar(A,{z:-1,len:8.4,stools:[-3.4,-1.2,1.2]});buildHighBoard(A);buildHall(A,'EG');buildATM(A,-2.4,-11.6,0);
   buildMTable(A,{id:'eg',name:'SPIELERTISCH',floor:0,x:5,z:8.2,sb:500,bb:1000,buy:5000,color:0xd6a02a,stool:0x6a1020});
   sofa(A,-9.5,9.8,Math.PI,0x3a1240);sofa(A,-10.8,7,Math.PI/2,0x3a1240);
   box(.9,.4,.9,lam({map:T.wood}),-9.2,.2,7.6,A.group);col(A,-9.2,7.6,.9,.9);
@@ -197,6 +197,10 @@ const pcHint=$('#pcHint'),cross=$('#cross');
 // Freier Zeiger am PC: der Punkt wandert mit der Maus, die Kamera zieht weich hinterher.
 // Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
 const AIM={x:0,y:0,sx:0,sy:0,hot:false};
+// Strg: Maus frei (echter Zeiger) zum Klicken auf Tasten und Automaten; Strg oder Esc = zurück zum Umschauen. Rechte Maustaste gedrückt = umschauen.
+const CUR={on:false,x:0,y:0};
+function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;if(CUR.on){freeMouse();AIM.x=AIM.y=0;}else grabMouse();pcUi();}
+function aimPos(){return aimActive()?[AIM.sx,AIM.sy]:CUR.on?[CUR.x,CUR.y]:[LW()/2,LH()/2];}
 const aimEul=new THREE.Euler(0,0,0,'YXZ'),aimV=new THREE.Vector3();
 function aimActive(){return PC&&mouseLocked()&&!locked&&!focus;}
 function aimClamp(){const t=Math.tan(camera.fov*Math.PI/360),mx=Math.atan(.86*t*camera.aspect),my=Math.atan(.78*t);AIM.x=clamp(AIM.x,-mx,mx);AIM.y=clamp(AIM.y,-my,my);}
@@ -221,15 +225,17 @@ function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 function pcUi(){
   document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
-  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId;
-  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;
+  const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId&&!CUR.on,ch=PC&&CUR.on&&started&&!focus&&!openId;
+  if(cross.hidden===lk)cross.hidden=!lk;if(pcHint.hidden===hint)pcHint.hidden=!hint;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
+  const cs=CUR.on&&!lk?(AIM.hot?'pointer':'crosshair'):'';if(cv.style.cursor!==cs)cv.style.cursor=cs;
 }
-document.addEventListener('pointerlockchange',()=>{if(mouseLocked())lockOK=true;pointers.clear();AIM.x=AIM.y=0;pcUi();});
+document.addEventListener('pointerlockchange',()=>{if(mouseLocked()){lockOK=true;CUR.on=false;}pointers.clear();AIM.x=AIM.y=0;pcUi();});
 // Browser ohne Maus-Fangen (z. B. eingebettet): dann wie bisher mit gedrückter Maus umschauen
 // Hat es schon einmal geklappt, ist ein Fehler nur die Sperrzeit des Browsers direkt nach Esc: einfach nochmal klicken lassen
 document.addEventListener('pointerlockerror',()=>{if(!lockOK){lockFail=true;pcUi();return;}
   if(performance.now()-lockErrT>1500){lockErrT=performance.now();toast('Kurz warten und nochmal klicken.');}});
-document.addEventListener('mousemove',e=>{if(!mouseLocked()||locked||focus)return;
+document.addEventListener('mousemove',e=>{if(CUR.on&&!mouseLocked()){const [lx,ly]=toLocal(e.clientX,e.clientY);CUR.x=lx;CUR.y=ly;return;}
+  if(!mouseLocked()||locked||focus)return;
   AIM.x+=e.movementX*.0024*SENS;AIM.y-=e.movementY*.0024*SENS;aimClamp();});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&PC){PC=false;freeMouse();joyBase.hidden=!started||!!focus;joyHint.hidden=joyBase.hidden;pcUi();}},true);
 
@@ -280,7 +286,7 @@ function bubTop(){let t=60;['#hudTop','#standBtn','#svStand'].forEach(q=>{const 
 function enterFocus(type,m){
   if(type==='poker'&&!pokerSit())return;
   if(type==='mtable'&&!MP.room){toast(window.NK_STANDALONE?'Erst oben auf MULTI tippen und einen Raum hosten oder beitreten.':'Der Spielertisch braucht eine Multiplayer-Verbindung.');return;}
-  focus={type,m,ly:0,lp:0};freeMouse();
+  focus={type,m,ly:0,lp:0};CUR.on=false;freeMouse();
   camAnim={t:0,dur:.6,fromPos:camera.position.clone(),fromYaw:P.yaw,fromPitch:P.pitch,fromFov:camera.fov,dir:1};
   walk=null;marker.visible=false;joy.active=false;joy.vx=joy.vy=0;joyRest();
   $('#standBtn').hidden=type==='slot';if(type==='slot')svOpen(m);else barsFor(type);joyBase.hidden=true;joyHint.hidden=true;promptEl.hidden=true;curAct=null;
@@ -314,9 +320,11 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
   if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button!==0)return;
-    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);}
-    else grabMouse();
-    return;}
+    if(mouseLocked()){if(!tapAt(AIM.sx,AIM.sy,true)&&curAct)interact(curAct);return;}
+    if(CUR.on){const [lx,ly]=toLocal(e.clientX,e.clientY);if(!tapAt(lx,ly,false)&&curAct)interact(curAct);return;}
+    grabMouse();return;}
+  if(PC&&CUR.on&&e.pointerType==='mouse'&&e.button===2&&!focus){ // rechte Maustaste: umschauen im Zeiger-Modus
+    try{cv.setPointerCapture(e.pointerId);}catch(_){}const [lx,ly]=toLocal(e.clientX,e.clientY);pointers.set(e.pointerId,{x:lx,y:ly,t:performance.now(),mode:'look',moved:0,type:'mouse',btn:2});return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
   const [lx,ly]=toLocal(e.clientX,e.clientY);
   const leftSide=!focus&&lx<LW()*.45&&e.pointerType!=='mouse';
@@ -337,12 +345,14 @@ cv.addEventListener('pointermove',e=>{
 function endPtr(e){
   const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);
   if(p.mode==='joy'){joy.active=false;joy.id=null;joy.vx=joy.vy=0;joyRest();}
-  if(!locked&&e.type==='pointerup'&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
+  if(!locked&&e.type==='pointerup'&&p.btn!==2&&p.moved<14&&performance.now()-p.t<420)tapAt(p.x,p.y,false,p.type==='touch');
 }
+cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
+  if((e.code==='ControlLeft'||e.code==='ControlRight')&&!e.repeat&&PC&&!focus&&!locked&&started){e.preventDefault();curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
-  if(e.code==='Escape'&&focus)leaveFocus();
+  if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on)curToggle();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
 // Tastatur am Automaten (am PC unter den Knöpfen angezeigt)
 const SVKEY_CODES={Space:'START',Enter:'START',KeyA:'AUTO',KeyK:'KARTE',KeyL:'LEITER',KeyE:'EINSATZ',KeyN:'LINIEN',KeyI:'INFO',KeyM:'MENU'};
@@ -354,6 +364,7 @@ function hitList(){return F.hits.concat(globalHits);}
 function tapAt(x,y,noWalk,fat){
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
   let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
+  {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}
   if(focus){
     for(const h of hits){const a=h.object.userData.act;if(!a)continue;
       if(focus.type==='slot'&&h.object===focus.m.scrMesh&&smTap(focus.m,h.uv))return true;
@@ -399,9 +410,10 @@ const promptEl=$('#prompt');
 promptEl.addEventListener('click',()=>{if(curAct&&!locked&&!focus)interact(curAct);});
 function updatePrompt(){
   let best=null;AIM.hot=false;
-  if(aimActive())v2.set(AIM.sx/LW()*2-1,-(AIM.sy/LH())*2+1);else v2.set(0,0);
+  const ap=aimPos();v2.set(ap[0]/LW()*2-1,-(ap[1]/LH())*2+1);
   ray.setFromCamera(v2,camera);ray.far=4.2;
-  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];
+  const hl=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);
+  const h=hl.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hl[0].distance+.03)||hl[0];
   if(h&&h.object.userData.act){const a=h.object.userData.act;
     if(a.type==='mbtn'){const m=a.m;
       if(isMine(m)&&h.distance<3.6){const bm=m.btnModel||btnModel(m),d=bm[a.key==='RISIKO'?'KARTE':a.key];a.label=(d&&d.label)||a.key;a.sub=m.G.title+(d&&!d.lit?' · gerade ohne Funktion':'');best=a;AIM.hot=true;}
@@ -427,6 +439,7 @@ function interact(act){
     case 'npc':talk(act.npc);break;
     case 'atm':atmOpen();break;
     case 'mbtn':pressStanding(act,0);break;
+    case 'board':openPanel('pHigh');hsRender();break;
   }
 }
 function talk(n){
@@ -488,7 +501,7 @@ function finishSpin(n){
   let win=0,stake=0;for(const k in R.bets){stake+=R.bets[k];win+=R.bets[k]*payMult(k,n);}
   R.last=Object.assign({},R.bets);R.bets={};
   const cname=n===0?'GRÜN':REDS.has(n)?'ROT':'SCHWARZ';
-  if(win>0){if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
+  if(win>0){hsReport('ROULETTE',win,stake);if(win>=500)mpWin('gewinnt '+fmt(win)+' beim Roulette!');setChips(chips+win,true);rMsg(n+' '+cname+' · GEWINN +'+fmt(win),'win');win>=stake*5?SFX.big():SFX.win();
     const x=win/stake,[wx,wy]=UFX.elXY(rCan);
     if(x>=3){UFX.banner(x>=10?'MEGA GEWINN':'GROSSER GEWINN',win,x>=10?2:1,n+' '+cname);UFX.flyChips(LW()/2,LH()*.55,win,x>=10?2.6:2);}
     else{UFX.flash(.35,'255,230,140');UFX.burst(wx,wy,30,{coin:true,sz:8,spd:300,up:200,life:1.2});UFX.flyChips(wx,wy,win);}}
@@ -586,7 +599,7 @@ function frame(){
     camera.updateProjectionMatrix();aimScreen();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
-    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);
+    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);hsStep(dt);
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
@@ -598,7 +611,7 @@ function frame(){
       n.head.getWorldPosition(tmpV);tmpV.y+=.42;const dist=tmpV.distanceTo(camera.position);tmpV.project(camera);
       if(tmpV.z>1||dist>13||Math.abs(tmpV.x)>1.1||Math.abs(tmpV.y)>1.1){n.bubbleEl.hidden=true;continue;}
       n.bubbleEl.hidden=false;const bw=n.bubbleEl.offsetWidth||120,bh=n.bubbleEl.offsetHeight||30;const bx=clamp((tmpV.x*.5+.5)*lw-bw/2,8,lw-bw-8),by=clamp((-tmpV.y*.5+.5)*lh-bh-8,bubTop(),lh-bh-8);n.bubbleEl.style.transform='translate('+(bx|0)+'px,'+(by|0)+'px)';}
-    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=aimActive()?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
+    if(!locked&&!focus){promptT-=dt;if(promptT<=0){promptT=(aimActive()||CUR.on)?0:.15;updatePrompt();}if(typeof rmUpdate==='function')rmUpdate();}else{if(!promptEl.hidden)promptEl.hidden=true;if(typeof rmHide==='function')rmHide();}
     if(openId==='pRoulette'||R.W.anim)updRoulette(dt);
   }
   renderer.render(scene,camera);

@@ -88,6 +88,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
   font-family:var(--f-title);font-size:19.6px;color:#fff;text-align:center;letter-spacing:.08em;line-height:1.5}
 #pcHint small{display:block;margin-top:8px;font-family:var(--f-body);font-size:16px;letter-spacing:0;opacity:.85}
 body.pcmode #joyBase,body.pcmode #joyHint{display:none}
+#curHint{position:fixed;z-index:5;left:50%;top:calc(env(safe-area-inset-top,0px) + 112px);transform:translateX(-50%);pointer-events:none;max-width:calc(100% - 32px);padding:7px 12px;background:rgba(10,6,16,.78);border:2px solid var(--gold);box-shadow:0 0 0 2px #000;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);text-align:center}
 /* Handy: Tastenleiste für eigene Automaten in Reichweite (im Stehen) */
 #rmBar{position:fixed;z-index:6;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 136px);display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none;max-width:calc(100vw - 20px)}
 .rm-row{display:flex;align-items:center;gap:5px;background:rgba(7,5,12,.84);border:2px solid var(--line);box-shadow:0 0 0 2px #000;padding:5px 6px;pointer-events:auto}
@@ -150,6 +151,14 @@ body.pcmode #rmBar{display:none}
 .bc-logo{position:absolute;right:8px;bottom:6px;display:flex}.bc-logo i{width:20px;height:20px;border-radius:50%;background:#ff3a3a;opacity:.9}.bc-logo i+i{background:#ffcf3a;margin-left:-8px}
 .mprooms{display:flex;flex-direction:column;gap:6px}
 .mproom{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+/* Highscore */
+.hs-list{display:flex;flex-direction:column;gap:4px}
+.hs-row{display:grid;grid-template-columns:30px 1fr auto;gap:0 8px;align-items:center;background:var(--black);border:2px solid var(--line);padding:5px 8px;min-width:0}
+.hs-row .hs-r{grid-row:1/3;font-family:var(--f-dev);font-size:18px;color:var(--dim)}
+.hs-row b{font-family:var(--f-dev);font-size:18px;letter-spacing:.03em;color:var(--ink);font-weight:700;overflow-wrap:anywhere}
+.hs-row .hs-g{grid-column:2;font-size:14px;color:var(--dim);overflow-wrap:anywhere}
+.hs-row .hs-a{grid-row:1/3;font-family:var(--f-dev);font-size:21px;color:var(--gold);white-space:nowrap}
+.hs-row.top{border-color:var(--gold)}.hs-row.top .hs-a{color:#ffe08a}
 /* Freunde */
 #friendBtn{width:auto;min-width:0;padding:0 7px;font-size:8px;position:relative}
 #friendBtn.on::after{content:attr(data-n);position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;border-radius:8px;background:#e8182c;color:#fff;font-family:var(--f-dev);font-size:11px;line-height:16px;text-align:center;box-shadow:0 0 0 2px #000}
@@ -507,7 +516,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
-<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · TASTEN AM AUTOMATEN ANKLICKEN · SHIFT SPRINTEN · ESC MAUS FREI</small></div>
+<div id="curHint" hidden>MAUS FREI · TASTEN UND AUTOMATEN ANKLICKEN · RECHTE MAUSTASTE = UMSCHAUEN · STRG = ZURÜCK</div>
+<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · STRG = MAUS FREI ZUM KLICKEN AUF TASTEN · SHIFT SPRINTEN</small></div>
 <button id="prompt" hidden></button>
 <div id="rmBar" hidden></div>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
@@ -601,6 +611,16 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <p class="mps" id="frMsg"></p>
   <p class="mps" style="color:var(--dim)">Dein Code ist deine Kontonummer. Schick ihn deinen Kollegen. Wer online ist, steht oben – mit BEITRETEN gehst du direkt in seinen Raum, mit EINLADEN holst du ihn zu dir.</p>
 </section>
+<section id="pHigh" class="panel" hidden aria-label="Highscore">
+  <header><h2>HIGHSCORE-TAFEL</h2><button class="x" data-close>ZURÜCK</button></header>
+  <div class="lbl" id="hsWeekLbl">DIESE WOCHE</div>
+  <div id="hsWeek" class="hs-list"></div>
+  <div class="lbl" id="hsPrevLbl">LETZTE WOCHE</div>
+  <div id="hsPrev" class="hs-list"></div>
+  <div class="lbl">REKORDE ALLER ZEITEN</div>
+  <div id="hsAll" class="hs-list"></div>
+  <p class="mps" style="color:var(--dim)">Gezählt wird jeder gebuchte Gewinn: Automaten, Roulette, Höher/Tiefer, Poker. Die Tafel ist für alle gleich – die Woche beginnt montags neu.</p>
+</section>
 <section id="pAtm" class="panel atm" hidden aria-label="Geldautomat">
   <header><h2>GELDAUTOMAT</h2><button class="x" data-close>KARTE RAUS</button></header>
   <div class="atmFront"><div class="atmScr" id="atmScr"></div><div class="atmSlot"><i></i></div></div>
@@ -627,7 +647,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
-    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC die Tasten am Pult anklicken (der Punkt zeigt, wo du hinguckst), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC mit Strg die Maus freigeben und die Tasten am Pult anklicken (oder direkt mit dem Punkt, der zeigt, wo du hinguckst), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
     <p><b>⟲ oben:</b> Querformat, falls sich die App nicht mitdreht.</p>

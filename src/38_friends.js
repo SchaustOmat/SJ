@@ -26,7 +26,7 @@ function frStart(){
       will:{topic:'sinanskeller/u/'+me,payload:JSON.stringify({n:MP.name||'GAST',on:0,t:Date.now()}),qos:0,retain:true}});}catch(e){return;}
     C.cli=cli;
     cli.on('connect',()=>{C.ok=true;FR.ok=true;
-      cli.subscribe('sinanskeller/fq/'+me+'/+',{qos:0});cli.subscribe('sinanskeller/fi/'+me,{qos:0});
+      cli.subscribe('sinanskeller/fq/'+me+'/+',{qos:0});cli.subscribe('sinanskeller/fi/'+me,{qos:0});cli.subscribe(HS_TOPIC+'+',{qos:0});if(typeof hsConnected==='function')hsConnected();
       FR.list.forEach(f=>cli.subscribe('sinanskeller/u/'+f.id,{qos:0}));
       FR.lastKey='';frTick();frRender();});
     cli.on('close',()=>{C.ok=false;FR.ok=FR.clis.some(x=>x.ok);});
@@ -43,6 +43,7 @@ function frTick(){if(!FR.ok)return;const s=frStatus(),k=s.n+'|'+s.r+'|'+s.b+'|'+
   if(openId==='pFriends')frRender();frBadge();}
 function frMsg(topic,txt){
   const p=topic.split('/'),me=frMe();let d=null;if(txt){try{d=JSON.parse(txt);}catch(e){return;}if(!d||typeof d!=='object')return;}
+  if(topic.startsWith(HS_TOPIC)){if(typeof hsMsg==='function')hsMsg(topic.slice(HS_TOPIC.length),d);return;}
   if(p[1]==='u'&&/^\d{8}$/.test(p[2]||'')){const f=frFind(p[2]);if(!f)return;
     if(!d){delete FR.st[p[2]];}else{const prev=FR.st[p[2]],cur={n:cleanText(d.n,14)||f.n,r:/^\d{4}$/.test(d.r||'')?d.r:'',b:frB(d.b),f:+d.f===1?1:0,t:Math.min(+d.t||0,Date.now()),on:d.on?1:0};
       if(cur.t&&(!prev||cur.t>=prev.t)){const was=frOnline(prev);FR.st[p[2]]=cur;if(cur.n&&cur.n!=='GAST'&&cur.n!==f.n){f.n=cur.n;frSave();}

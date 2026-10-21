@@ -74,7 +74,7 @@ function hlPress(key){
   else if(key==='NEHMEN'){hlCollect();}
   else if(key==='WEITER'){hlDeal();}
 }
-function hlCollect(){if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';
+function hlCollect(){if(HL.pending>0)hsReport('HÖHER/TIEFER',HL.pending);if(HL.pending>=1000)mpWin('kassiert '+fmt(HL.pending)+' bei Höher/Tiefer!');if(HL.pending>0){setChips(chips+HL.pending,true);SFX.chip();HL.msg='+'+fmt(HL.pending)+' KASSIERT';
   UFX.burst(LW()/2,LH()*.6,24,{coin:true,sz:9,spd:300,up:260,life:1.3});UFX.flyChips(LW()/2,LH()*.5,HL.pending);}HL.pending=0;store('nk_hlpend',null);HL.state='bet';hlClearCards();hlUpdate();}
 function hlPick(i){
   if(HL.state!=='pick')return;HL.pick=i;HL.state='reveal';
