@@ -14,7 +14,31 @@
 const CHR={ready:false,fail:false,clips:{},lib:null,male:null,female:null,pending:[],all:[],fp:null,seedN:0,sitOff:null,eye:null,base:(window.NK_ASSET_BASE||''),mats:{}};
 const CH_SUITS=[0x1a1a22,0x2a1a3a,0x3a1414,0x10243a,0x1e2a1a,0x3a2a10,0x262630,0x4a1a2a,0x0e2a2a,0x5a4a3a,0x2a2a2a];
 const CH_HAIR=[0x111111,0x2a1a10,0x4a2a14,0x7a4a20,0xb08a50,0x8a1a2a,0x3a3a3a];
-const CH_HAIR_F=['Hair_Long','Hair_Buns','Hair_SimpleParted','Hair_BuzzedFemale'],CH_HAIR_M=['Hair_SimpleParted','Hair_Buzzed','Hair_SimpleParted','Hair_Buzzed'];
+const CH_HAIR_F=['Hair_Long','Hair_Buns','Hair_SimpleParted','Hair_BuzzedFemale'],CH_HAIR_M=['Hair_SimpleParted','Hair_Buzzed','Hair_Long','Hair_Buns'];
+const CH_SKIN=[1.32,1.14,1.0,.82,.62]; // Hautton: Faktor auf die Hauttextur (hell … dunkel)
+// ---- eigenes Aussehen (nk_look): g Körper (0 Mann, 1 Frau), h Frisur, hc Haarfarbe, s Anzug/Kleid, k Hautton, b Bart ----
+function chLookClean(l){const n=(v,max)=>Math.max(0,Math.min(max-1,Math.round(+v)||0));l=l&&typeof l==='object'?l:{};return {g:l.g?1:0,h:n(l.h,4),hc:n(l.hc,CH_HAIR.length),s:n(l.s,CH_SUITS.length),k:n(l.k,CH_SKIN.length),b:l.b?1:0};}
+function chLookSave(l){try{localStorage.setItem('nk_look',JSON.stringify(l));}catch(e){}}
+function chLook(){if(CHR.look)return CHR.look;let l=null;try{l=JSON.parse(localStorage.getItem('nk_look')||'null');}catch(e){}
+  if(!l){const r=Math.random;l={g:r()<.5?1:0,h:(r()*4)|0,hc:(r()*CH_HAIR.length)|0,s:(r()*CH_SUITS.length)|0,k:(r()*CH_SKIN.length)|0,b:0};chLookSave(l);}
+  CHR.look=chLookClean(l);return CHR.look;}
+function chLookOpts(l){l=chLookClean(l);const fem=l.g===1;return {female:fem,hairStyle:(fem?CH_HAIR_F:CH_HAIR_M)[l.h],hair:CH_HAIR[l.hc],color:CH_SUITS[l.s],skin:CH_SKIN[l.k],beard:!fem&&l.b===1};}
+function chLookSet(key,delta){const l=chLook();const max={g:2,h:4,hc:CH_HAIR.length,s:CH_SUITS.length,k:CH_SKIN.length,b:2}[key];if(!max)return;l[key]=((l[key]+delta)%max+max)%max;chLookSave(l);CHR.look=l;
+  const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55},o));if(CHR.mirror)chRelook(CHR.mirror,o);
+  if(typeof MP!=='undefined'&&MP.room){MP.dirty=true;MP.lastSent=0;}chLookUi();}
+// Figur mit neuem Aussehen neu aufbauen (Sitzen/Kopf-ausblenden bleibt)
+function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
+// Spiegel: eine Kopie der eigenen Figur 2 m vor dem Spieler, zum Spieler gedreht (solange das Figur-Fenster offen ist)
+function chMirrorShow(){if(!CHR.ready||CHR.fail)return;chMirrorHide();const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'',F:null,bubbleUntil:0,bubbleEl:null};
+  const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);n.root.position.set(P.x+fx*2.1,0,P.z+fz*2.1);n.root.rotation.y=P.yaw;scene.add(n.root);chAttach(n,chLookOpts(chLook()));CHR.mirror=n;document.body.classList.add('lookopen');chLookUi();}
+function chMirrorHide(){if(CHR.mirror){scene.remove(CHR.mirror.root);CHR.mirror=null;}document.body.classList.remove('lookopen');}
+function chLookUi(){const el=document.getElementById('pLook');if(!el||el.hidden)return;const l=chLook();
+  const set=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t;};
+  set('lkG',l.g?'Frau':'Mann');set('lkH',['Lang','Dutt','Scheitel','Kurz'][l.g?l.h:[2,3,0,1][l.h]]||String(l.h+1));set('lkB',l.b?'Ja':'Nein');
+  const sw=(id,hex)=>{const e=document.getElementById(id);if(e)e.style.background='#'+hex.toString(16).padStart(6,'0');};
+  sw('lkHC',CH_HAIR[l.hc]);sw('lkS',CH_SUITS[l.s]);const k=CH_SKIN[l.k],sk=Math.round(Math.min(255,170*k));const e=document.getElementById('lkK');if(e)e.style.background='rgb('+sk+','+Math.round(sk*.72)+','+Math.round(sk*.55)+')';
+  const rb=document.getElementById('lkBrow');if(rb)rb.hidden=!!l.g;}
+{const el=document.getElementById('pLook');if(el)el.addEventListener('click',e=>{const b=e.target.closest('[data-lk]');if(!b)return;SFX.click();chLookSet(b.dataset.lk,+b.dataset.d||1);});}
 const chV=new THREE.Vector3(),chV2=new THREE.Vector3();
 function chLoad(){
   if(typeof THREE.GLTFLoader!=='function'||typeof THREE.SkeletonUtils==='undefined'){CHR.fail=true;return;}
@@ -54,7 +78,7 @@ function chBodyMat(map,cols){
   m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;varying float vZone;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;uniform vec3 pal[5];')
-      .replace('#include <map_fragment>','#include <map_fragment>\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
+      .replace('#include <map_fragment>','#include <map_fragment>\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
@@ -67,10 +91,10 @@ function chAttach(n,o){
   let model;const bones={};
   if(CHR.lib){
     model=THREE.SkeletonUtils.clone(CHR.lib);model.traverse(x=>{if(x.isBone)bones[x.name]=x;});
-    const hairName=o.hairStyle||(fem?CH_HAIR_F[seed%CH_HAIR_F.length]:CH_HAIR_M[seed%CH_HAIR_M.length]);const beard=!fem&&(seed%3===0);
+    const hairName=o.hairStyle||(fem?CH_HAIR_F[seed%CH_HAIR_F.length]:CH_HAIR_M[seed%2]);const beard=o.beard!==undefined?!!o.beard:(!fem&&(seed%3===0));const skin=o.skin||CH_SKIN[(seed*5+1)%CH_SKIN.length];
     const hairCol=o.hair!==undefined?o.hair:CH_HAIR[(seed*7+3)%CH_HAIR.length];
     const shirt=0xf0ece4,shoes=0x151214,trousers=o.pants||col;
-    const pal=fem?[0xffffff,col,col,shoes,shirt]:[0xffffff,col,trousers,shoes,shirt];
+    const sk=new THREE.Color(skin,skin,skin);const pal=fem?[sk,col,col,shoes,shirt]:[sk,col,trousers,shoes,shirt];
     model.traverse(x=>{if(!x.isSkinnedMesh)return;const nm=x.name;const bodyOf=fem?'F':'M';
       const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
       x.visible=show;if(!show)return;
@@ -126,7 +150,8 @@ function chAnimate(n,dt){
 // ---- eigener Körper in der Ich-Perspektive ----
 function chFPStep(dt){
   if(CHR.fail||!CHR.ready||!started)return;
-  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,{color:0x2a2a36,female:false,seatH:.55,hairStyle:'Hair_Buzzed'});if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
+  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,Object.assign({seatH:.55},chLookOpts(chLook())));if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
+  if(CHR.mirror&&CHR.mirror.rig)chAnimate(CHR.mirror,dt);
   const n=CHR.fp,R=n.rig;if(!R)return;
   const s=typeof mpLocalState==='function'?mpLocalState():{x:P.x,z:P.z,y:P.yaw+Math.PI,a:'walk'};
   const sitting=s.a==='slot'||s.a==='poker'||s.a==='hilo'||s.a==='mtable';

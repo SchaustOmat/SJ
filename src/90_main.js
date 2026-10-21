@@ -477,7 +477,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeou
    ========================================================= */
 let openId=null,busy=false;
 function openPanel(id){freeMouse();if(typeof hudMenu==='function')hudMenu(false);if(openId)closePanel();openId=id;$('#'+id).hidden=false;$('#veil').hidden=false;locked=true;joy.active=false;joy.vx=joy.vy=0;joyRest();pointers.clear();promptEl.hidden=true;SFX.click();}
-function closePanel(){if(!openId)return;
+function closePanel(){if(!openId)return;if(typeof chMirrorHide==='function')chMirrorHide();
   if(openId==='pAtm')atmClosed();
   if(openId==='pMulti'&&typeof lobbyClose==='function')lobbyClose();
   if(openId==='pRoulette'&&!R.spinning){let s=0;for(const k in R.bets)s+=R.bets[k];if(s>0){setChips(chips+s);toast(fmt(s)+' Einsatz zurück.');}R.bets={};}$('#'+openId).hidden=true;$('#veil').hidden=true;openId=null;locked=false;curAct=null;}
@@ -570,6 +570,7 @@ function resize(){
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
 $('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
+$('#lookBtn').addEventListener('click',()=>{openPanel('pLook');if(typeof chMirrorShow==='function')chMirrorShow();});
 // Handy-Menü (≡) oben rechts: Symbole aufklappen; schließt bei Auswahl, Tippen ins Bild oder wenn ein Fenster aufgeht
 function hudMenu(open){const ic=$('#hudIcons'),mb=$('#menuBtn');if(!ic||!mb)return;ic.classList.toggle('open',!!open);mb.textContent=open?'✕':'≡';mb.setAttribute('aria-expanded',String(!!open));}
 $('#menuBtn').addEventListener('click',()=>{SFX.click();hudMenu(!$('#hudIcons').classList.contains('open'));});

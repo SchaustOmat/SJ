@@ -107,7 +107,11 @@ body.pcmode #itBar{display:none}
 #itHint{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;pointer-events:none;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);background:rgba(10,6,16,.7);padding:5px 10px;border:1px solid rgba(214,160,42,.4);border-radius:6px;white-space:nowrap}
 body:not(.pcmode) #itHint{display:none}
 #itBar.fc{top:calc(env(safe-area-inset-top,0px) + 8px);z-index:16}#itHint.fc{z-index:16;bottom:auto;top:8px}
-#barList{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}#barList .btn b{color:var(--gold);margin-left:6px}
+#barList{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#pLook{left:auto;right:12px;top:72px;bottom:auto;transform:none;margin:0;width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 100px);overflow:auto}
+body.lookopen #veil{background:transparent!important}
+.lookrow{display:flex;align-items:center;gap:8px;margin:7px 0;font-family:var(--f-title);font-size:12px;letter-spacing:.05em}.lookrow span{flex:1;color:var(--dim)}.lookrow b{min-width:64px;text-align:center;color:var(--gold)}
+.lookrow .btn.sm{padding:6px 10px;min-width:0}.lookrow .sw{display:inline-block;width:40px;height:22px;border:1px solid rgba(255,255,255,.35);border-radius:4px}#barList .btn b{color:var(--gold);margin-left:6px}
 @media (max-width:400px){.rm-n{display:none}.rm-row button{min-width:40px;height:34px;font-size:10px}}
 @media (max-height:460px){#rmBar{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);right:auto;left:50%;transform:translateX(-50%);flex-direction:row;align-items:flex-end;gap:5px;max-width:calc(100vw - 300px)}}
 #joyHint{position:fixed;z-index:5;pointer-events:none;font-family:var(--f-title);font-size:11.2px;color:var(--dim);letter-spacing:.1em;text-align:center;width:124px}
@@ -551,6 +555,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <button class="ibtn" id="radioBtn" aria-label="Radio" data-ic="♫"><i>RADIO</i><span class="l">Radio</span></button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat drehen" data-ic="⟲" aria-pressed="false"><i>⟲</i><span class="l">Querformat drehen</span></button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus" data-ic="♪"><i>♪</i><span class="l">Ton an / aus</span></button>
+    <button class="ibtn" id="lookBtn" aria-label="Deine Figur" data-ic="☺"><i>ICH</i><span class="l">Deine Figur</span></button>
     <button class="ibtn" id="helpBtn" aria-label="Hilfe und Name" data-ic="?"><i>?</i><span class="l">Hilfe &amp; Name</span></button>
   </div>
   <button class="ibtn" id="menuBtn" aria-label="Menü" aria-expanded="false" hidden>≡</button>
@@ -617,6 +622,16 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="bubbles"></div>
 <div id="veil" hidden></div>
 
+<section id="pLook" class="panel" hidden aria-label="Deine Figur">
+  <header><h2>DEINE FIGUR</h2><button class="x" data-close>FERTIG</button></header>
+  <p style="color:var(--dim);margin:0 0 8px">Vor dir steht dein Spiegelbild. So sehen dich die anderen.</p>
+  <div class="lookrow"><span>Körper</span><button class="btn" data-lk="g" data-d="1" id="lkG">Mann</button></div>
+  <div class="lookrow"><span>Frisur</span><button class="btn sm" data-lk="h" data-d="-1">◀</button><b id="lkH">–</b><button class="btn sm" data-lk="h" data-d="1">▶</button></div>
+  <div class="lookrow"><span>Haarfarbe</span><button class="btn sm" data-lk="hc" data-d="-1">◀</button><i class="sw" id="lkHC"></i><button class="btn sm" data-lk="hc" data-d="1">▶</button></div>
+  <div class="lookrow"><span>Anzug / Kleid</span><button class="btn sm" data-lk="s" data-d="-1">◀</button><i class="sw" id="lkS"></i><button class="btn sm" data-lk="s" data-d="1">▶</button></div>
+  <div class="lookrow"><span>Hautton</span><button class="btn sm" data-lk="k" data-d="-1">◀</button><i class="sw" id="lkK"></i><button class="btn sm" data-lk="k" data-d="1">▶</button></div>
+  <div class="lookrow" id="lkBrow"><span>Bart</span><button class="btn" data-lk="b" data-d="1" id="lkB">Nein</button></div>
+</section>
 <section id="pBar" class="panel" hidden aria-label="Bar">
   <header><h2>BAR</h2><button class="x" data-close>ZURÜCK</button></header>
   <p id="barInv"></p>

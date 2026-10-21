@@ -24,11 +24,12 @@ function mpTag(){const t=$('#onlineTag');const n=MP.online;t.hidden=!MP.started;
   if(window.NK_STANDALONE&&NET.code){t.textContent='RAUM '+NET.code+' · '+(n+1)+' SPIELER';t.classList.toggle('live',n>0);return;}
   const c=MP.room.connected&&MP.room.connected();t.textContent=!c?(ph?'VERBINDET…':'MULTI: VERBINDET…'):n>0?(n+1)+' ONLINE':(ph?'ALLEIN':'MULTI: ALLEIN');t.classList.toggle('live',n>0);}
 // Ein Mitspieler hat zwei Modelle (stehend und sitzend) in einer gemeinsamen Gruppe
-function makeAvatar(name,color){
+function makeAvatar(name,color,lk){
   const g=new THREE.Group();avG.add(g);
   const fake={group:g,cols:[],hits:[],acts:[],npcs:[]};
-  const st=npc(fake,{x:0,z:0,noTag:true,noCol:true,anim:'idle',color,hair:0x111111,lines:[]});
-  const si=npc(fake,{x:0,z:0,sit:true,noTag:true,noCol:true,anim:'cards',color,hair:0x111111,lines:[]});si.root.visible=false;
+  const look=lk&&typeof chLookOpts==='function'?chLookOpts(lk):{color,hair:0x111111}; // Aussehen des Mitspielers (Präsenz lk)
+  const st=npc(fake,Object.assign({x:0,z:0,noTag:true,noCol:true,anim:'idle',lines:[]},look));
+  const si=npc(fake,Object.assign({x:0,z:0,sit:true,noTag:true,noCol:true,anim:'cards',lines:[]},look));si.root.visible=false;
   const lab=spriteLabel(192,52,.26);lab.position.set(0,2.15,0);g.add(lab);
   const ring=new THREE.Mesh(new THREE.RingGeometry(.3,.38,10),new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.03;g.add(ring);
   return {g,st,si,lab,ring,labelName:''};
@@ -48,9 +49,10 @@ function mpSync(peers){
     others++;seen.add(p.peer);
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
-    if(!a){const m=makeAvatar(name,color);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color,peer:p.peer};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
+    if(!a){const m=makeAvatar(name,color,pr.lk);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color,peer:p.peer,lkKey:JSON.stringify(pr.lk||null)};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
       if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
+    {const lkKey=JSON.stringify(pr.lk||null);if(lkKey!==a.lkKey&&typeof chRelook==='function'){a.lkKey=lkKey;const look=pr.lk?chLookOpts(pr.lk):{color,hair:0x111111};chRelook(a.m.st,look);chRelook(a.m.si,Object.assign({sit:true},look));}}
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
     a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;a.rl=Array.isArray(pr.rl)?pr.rl.map(Number).filter(Number.isFinite).slice(0,40):[];if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);if(typeof itemsPeer==='function')itemsPeer(a,pr);
     a.ms=Number.isInteger(pr.ms)&&pr.ms>=0&&pr.ms<6?pr.ms:-1;a.mt=typeof pr.mt==='string'&&TABLES[pr.mt]?pr.mt:'';
@@ -74,7 +76,7 @@ function mpLocalState(){
     else if(focus.type==='mtable'){const T=focus.m,si=mtMySeat(T);mt=T.id;if(si>=0){const p=mtSeatPos(T,si,T.R);x=p.x;z=p.z;y=Math.atan2(T.cx-p.x,T.cz-p.z);a='mtable';ms=si;}else{const p=mtSeatPos(T,0,T.R+.9);x=p.x;z=p.z;y=Math.PI;a='mwatch';}}
   } else if(openId==='pRoulette')a='roulette';
   else if(EL.phase==='moving')a='elev';
-  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,rl:[...RESVS].map(m=>allMachines().indexOf(m)),gx:mpActivity(),gl:mpActivityList(),it:(typeof itemsPresence==='function'?itemsPresence():0),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
+  return {n:MP.name||'GAST',c:nameColor(MP.name||'GAST'),k:chips+(PK.sitting?PK.human.stack:0)+(MT.deducted&&mtMySeat()>=0?TABLES[MT.table].view.seats[mtMySeat()].st:0),ms,mt,rs:RESV?allMachines().indexOf(RESV):-1,rl:[...RESVS].map(m=>allMachines().indexOf(m)),gx:mpActivity(),gl:mpActivityList(),it:(typeof itemsPresence==='function'?itemsPresence():0),lk:(typeof chLook==='function'?chLook():0),f:floorIdx,x:Math.round(x*100)/100,z:Math.round(z*100)/100,y:Math.round(y*100)/100,a};
 }
 const EXTRA_SEATS={poker:[[-1.3,-1.95],[1.3,-1.95],[-1.95,-.05],[1.95,-.05]],hilo:[[-1.55,.1],[1.55,.1],[-1.3,-.65],[1.3,-.65]]};
 function seatAvatars(){
@@ -93,7 +95,7 @@ function mpStep(dt){
   seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
   if(MP.room&&MP.started){
     const s=mpLocalState();const m=MP.me;
-    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||JSON.stringify(s.gl)!==JSON.stringify(m.gl)||JSON.stringify(s.it)!==JSON.stringify(m.it)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
+    const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||JSON.stringify(s.gl)!==JSON.stringify(m.gl)||JSON.stringify(s.it)!==JSON.stringify(m.it)||JSON.stringify(s.lk)!==JSON.stringify(m.lk)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
     if((ch||MP.dirty)&&now-MP.lastSent>.1){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
       MP.room.presence(Object.assign({},m)).catch(()=>{});}
   }
