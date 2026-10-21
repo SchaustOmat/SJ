@@ -7,7 +7,7 @@
    Lokal in nk_hs gespeichert, läuft also auch ohne Verbindung.
    ========================================================= */
 const HS={cur:{k:'',l:[]},prev:{k:'',l:[]},all:[],board:null,disp:[],target:[],flip:[],pub:{},pubT:null,tick:0,lastDraw:0,lastMin:-1,sfxT:0,active:false,tickTxt:'',tickW:0,dirtyStatic:true,ready:false};
-const HS_N=10,HS_ROWS=6,HS_MIN=50; // ab 0,50 € zählt ein Gewinn
+const HS_N=10,HS_ROWS=6,HS_MIN=50000; // erst ab 500 € in einem Spiel kommt ein Gewinn auf die Tafel (Wunsch 2026-10-21: keine Mini-Gewinne); gilt auch für alte/empfangene Einträge (hsClean)
 // Tests: window.NK_HS_LOCAL = nichts senden/empfangen; window.NK_HS_TOPIC = eigenes Testthema statt der echten Tafel
 const HS_TOPIC=(typeof window!=='undefined'&&window.NK_HS_TOPIC)||'sinanskeller/hs/';const hsLocal=()=>!!(typeof window!=='undefined'&&window.NK_HS_LOCAL);
 const HS_DAYS=['SO','MO','DI','MI','DO','FR','SA'];
@@ -21,7 +21,7 @@ function hsName(){const n=cleanText((typeof MP!=='undefined'&&MP.name)||'',14).t
 // Einträge prüfen (auch die vom Server), kaputte oder doppelte raus
 function hsClean(list){const out=[],seen={},tn=Date.now()+120000;
   (Array.isArray(list)?list:[]).slice(0,40).forEach(e=>{if(!e||typeof e!=='object')return;const i=String(e.i||'');if(!/^[a-z0-9]{6,16}$/.test(i)||seen[i])return;
-    const a=Math.round(+e.a),t=+e.t;if(!(a>0&&a<=1e9)||!(t>0&&t<tn))return;seen[i]=1;
+    const a=Math.round(+e.a),t=+e.t;if(!(a>=HS_MIN&&a<=1e9)||!(t>0&&t<tn))return;seen[i]=1;
     out.push({i,k:/^\d{8}$/.test(String(e.k||''))?String(e.k):'',n:cleanText(e.n,14).toUpperCase()||'GAST',g:cleanText(e.g,18).toUpperCase()||'?',a,b:Math.max(0,Math.round(+e.b)||0),t});});
   return out;}
 const hsSort=(x,y)=>y.a-x.a||x.t-y.t;

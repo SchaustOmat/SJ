@@ -197,8 +197,9 @@ const pcHint=$('#pcHint'),cross=$('#cross');
 // Freier Zeiger am PC (Standard): Maus gefangen, der Kreis wandert mit der Maus, die Kamera zieht weich hinterher.
 // Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
 const AIM={x:0,y:0,sx:0,sy:0,hot:false};
-// Strg = Zeiger-Modus (seit 2026-10-21 abends, Wunsch des Nutzers): derselbe Kreis, aber mit viel Spielraum zum Anklicken von Tasten,
-// Automaten und Boden; die Kamera zieht nur ganz sanft nach und erst am Rand richtig. Nicht direkt. Strg oder Esc = zurück.
+// Tab oder rechte Maustaste = Zeiger-Modus (seit 2026-10-21 abends, Wunsch des Nutzers): derselbe Kreis, aber mit viel Spielraum zum Anklicken
+// von Tasten, Automaten und Boden; die Kamera zieht nur ganz sanft nach und erst am Rand richtig. Nicht direkt. Tab, rechte Maustaste oder Esc = zurück.
+// Nicht Strg: beim Laufen (W gedrückt) löst Strg+W im Browser das Schließen des Tabs aus, das kann die Seite nicht verhindern.
 // Ohne Maus-Fangen (lockFail) ist CUR der echte Zeiger: Ziehen = umschauen, Klick = benutzen.
 const CUR={on:false,x:0,y:0};
 function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;AIM.x=AIM.y=0;if(!lockFail)grabMouse();pcUi();}
@@ -322,7 +323,7 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
-  if(PC&&e.pointerType==='mouse'&&!focus&&mouseLocked()){if(e.button===0&&!tapAt(AIM.sx,AIM.sy,!CUR.on)&&curAct)interact(curAct);return;}
+  if(PC&&e.pointerType==='mouse'&&!focus&&mouseLocked()){if(e.button===2)curToggle();else if(e.button===0&&!tapAt(AIM.sx,AIM.sy,!CUR.on)&&curAct)interact(curAct);return;}
   if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button===0)grabMouse();return;}
   if(PC&&e.pointerType==='mouse'&&!focus){ // ohne Maus-Fangen: Ziehen (links oder rechts) = umschauen, kurzer Klick = anklicken (beim Loslassen)
     if(e.button!==0&&e.button!==2)return;
@@ -352,7 +353,7 @@ function endPtr(e){
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
-  if((e.code==='ControlLeft'||e.code==='ControlRight')&&!e.repeat&&PC&&!focus&&!locked&&started){e.preventDefault();curToggle();}
+  if(e.code==='Tab'&&PC&&started){e.preventDefault();if(!e.repeat&&!focus&&!locked)curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on&&lockFail)curToggle();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});

@@ -556,8 +556,8 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 <div id="joyBase" hidden><div id="joyKnob"></div></div>
 <div id="joyHint" hidden>LAUFEN</div>
 <div id="cross" hidden></div>
-<div id="curHint" hidden>ZEIGER-MODUS · KREIS FREI BEWEGEN, TASTEN UND AUTOMATEN ANKLICKEN · KAMERA ZIEHT SANFT NACH · STRG ODER ESC = ZURÜCK</div>
-<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · STRG = ZEIGER-MODUS ZUM ANKLICKEN VON TASTEN · SHIFT SPRINTEN</small></div>
+<div id="curHint" hidden>ZEIGER-MODUS · KREIS FREI BEWEGEN, TASTEN UND AUTOMATEN ANKLICKEN · KAMERA ZIEHT SANFT NACH · TAB, RECHTE MAUSTASTE ODER ESC = ZURÜCK</div>
+<div id="pcHint" hidden>KLICKEN ZUM SPIELEN<small>WASD LAUFEN · MAUS UMSCHAUEN · KLICK ODER E BENUTZEN · TAB ODER RECHTE MAUSTASTE = ZEIGER-MODUS ZUM ANKLICKEN VON TASTEN · SHIFT SPRINTEN</small></div>
 <button id="prompt" hidden></button>
 <div id="rmBar" hidden></div>
 <button id="standBtn" hidden>◄ AUFSTEHEN</button>
@@ -680,14 +680,14 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
   <label class="sens"><span>UMSCHAUEN</span><input type="range" id="sensIn" min="0.2" max="3" step="0.1" value="1"><b id="sensVal">1.0×</b></label>
   <div class="help" style="display:flex;flex-direction:column;gap:10px">
     <p><b>Links:</b> Daumen ziehen zum Laufen. <b>Rechts:</b> wischen zum Umschauen.</p>
-    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen, Shift sprintet, mit der Maus umschauen: der Kreis wandert, die Kamera zieht weich nach (Empfindlichkeit oben bei UMSCHAUEN). Klick oder E benutzt. Strg = Zeiger-Modus: derselbe Kreis mit viel Spielraum zum Anklicken von Tasten, Automaten und Boden, die Kamera zieht nur sanft nach. Strg oder Esc zurück; beim Spielen ist die Maus frei.</p>
+    <p><b>Am PC:</b> Ins Bild klicken, dann WASD laufen, Shift sprintet, mit der Maus umschauen: der Kreis wandert, die Kamera zieht weich nach (Empfindlichkeit oben bei UMSCHAUEN). Klick oder E benutzt. Tab oder rechte Maustaste = Zeiger-Modus: derselbe Kreis mit viel Spielraum zum Anklicken von Tasten, Automaten und Boden, die Kamera zieht nur sanft nach. Tab, rechte Maustaste oder Esc zurück (nicht Strg: Strg+W würde den Browser-Tab schließen); beim Spielen ist die Maus frei.</p>
     <p><b>Antippen:</b> Automat, Tisch, Aufzug oder Person. Ist es weiter weg, läufst du hin.</p>
     <p><b>Automaten &amp; Tische:</b> Du setzt dich hin und drückst die großen Knöpfe unten. Oben links: Aufstehen.</p>
     <p><b>Aufzug:</b> grünen Knopf rufen, rein, in der Kabine 2 oder EG drücken.</p>
     <p><b>Mit Kollegen:</b> Wer gleichzeitig im Spiel ist, läuft als Figur mit Namen herum. Oben auf SAG tippen zum Chatten. Große Gewinne sehen alle.</p>
     <p><b>Spielertisch (EG):</b> Hold'em gegen deine Mitspieler. Erst über MULTI einen Raum verbinden, dann an den Tisch. Wer keinen Platz will, schaut zu.</p>
     <p><b>Voice-Chat:</b> Im Raum oben auf MIC tippen und das Mikrofon erlauben. Nochmal tippen = stumm, dann aus.</p>
-    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC die Tasten am Pult mit dem Kreis anklicken (mit Strg hast du mehr Spielraum), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
+    <p><b>Automaten im Stehen bedienen:</b> Automaten mit deiner Karte kannst du auch ohne Hinsetzen steuern: am PC die Tasten am Pult mit dem Kreis anklicken (mit Tab oder rechter Maustaste hast du mehr Spielraum), am Handy über die kleine Tastenleiste unten rechts, sobald du nah genug dran bist.</p>
     <p><b>Highscore-Tafel (EG, hinten an der Wand):</b> zeigt die höchsten Gewinne der Woche mit Spieler und Spiel. Antippen öffnet die ganze Liste mit Vorwoche und Rekorden.</p>
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
@@ -710,7 +710,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792586448";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792586665";</script>
 <script>
 (function(){
 if(!window.THREE){const g=document.querySelector("#startGo");g.dataset.loading="false";g.style.animation="none";g.style.lineHeight="1.8";g.textContent="3D-GRAFIK KONNTE NICHT LADEN. ÖFFNE DAS SPIEL ÜBER DEN LINK MIT INTERNET.";return;}
@@ -5802,7 +5802,7 @@ function rmUpdate(){
    Lokal in nk_hs gespeichert, läuft also auch ohne Verbindung.
    ========================================================= */
 const HS={cur:{k:'',l:[]},prev:{k:'',l:[]},all:[],board:null,disp:[],target:[],flip:[],pub:{},pubT:null,tick:0,lastDraw:0,lastMin:-1,sfxT:0,active:false,tickTxt:'',tickW:0,dirtyStatic:true,ready:false};
-const HS_N=10,HS_ROWS=6,HS_MIN=50; // ab 0,50 € zählt ein Gewinn
+const HS_N=10,HS_ROWS=6,HS_MIN=50000; // erst ab 500 € in einem Spiel kommt ein Gewinn auf die Tafel (Wunsch 2026-10-21: keine Mini-Gewinne); gilt auch für alte/empfangene Einträge (hsClean)
 // Tests: window.NK_HS_LOCAL = nichts senden/empfangen; window.NK_HS_TOPIC = eigenes Testthema statt der echten Tafel
 const HS_TOPIC=(typeof window!=='undefined'&&window.NK_HS_TOPIC)||'sinanskeller/hs/';const hsLocal=()=>!!(typeof window!=='undefined'&&window.NK_HS_LOCAL);
 const HS_DAYS=['SO','MO','DI','MI','DO','FR','SA'];
@@ -5816,7 +5816,7 @@ function hsName(){const n=cleanText((typeof MP!=='undefined'&&MP.name)||'',14).t
 // Einträge prüfen (auch die vom Server), kaputte oder doppelte raus
 function hsClean(list){const out=[],seen={},tn=Date.now()+120000;
   (Array.isArray(list)?list:[]).slice(0,40).forEach(e=>{if(!e||typeof e!=='object')return;const i=String(e.i||'');if(!/^[a-z0-9]{6,16}$/.test(i)||seen[i])return;
-    const a=Math.round(+e.a),t=+e.t;if(!(a>0&&a<=1e9)||!(t>0&&t<tn))return;seen[i]=1;
+    const a=Math.round(+e.a),t=+e.t;if(!(a>=HS_MIN&&a<=1e9)||!(t>0&&t<tn))return;seen[i]=1;
     out.push({i,k:/^\d{8}$/.test(String(e.k||''))?String(e.k):'',n:cleanText(e.n,14).toUpperCase()||'GAST',g:cleanText(e.g,18).toUpperCase()||'?',a,b:Math.max(0,Math.round(+e.b)||0),t});});
   return out;}
 const hsSort=(x,y)=>y.a-x.a||x.t-y.t;
@@ -6151,8 +6151,9 @@ const pcHint=$('#pcHint'),cross=$('#cross');
 // Freier Zeiger am PC (Standard): Maus gefangen, der Kreis wandert mit der Maus, die Kamera zieht weich hinterher.
 // Kleine Bewegungen (Totzone) drehen die Kamera erst langsam, größere ziehen sie schnell nach – Blickrichtung = Kamera + Versatz.
 const AIM={x:0,y:0,sx:0,sy:0,hot:false};
-// Strg = Zeiger-Modus (seit 2026-10-21 abends, Wunsch des Nutzers): derselbe Kreis, aber mit viel Spielraum zum Anklicken von Tasten,
-// Automaten und Boden; die Kamera zieht nur ganz sanft nach und erst am Rand richtig. Nicht direkt. Strg oder Esc = zurück.
+// Tab oder rechte Maustaste = Zeiger-Modus (seit 2026-10-21 abends, Wunsch des Nutzers): derselbe Kreis, aber mit viel Spielraum zum Anklicken
+// von Tasten, Automaten und Boden; die Kamera zieht nur ganz sanft nach und erst am Rand richtig. Nicht direkt. Tab, rechte Maustaste oder Esc = zurück.
+// Nicht Strg: beim Laufen (W gedrückt) löst Strg+W im Browser das Schließen des Tabs aus, das kann die Seite nicht verhindern.
 // Ohne Maus-Fangen (lockFail) ist CUR der echte Zeiger: Ziehen = umschauen, Klick = benutzen.
 const CUR={on:false,x:0,y:0};
 function curToggle(){if(!PC||focus||locked||!started)return;CUR.on=!CUR.on;AIM.x=AIM.y=0;if(!lockFail)grabMouse();pcUi();}
@@ -6276,7 +6277,7 @@ $('#standBtn').addEventListener('click',()=>{SFX.click();leaveFocus();});
 
 cv.addEventListener('pointerdown',e=>{
   if(locked||!started)return;
-  if(PC&&e.pointerType==='mouse'&&!focus&&mouseLocked()){if(e.button===0&&!tapAt(AIM.sx,AIM.sy,!CUR.on)&&curAct)interact(curAct);return;}
+  if(PC&&e.pointerType==='mouse'&&!focus&&mouseLocked()){if(e.button===2)curToggle();else if(e.button===0&&!tapAt(AIM.sx,AIM.sy,!CUR.on)&&curAct)interact(curAct);return;}
   if(PC&&!lockFail&&e.pointerType==='mouse'&&!focus){if(e.button===0)grabMouse();return;}
   if(PC&&e.pointerType==='mouse'&&!focus){ // ohne Maus-Fangen: Ziehen (links oder rechts) = umschauen, kurzer Klick = anklicken (beim Loslassen)
     if(e.button!==0&&e.button!==2)return;
@@ -6306,7 +6307,7 @@ function endPtr(e){
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 addEventListener('keydown',e=>{keys[e.code]=true;
-  if((e.code==='ControlLeft'||e.code==='ControlRight')&&!e.repeat&&PC&&!focus&&!locked&&started){e.preventDefault();curToggle();}
+  if(e.code==='Tab'&&PC&&started){e.preventDefault();if(!e.repeat&&!focus&&!locked)curToggle();}
   if(e.code==='KeyE'&&curAct&&!locked&&!focus)interact(curAct);
   if(e.code==='Escape'&&focus)leaveFocus();else if(e.code==='Escape'&&CUR.on&&lockFail)curToggle();
   if(focus&&focus.type==='slot'&&!e.repeat){const k=SVKEY_CODES[e.code];if(k){e.preventDefault();pressButton(focus.m,k);const b=SV.btn[k];if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);}}}});
