@@ -295,7 +295,7 @@ function chPackPose(n,side,cm){
   if(typeof HD==='undefined'||!HD.pack||!HD.pack.visible||!HD.pack.parent||!HD.pack.parent.isBone)return null;
   const hand=n.rig.bones['hand_'+side];if(HD.pack.parent!==hand)return null;
   const t=hdPackTarget();const e=Math.min(1,HD.packT/.35),lift=HD.packSt==='out'?e:HD.packSt==='in'?1-e:0;
-  const P=chCamPose('pack',cm,HD.pack,n.rig.bones,side,[t[0],t[1]-.3*lift,-t[2]]);if(P&&HD.thumbPush&&now-HD.thumbPush<.45)P.fp=CH_FPOSE.packPush;return P; // beim Öffnen streckt sich der Daumen zum Deckel
+  const P=chCamPose('pack',cm,HD.pack,n.rig.bones,side,[t[0],t[1]-.3*lift,-t[2]]);if(P)P.coll={obj:HD.pack,hx:.028,hy:.044,hz:.011};if(P&&HD.thumbPush&&now-HD.thumbPush<.45)P.fp=CH_FPOSE.packPush;return P; // Finger stoßen an die Schachtel (Kollision in chFingers) // beim Öffnen streckt sich der Daumen zum Deckel
 }
 // Ziele für beide Hände je nach Lage, dann IK mit weicher Gewichtung (auch für Mitspieler-Figuren)
 function chArmsStep(n,dt,ctx){
@@ -319,8 +319,8 @@ function chArmsStep(n,dt,ctx){
         if(!ok)K.cq.copy(tgt.q);K.camMode=true;K.has=true;}
       K.cp.lerp(tgt.p,k);K.cq.slerp(tgt.q,k);K.cur.copy(fpvP(cm,K.cp.toArray()));
       K.fd=fpvV(cm,new THREE.Vector3(1,0,0).applyQuaternion(K.cq).toArray());K.pal=fpvV(cm,new THREE.Vector3(0,1,0).applyQuaternion(K.cq).toArray());K.pole=tgt.pole?fpvV(cm,tgt.pole.toArray()):null;K.free=true;
-      K.w=Math.min(1,K.w+dt*4);K.fp=tgt.fp||null;}
-    else if(tgt){K.camMode=false;K.free=!!tgt.free;if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:7)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach
+      K.w=Math.min(1,K.w+dt*4);K.fp=tgt.fp||null;K.coll=tgt.coll||null;}
+    else if(tgt){K.camMode=false;K.free=!!tgt.free;K.coll=tgt.coll||null;if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:7)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach
     else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0){K.has=false;K.camMode=false;}}
     if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=K.pole||new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
       if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w,K.free);
@@ -335,12 +335,26 @@ function chPalmWorld(B,sd){const hb=B['hand_'+sd],mid=B['middle_01_'+sd],i1=B['i
   return {h,fw,pal};}
 // Finger: jedes Glied weich auf seinen Zielwinkel (ab Datei-Pose), Gewicht wie der Arm
 const chFAx=new THREE.Vector3();
+// Kollision mit einem gehaltenen Gegenstand (K.coll = {obj, hx,hy,hz} Quader in Objekt-Koordinaten): jedes Glied wird höchstens so weit gebeugt,
+// dass das nächste Gelenk, die Gliedmitte und die Fingerspitze außen bleiben (Fingerdicke 8 mm) – die Finger liegen an, statt durchzugehen
+const chCP=new THREE.Vector3(),chCP2=new THREE.Vector3(),chQA=new THREE.Quaternion();
+function chCollHit(C,b){const ch=b.children.find(c=>c.isBone);if(!ch)return false;const sc=C.obj.scale.x||1,r=.008/sc;
+  b.getWorldPosition(chCP2);ch.getWorldPosition(chCP);
+  const t=(p)=>{C.obj.worldToLocal(p);return Math.abs(p.x)<C.hx+r&&Math.abs(p.y)<C.hy+r&&Math.abs(p.z)<C.hz+r;};
+  const mid=chCP2.clone().add(chCP).multiplyScalar(.5);return t(chCP)||t(mid);}
 function chFingers(B,sd,K,dt){
   if(!K.fp&&!K.fc)return;const tgt=K.fp||CH_FPOSE.flat;if(!K.fc)K.fc=tgt.map(f=>f.slice());
+  const C=K.coll&&K.coll.obj&&K.coll.obj.visible?K.coll:null;if(C)C.obj.updateMatrixWorld(true);
   for(let i=0;i<5;i++)for(let j=0;j<3;j++){const b=B[CH_FING[i]+'_0'+(j+1)+'_'+sd];if(!b||!b.userData.rest)continue;
     K.fc[i][j]+=(tgt[i][j]-K.fc[i][j])*Math.min(1,dt*10);
     if(i===0&&j===0){chFAx.copy(CH_THUMB_AX);if(sd==='l'){chFAx.y=-chFAx.y;chFAx.z=-chFAx.z;}}else chFAx.set(1,0,0);
-    ikQ.setFromAxisAngle(chFAx,K.fc[i][j]*Math.PI/180);ikQ2.copy(b.userData.rest).multiply(ikQ);b.quaternion.slerp(ikQ2,K.w);}
+    const ax=chFAx.clone();chQA.copy(b.quaternion);
+    const setA=a=>{ikQ.setFromAxisAngle(ax,a*Math.PI/180);ikQ2.copy(b.userData.rest).multiply(ikQ);b.quaternion.copy(chQA).slerp(ikQ2,K.w);};
+    setA(K.fc[i][j]);
+    if(C){b.updateMatrixWorld(true);if(chCollHit(C,b)){let lo=-25,hi=K.fc[i][j];setA(lo);b.updateMatrixWorld(true);
+        if(!chCollHit(C,b)){for(let it=0;it<7;it++){const m=(lo+hi)/2;setA(m);b.updateMatrixWorld(true);if(chCollHit(C,b))hi=m;else lo=m;}setA(lo);}
+        else setA(K.fc[i][j]);}
+      b.updateMatrixWorld(true);}}
   if(!K.fp&&K.w<=0)K.fc=null;
 }
 // ---- eigener Körper in der Ich-Perspektive ----
