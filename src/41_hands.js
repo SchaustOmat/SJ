@@ -25,6 +25,39 @@ const POSE={
   hand:{p:[.21,-.22,-.40],r:[-.75,-.35,.45]},handMouth:{p:[.045,-.15,-.15],r:[-.95,.05,.3]},handAsh:{p:[.24,-.27,-.40],r:[-.55,-.35,.75]},
   lightOut:{p:[.26,-.44,-.30],r:[0,-.4,0]},lightIn:{p:[.03,-.112,-.145],r:[-.1,-.3,.08]},lightInSlot:{p:[.03,-.135,-.22],r:[-.1,-.3,.08]},
   glass:{p:[-.19,-.23,-.40],r:[.15,.3,-.1]},glassSip:{p:[-.02,-.095,-.19],r:[-.9,.1,-.15]},glassOut:{p:[-.2,-.5,-.4],r:[.15,.3,-.1]}};
+// Posen, die vom Bildwinkel abhängen (am Automaten ist er enger, Handy hoch/quer): Kippe im Mund und Feuerzeug erscheinen immer gleich groß
+// und an derselben Stelle; am Automaten rückt die Kippe ganz über die Tastenleiste, damit man sie richtig sieht (Nutzer 2026-10-22)
+function hdK(){return Math.tan((LW()<LH()?82:64)*Math.PI/360)/Math.tan(camera.fov*Math.PI/360);}
+function hdBarTop(){ // Oberkante der Tastenleiste am Automaten als Bildanteil von unten (0 = keine Leiste)
+  if(!atSlot())return 0;const d=$('.sv-side');if(!d||SV.el.hidden)return 0;const r=d.getBoundingClientRect();return r.height>0?Math.max(0,(LH()-r.top)/LH()):0;}
+const HD_MOUTH=POSE.mouth.p; // Lippen im Kamera-Raum (auch Ziel der Hand beim Ziehen, chFPArms)
+// Kippe im Mund: immer dieselbe Pose wie im Stehen (Filter unter dem Bildrand, Spitze nach vorn-oben, hdK gleicht den Bildwinkel aus).
+// Am Automaten verdeckt die Tastenleiste den unteren Bildrand: dort wird die Pose nur so weit angehoben, dass das Filterende knapp
+// hinter der Leiste bleibt und der Rest wie gewohnt darüber zu sehen ist (nie ein frei schwebendes Filterende, Nutzer 2026-10-22)
+function hdMouth(){
+  const bt=hdBarTop(),k=hdK()*(bt>0?1.3:1),tv=Math.tan(camera.fov*Math.PI/360);const p=POSE.mouth.p.map(v=>v*k),r=POSE.mouth.r.slice(); // am Automaten ein Drittel weiter weg (verdeckt weniger vom Bildschirm)
+  if(bt>0){const need=((-1+2*bt)-.07)*tv*(-p[2]);if(p[1]<need)p[1]=need;}
+  return {p,r};}
+// Schachtel: Zielpunkt der Schachtelmitte im Kamera-Raum, über Bildanteile (sx/sy wie Normkoordinaten -1..1) und Abstand d:
+// Handy nah und groß (zum Tippen), am Automaten weiter weg und über der Tastenleiste (Hochformat mittig, quer rechts neben den Walzen)
+function hdPackTarget(){
+  const tv=Math.tan(camera.fov*Math.PI/360),asp=LW()/LH();let d,sx,sy;
+  if(atSlot()){const bt=hdBarTop();d=.4;sy=(-1+2*bt)+.06+(.046*hdPackScale()/d)/tv;sx=asp<1?0:.5;} // am Automaten: Einblendung (Kamera steht weit vom Körper)
+  else if(PC){d=.27;sx=.07;sy=-.62;}else if(asp<1){d=.135;sx=0;sy=-.46;}else{d=.17;sx=.06;sy=-.32;} // Handy: nah und groß (Nutzer 2026-10-22)
+  return [tv*asp*sx*d,tv*sy*d,-d];}
+function hdPackScale(){return PC?1:LW()<LH()?(atSlot()?1.7:2.2):(atSlot()?1.5:1.7);} // Einblendung (ohne Körper / am Automaten): Handy-Schachtel groß genug zum Tippen (Nutzer 2026-10-22)
+function hdPose(name){
+  if(name&&typeof name==='object')return name;
+  if(name==='mouth'||name==='mouthSlot')return hdMouth();
+  if(name==='mouthAsh'){const m=hdMouth();return {p:[m.p[0]+.008,m.p[1]-.02,m.p[2]+.01],r:[m.r[0]+.25,m.r[1],.3]};}
+  if(name==='lightIn'||name==='lightInSlot'){ // Flamme an die Spitze der Kippe im Mund
+    const m=hdMouth(),P=HD.mc.userData.parts,tip=new THREE.Vector3(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0).applyEuler(new THREE.Euler(m.r[0],m.r[1],m.r[2])).add(new THREE.Vector3().fromArray(m.p));
+    const r=POSE.lightIn.r,fl=new THREE.Vector3(0,.052,0).applyEuler(new THREE.Euler(r[0],r[1],r[2]));
+    return {p:[tip.x-fl.x+.004,tip.y-fl.y-.008,tip.z-fl.z+.002],r};}
+  if(name==='lightOut'){const k=hdK();return {p:[.26*k,-.44*k,-.30*k],r:POSE.lightOut.r};}
+  if(name==='packIn')return {p:hdPackTarget(),r:POSE.packIn.r};
+  if(name==='packOut'){const t=hdPackTarget();t[1]-=.35*hdPackScale();return {p:t,r:POSE.packOut.r};}
+  return POSE[name];}
 const SM_MAT={white:lam({color:0xf4f0e8}),filter:lam({color:0xd89a4a}),ash:lam({color:0x9a9a9a}),skin:lam({color:0xe8b890}),nail:lam({color:0xf0d0c0}),
   red:lam({color:0xc81e1e}),gold:bas({color:0xd6a02a}),foil:lam({color:0xd0c8b8}),plastic:lam({color:0x1a3a9a}),metal:lam({color:0xb0b0b8}),
   ember:bas({color:0xff6a10}),emberHot:bas({color:0xffd080})};
@@ -123,7 +156,7 @@ function hdPick(x,y){if(!HD.pack.visible)return null;hdV.set(x/LW()*2-1,-(y/LH()
 // ---- Schachtel ----
 function packShow(){
   if(HD.packSt!=='off')return;if(HD.cig&&HD.cig.where==='hand'){toast('Erst die Kippe in den Mund (H).');return;}
-  HD.packSt='in';HD.packT=0;HD.pack.visible=true;HD.pack.position.fromArray(PX(POSE.packOut.p));HD.pack.rotation.fromArray(POSE.packOut.r);HD.lidOpen=0;HD.hover=-1;
+  HD.packSt='in';HD.packT=0;HD.pack.visible=true;HD.pack.scale.setScalar(hdPackScale());HD.pack.position.fromArray(PX(hdPose('packOut').p));HD.pack.rotation.fromArray(POSE.packOut.r);HD.lidOpen=0;HD.hover=-1;
   HD.cx=LW()/2;HD.cy=LH()*.62;hdSyncCigs();HSFX.take();hdUi();
 }
 function packHide(){if(HD.packSt==='off')return;HD.packSt='out';HD.packT=0;HD.hover=-1;if(HD.lidOpen>.5)HSFX.packClose();hdUi();}
@@ -131,15 +164,20 @@ function hdSyncCigs(){HD.cigs.forEach((c,i)=>{c.visible=i<INV.cigs;});}
 function packStep(dt){
   const Pk=HD.pack;if(HD.packSt==='off')return;
   HD.packT+=dt;const k=Math.min(1,HD.packT/.35),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
-  const fr=HD.packSt==='out'?POSE.packIn:POSE.packOut,tt=HD.packSt==='out'?POSE.packOut:POSE.packIn,fp=PX(fr.p),tp=PX(tt.p);
-  Pk.position.set(fp[0]+(tp[0]-fp[0])*e,fp[1]+(tp[1]-fp[1])*e,fp[2]+(tp[2]-fp[2])*e);
+  const rig=atSlot()?null:hdFpRig();
+  if(rig){ // Schachtel liegt in der echten Hand (Arm per IK, Ziel in chFPArms); beim Wegstecken sinkt sie mit dem Arm
+    const side=HD.drink?'r':'l',hb=rig.bones['hand_'+side];if(Pk.parent!==hb){hb.add(Pk);Pk.scale.setScalar(1);HD.handL.visible=false;}
+    const fr=hdHandFrame(rig.bones,side);if(fr)hdPackToHand(Pk,fr,side);}
+  else{if(Pk.parent!==HD.rig){HD.rig.add(Pk);Pk.scale.setScalar(hdPackScale());HD.handL.visible=true;}
+    const fr=hdPose(HD.packSt==='out'?'packIn':'packOut'),tt=hdPose(HD.packSt==='out'?'packOut':'packIn'),fp=PX(fr.p),tp=PX(tt.p);
+    Pk.position.set(fp[0]+(tp[0]-fp[0])*e,fp[1]+(tp[1]-fp[1])*e,fp[2]+(tp[2]-fp[2])*e);}
   if(HD.packSt==='out'&&k>=1){HD.packSt='off';Pk.visible=false;hdUi();return;}
   if(HD.packSt==='in'&&k>=1){HD.packSt='open';if(!PC){HD.lidOpen=.51;HSFX.packOpen();}} // Handy: Deckel geht gleich auf (kein Drüberfahren möglich)
   // Deckel: Maus auf der Schachtel = auf
   let want=HD.lidOpen>.5?1:0,hov=-1;
   if(HD.packSt==='open'&&!HD.fly){const pt=handsPointer();const u=hdPick(pt[0],pt[1]);if(u){if(u.part==='pack')want=1;if(u.part==='cig'&&HD.lidOpen>.9&&u.idx<INV.cigs){hov=u.idx;want=1;}}}
   if(want&&HD.lidOpen<.01)HSFX.packOpen();
-  HD.lidOpen+=((want?1:0)-HD.lidOpen)*Math.min(1,dt*9);HD.lid.rotation.x=HD.lidOpen*1.95;
+  HD.lidOpen+=((want?1:0)-HD.lidOpen)*Math.min(1,dt*9);HD.lid.rotation.x=-HD.lidOpen*1.95; // Deckel klappt nach hinten weg (Nutzer 2026-10-22)
   if(hov!==HD.hover){HD.hover=hov;if(hov>=0)noise(.02,.03,3000);}
   HD.cigs.forEach((c,i)=>{const u=c.userData;u.rise+=((i===hov?1:0)-u.rise)*Math.min(1,dt*12);c.position.y=u.base+u.rise*.02;});
 }
@@ -148,11 +186,17 @@ function handsTap(x,y){
   if(HD.packSt==='open'&&!HD.fly){const pt=handsCursorActive()?[HD.cx,HD.cy]:(PC&&!mouseLocked()?[CUR.x,CUR.y]:[x,y]);const u=hdPick(pt[0],pt[1]);
     if(u&&HD.lidOpen<.5){HD.lidOpen=.51;HSFX.packOpen();return true;} // erster Tipp auf die Schachtel: Deckel auf
     if(u&&u.part==='cig'&&u.idx<INV.cigs&&HD.lidOpen>.6){cigTake(u.idx);return true;}
+    if(!PC&&HD.lidOpen>.6){const i=hdNearCig(pt[0],pt[1]);if(i!==null){cigTake(i);return true;}} // Handy: dicker Finger – nächste Zigarette zum Tipp
     if(u&&u.part==='pack'){HD.lidOpen=.49;return true;}
     return true; // bei offener Schachtel geht kein Klick in die Welt
   }
   return false;
 }
+// Handy: die Zigarette, deren Kopf dem Tipp auf dem Bildschirm am nächsten liegt (bis etwa 1,6 Zigarettenabstände, mindestens 30 px)
+function hdNearCig(x,y){
+  if(!HD.pack.visible)return null;HD.rig.updateMatrixWorld(true);HD.pack.updateMatrixWorld(true);const w=LW(),h=LH();const sp=(c)=>{const p=c.getWorldPosition(new THREE.Vector3()).project(camera);return [(p.x+1)/2*w,(1-p.y)/2*h];};
+  let best=null,bd=1e9;HD.cigs.forEach((c,i)=>{if(!c.visible||i>=INV.cigs)return;const s=sp(c);const d=Math.hypot(s[0]-x,s[1]-y);if(d<bd){bd=d;best=i;}});
+  if(best===null)return null;const a=sp(HD.cigs[0]),b=sp(HD.cigs[1]);const gap=Math.hypot(a[0]-b[0],a[1]-b[1]);return bd<=Math.max(30,gap*1.6)?best:null;}
 // Zigarette aus der Schachtel nehmen: fliegt in den Mund
 function cigTake(idx){
   if(HD.cig){toast('Du hast schon eine.');return;}
@@ -167,14 +211,14 @@ function seqStep(dt,obj){
   if(!HD.seq.length)return false;const s=HD.seq[0];
   if(HD.seqFrom===null){HD.seqFrom={p:obj.position.clone(),r:obj.rotation.clone()};HD.seqT=0;if(s.at)s.at();}
   HD.seqT+=dt;const k=Math.min(1,HD.seqT/(s.dur||.4)),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
-  if(s.to){const to=POSE[s.to]||s.to,tp=PX(to.p);obj.position.set(HD.seqFrom.p.x+(tp[0]-HD.seqFrom.p.x)*e,HD.seqFrom.p.y+(tp[1]-HD.seqFrom.p.y)*e,HD.seqFrom.p.z+(tp[2]-HD.seqFrom.p.z)*e);
+  if(s.to){const to=hdPose(s.to),tp=PX(to.p);obj.position.set(HD.seqFrom.p.x+(tp[0]-HD.seqFrom.p.x)*e,HD.seqFrom.p.y+(tp[1]-HD.seqFrom.p.y)*e,HD.seqFrom.p.z+(tp[2]-HD.seqFrom.p.z)*e);
     obj.rotation.set(HD.seqFrom.r.x+(to.r[0]-HD.seqFrom.r.x)*e,HD.seqFrom.r.y+(to.r[1]-HD.seqFrom.r.y)*e,HD.seqFrom.r.z+(to.r[2]-HD.seqFrom.r.z)*e);}
   if(k>=1){if(s.end)s.end();HD.seq.shift();HD.seqFrom=null;}
   return true;
 }
 function cigObj(){return HD.cig&&HD.cig.where==='hand'?HD.handR:HD.mc;}
 function cigLight(){const C=HD.cig;if(!C||C.lit||HD.seq.length||HD.lighterOn)return;if(C.where!=='mouth'){toast('Zum Anzünden in den Mund (H).');return;}
-  HD.lighterOn=true;const Lg=HD.lighter,li=atSlot()?'lightInSlot':'lightIn';Lg.visible=true;Lg.position.fromArray(PX(POSE.lightOut.p));Lg.rotation.fromArray(POSE.lightOut.r);HD.lq=[
+  HD.lighterOn=true;const Lg=HD.lighter,li='lightIn';Lg.visible=true;Lg.position.fromArray(PX(hdPose('lightOut').p));Lg.rotation.fromArray(POSE.lightOut.r);HD.lq=[
     {to:li,dur:.45,at(){}},{to:li,dur:.15,at(){HSFX.lighterClick();HD.flame.visible=true;HSFX.lighterHiss(1.1);}},
     {to:li,dur:.9,end(){C.lit=true;C.ember=1;C.dragT=.6;HSFX.drag();mpItems();}},{to:'lightOut',dur:.45,at(){HD.flame.visible=false;},end(){Lg.visible=false;HD.lighterOn=false;hdUi();}}];
   HD.lqFrom=null;HD.lqT=0;hdUi();}
@@ -182,7 +226,7 @@ function lighterStep(dt){
   if(!HD.lighterOn)return;const Lg=HD.lighter;
   if(!HD.lq.length)return;const s=HD.lq[0];
   if(HD.lqFrom===null){HD.lqFrom={p:Lg.position.clone(),r:Lg.rotation.clone()};HD.lqT=0;if(s.at)s.at();}
-  HD.lqT+=dt;const k=Math.min(1,HD.lqT/s.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,to=POSE[s.to],tp=PX(to.p);
+  HD.lqT+=dt;const k=Math.min(1,HD.lqT/s.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,to=hdPose(s.to),tp=PX(to.p);
   Lg.position.set(HD.lqFrom.p.x+(tp[0]-HD.lqFrom.p.x)*e,HD.lqFrom.p.y+(tp[1]-HD.lqFrom.p.y)*e,HD.lqFrom.p.z+(tp[2]-HD.lqFrom.p.z)*e);
   Lg.rotation.set(HD.lqFrom.r.x+(to.r[0]-HD.lqFrom.r.x)*e,HD.lqFrom.r.y+(to.r[1]-HD.lqFrom.r.y)*e,HD.lqFrom.r.z+(to.r[2]-HD.lqFrom.r.z)*e);
   if(HD.flame.visible){const f=.9+Math.random()*.35;HD.flame.scale.set(.015*f,.03*(1.1-f*.1),1);HD.flame.position.x=(Math.random()-.5)*.003;}
@@ -196,7 +240,7 @@ function cigExhale(){const C=HD.cig;if(!C)return;C.burn=Math.min(1,C.burn+.03);C
   camera.getWorldDirection(hdTmp);hdTmp2.copy(camera.position).addScaledVector(hdTmp,.22);hdTmp2.y-=.07;smokePuff(hdTmp2,hdTmp.clone().multiplyScalar(.45).add(new THREE.Vector3(0,.12,0)),12,.08,.42,2.8,.25,.42);mpItems();}
 function cigToggleHand(){const C=HD.cig;if(!C||HD.seq.length||HD.lighterOn)return;if(atSlot()&&C.where==='mouth'){toast('Am Automaten bleibt sie im Mund.');return;}
   if(C.where==='mouth'){C.where='hand';HD.mc.visible=false;HD.handR.visible=true;HD.handR.position.fromArray(PX(POSE.handMouth.p));HD.handR.rotation.fromArray(POSE.handMouth.r);seqStart([{to:'hand',dur:.5}]);}
-  else{seqStart([{to:'handMouth',dur:.5,end(){C.where='mouth';HD.handR.visible=false;HD.mc.visible=true;HD.mc.position.fromArray(PX(POSE[mouthP()].p));HD.mc.rotation.fromArray(POSE[mouthP()].r);seqStart([{to:mouthP(),dur:.1}]);mpItems();}}]);}
+  else{seqStart([{to:'handMouth',dur:.5,end(){C.where='mouth';HD.handR.visible=false;HD.mc.visible=true;const mp=hdPose('mouth');HD.mc.position.fromArray(PX(mp.p));HD.mc.rotation.fromArray(mp.r);seqStart([{to:'mouth',dur:.1}]);mpItems();}}]);}
   mpItems();hdUi();}
 function cigAsh(){const C=HD.cig;if(!C||HD.seq.length||HD.lighterOn)return;
   const doAsh=()=>{if(C.ash>.05){const tip=cigTipWorld();smokePuff(tip,new THREE.Vector3(0,-.5,0),4,.02,.03,.8,.1,.6);}C.ash=0;HSFX.ash();};
@@ -216,15 +260,23 @@ function hdHandFrame(B,side){const hb=B['hand_'+side],mid=B['middle_01_'+side];i
   {const i0=loc(B['index_01_'+side]),p0=loc(B['pinky_01_'+side]);if(i0&&p0){const ac=p0.sub(i0);pal=side==='r'?new THREE.Vector3().crossVectors(fd,ac):new THREE.Vector3().crossVectors(ac,fd);pal.sub(fd.clone().multiplyScalar(pal.dot(fd)));if(pal.lengthSq()<1e-8)pal=null;else pal.normalize();}} // Handfläche = Finger x Handbreite (Vorzeichen an der Faust gemessen)
   const i2=loc(B['index_02_'+side]),m2=loc(B['middle_02_'+side]),i1=loc(B['index_01_'+side]),p1=loc(B['pinky_01_'+side]);
   return {hb,fd,pal,grip:i2&&m2?i2.add(m2).multiplyScalar(.5):null,knuck:i1&&p1?i1.add(p1).multiplyScalar(.5):null};}
-// Kippe in die Finger legen: quer zwischen Zeige- und Mittelfinger, Filter zur Handfläche (Mund), Glut aus dem Handrücken heraus
-function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const base=fr.grip?fr.grip.clone().addScaledVector(fr.fd,.012):fr.fd.clone().multiplyScalar(.105);obj.position.copy(base).addScaledVector(fr.pal,.02);obj.quaternion.setFromUnitVectors(hdY,fr.pal.clone().negate());}
+// Kippe in die Finger legen: zwischen Zeige- und Mittelfinger am zweiten Glied, die Glut ragt schräg aus dem Handrücken heraus
+// (etwa 40° von der Handflächen-Normalen zu den Fingerspitzen hin, wie beim echten Halten), der Filter sitzt 2 cm hinter dem Griffpunkt
+function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const dir=fr.pal.clone().multiplyScalar(-.75).addScaledVector(fr.fd,.65).normalize();const base=fr.grip?fr.grip.clone().addScaledVector(fr.fd,.012):fr.fd.clone().multiplyScalar(.105);obj.position.copy(base).addScaledVector(dir,-.022);obj.quaternion.setFromUnitVectors(hdY,dir);}
   else{obj.position.copy(fr.fd.clone().multiplyScalar(.1));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
+// Schachtel in der Hand: Boden-Ecke im Handballen, Finger schräg über die Rückseite, Daumen vorn; Vorderseite zeigt zur Kamera, oben kippt leicht weg
+function hdPackFrame(side){const cq=camera.quaternion,f=new THREE.Vector3(0,0,-1).applyQuaternion(cq),u=new THREE.Vector3(0,1,0).applyQuaternion(cq);
+  const up=u.clone().multiplyScalar(.9).addScaledVector(f,.44).normalize(),front=u.clone().multiplyScalar(.44).addScaledVector(f,-.9).normalize(),right=new THREE.Vector3().crossVectors(up,front).normalize();
+  return {up,front,right,fd:up.clone().multiplyScalar(.85).addScaledVector(right,side==='l'?.53:-.53).normalize(),pal:front};} // Finger laufen schräg nach oben über die Rückseite
+function hdPackToHand(obj,fr,side){if(!fr)return;const base=fr.knuck?fr.knuck.clone():fr.fd.clone().multiplyScalar(.11);obj.position.copy(base).addScaledVector(fr.fd,.055);if(fr.pal)obj.position.addScaledVector(fr.pal,.024); // Knöchel unter der Unterkante, Rückseite liegt auf den Fingern
+  const W=hdPackFrame(side);hdM4.makeBasis(W.right,W.up,W.front);obj.quaternion.copy(fr.hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromRotationMatrix(hdM4));}
+const hdM4=new THREE.Matrix4();
 function hdGlassToHand(obj,fr){if(!fr)return;const base=fr.knuck?fr.knuck.clone().addScaledVector(fr.fd,.005):fr.fd.clone().multiplyScalar(.075);obj.position.copy(base);if(fr.pal)obj.position.addScaledVector(fr.pal,.04);}
 function cigTipWorld(){const P=HD.mc.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0);HD.rig.updateMatrixWorld(true);return HD.mc.localToWorld(hdTmp.clone());}
 function cigStep(dt){
   const C=HD.cig;if(!C)return;
   const obj=cigObj();
-  if(HD.fly){HD.fly.t+=dt;const k=Math.min(1,HD.fly.t/HD.fly.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const f=HD.fly.from,to=POSE[mouthP()],tp=PX(to.p);
+  if(HD.fly){HD.fly.t+=dt;const k=Math.min(1,HD.fly.t/HD.fly.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const f=HD.fly.from,to=hdPose('mouth'),tp=PX(to.p);
     HD.mc.position.set(f[0]+(tp[0]-f[0])*e,f[1]+(tp[1]-f[1])*e+Math.sin(k*Math.PI)*.05,f[2]+(tp[2]-f[2])*e);
     HD.mc.rotation.set(Math.PI+(to.r[0]-Math.PI)*e,to.r[1]*e,0);if(k>=1){HD.fly=null;hdUi();}return;}
   seqStep(dt,obj);
@@ -238,8 +290,8 @@ function cigStep(dt){
     if(fp){const hb=fp.bones.hand_r;HD.handR.visible=false;
       if(HD.mc.parent!==hb){hb.add(HD.mc);HD.mc.visible=true;}hdCigToHand(HD.mc,hdHandFrame(fp.bones,'r'));}
     else{if(HD.mc.parent!==HD.handR){HD.handR.add(HD.mc);HD.mc.visible=true;}HD.mc.position.set(.0,.058,-.004);HD.mc.rotation.set(-.35,0,0);}}
-  else{if(HD.mc.parent!==HD.rig){HD.rig.add(HD.mc);HD.mc.position.fromArray(PX(POSE[mouthP()].p));HD.mc.rotation.fromArray(POSE[mouthP()].r);}
-    if(!HD.seq.length){const mp=POSE[mouthP()];HD.mc.position.lerp(hdTmp2.fromArray(PX(mp.p)),Math.min(1,dt*8));}} // Mund-Pose wechselt weich beim Hinsetzen/Aufstehen
+  else{const mp=hdPose('mouth');if(HD.mc.parent!==HD.rig){HD.rig.add(HD.mc);HD.mc.position.fromArray(PX(mp.p));HD.mc.rotation.fromArray(mp.r);}
+    if(!HD.seq.length){const g=Math.min(1,dt*8),e=HD.mc.rotation;HD.mc.position.lerp(hdTmp2.fromArray(PX(mp.p)),g);e.x+=(mp.r[0]-e.x)*g;e.y+=(mp.r[1]-e.y)*g;e.z+=(mp.r[2]-e.z)*g;}} // Mund-Pose wechselt weich beim Hinsetzen/Aufstehen (Bildwinkel)
 }
 // ---- Trinken ----
 const DRINKS={bier:{n:'Bier',p:350,alc:.35,c:0xf0b020,op:.85},cola:{n:'Cola',p:250,alc:0,c:0x2a1408,op:.95},whisky:{n:'Whisky',p:600,alc:.7,c:0xc07a1a,op:.8},wasser:{n:'Wasser',p:150,alc:0,c:0xd8ecf8,op:.5},sekt:{n:'Sekt',p:500,alc:.4,c:0xf4e8a0,op:.6}};
@@ -261,14 +313,15 @@ function drinkStep(dt){
   if(fp){const hb=fp.bones.hand_l;
     if(Gl.parent!==hb){hb.add(Gl);Gl.visible=true;Gl.children.forEach(c=>{if(c.userData.hand)c.visible=false;});HD.gTilt=0;}hdGlassToHand(Gl,hdHandFrame(fp.bones,'l'));
     const sip=HD.gq&&HD.gq.length&&HD.gq[0].to==='glassSip'&&HD.gq.length<=2;HD.gTilt=(HD.gTilt||0)+((sip?.8:0)-(HD.gTilt||0))*Math.min(1,dt*6);
-    const f=hdTmp.set(0,0,-1).applyQuaternion(camera.quaternion);f.y=0;if(f.lengthSq()>1e-6){f.normalize();const right=hdTmp2.set(-f.z,0,f.x);
-      const des=new THREE.Quaternion().setFromAxisAngle(right,HD.gTilt);Gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(des);}
+    {const cq=camera.quaternion,f=hdTmp.set(0,0,-1).applyQuaternion(cq),up=hdTmp2.set(0,1,0).applyQuaternion(cq);if(atSlot()){f.y=0;f.normalize();up.set(0,1,0);} // sitzend: Kamera steht vorm Bildschirm, dann waagerecht
+      const t=HD.gTilt;const ax=new THREE.Vector3(0,1,0).multiplyScalar(1-t/.8).addScaledVector(up.multiplyScalar(Math.cos(t)).addScaledVector(f,-Math.sin(t)),t/.8).normalize(); // Glas steht aufrecht, kippt beim Schluck zum Gesicht (mit Blickrichtung)
+      Gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromUnitVectors(hdY,ax));}
     if(!HD.gq||!HD.gq.length)return;const s=HD.gq[0];if(HD.gqFrom===null||HD.gqFrom===undefined){HD.gqFrom={};HD.gqT=0;if(s.at)s.at();}
     HD.gqT+=dt;if(HD.gqT>=s.dur){if(s.end)s.end();HD.gq.shift();HD.gqFrom=null;}return;}
   else if(Gl.parent!==HD.rig){HD.rig.add(Gl);Gl.children.forEach(c=>{if(c.userData.hand)c.visible=true;});Gl.position.fromArray(PX(POSE.glass.p));Gl.rotation.fromArray(POSE.glass.r);}
   if(!HD.gq||!HD.gq.length)return;const s=HD.gq[0];
   if(!HD.gqFrom||!HD.gqFrom.p){const first=!HD.gqFrom;HD.gqFrom={p:Gl.position.clone(),r:Gl.rotation.clone()};if(first){HD.gqT=0;if(s.at)s.at();}}
-  HD.gqT+=dt;const k=Math.min(1,HD.gqT/s.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,to=POSE[s.to],tp=PX(to.p);
+  HD.gqT+=dt;const k=Math.min(1,HD.gqT/s.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,to=hdPose(s.to),tp=PX(to.p);
   Gl.position.set(HD.gqFrom.p.x+(tp[0]-HD.gqFrom.p.x)*e,HD.gqFrom.p.y+(tp[1]-HD.gqFrom.p.y)*e,HD.gqFrom.p.z+(tp[2]-HD.gqFrom.p.z)*e);
   Gl.rotation.set(HD.gqFrom.r.x+(to.r[0]-HD.gqFrom.r.x)*e,HD.gqFrom.r.y+(to.r[1]-HD.gqFrom.r.y)*e,HD.gqFrom.r.z+(to.r[2]-HD.gqFrom.r.z)*e);
   if(k>=1){if(s.end)s.end();HD.gq.shift();HD.gqFrom=null;}
@@ -340,7 +393,7 @@ function handsStep(dt){
   smokeStep(dt);itemsAvatarsStep(dt);
   HD.ax=Math.min(1,Math.max(.55,LW()/LH()/1.3));
   const show=started&&(!focus||atSlot())&&!locked&&!openId&&EL.phase!=='moving';
-  if(atSlot()&&HD.cig&&HD.cig.where==='hand'&&!HD.seq.length&&!HD.lighterOn){HD.cig.where='mouth';HD.handR.visible=false;HD.rig.add(HD.mc);HD.mc.visible=true;HD.mc.position.fromArray(PX(POSE.mouthSlot.p));HD.mc.rotation.fromArray(POSE.mouthSlot.r);mpItems();hdUi();} // hinsetzen: Kippe in den Mund
+  if(atSlot()&&HD.cig&&HD.cig.where==='hand'&&!HD.seq.length&&!HD.lighterOn){HD.cig.where='mouth';HD.handR.visible=false;HD.rig.add(HD.mc);HD.mc.visible=true;const mp=hdPose('mouth');HD.mc.position.fromArray(PX(mp.p));HD.mc.rotation.fromArray(mp.r);mpItems();hdUi();} // hinsetzen: Kippe in den Mund
   HD.rig.position.copy(camera.position);HD.rig.quaternion.copy(camera.quaternion);HD.rig.visible=show;HD.rig.updateMatrixWorld(true);
   if(HD.buzz>0){HD.buzz=Math.max(0,HD.buzz-dt*.006);camera.rotation.z+=Math.sin(now*.9)*.014*HD.buzz;camera.rotation.x+=Math.sin(now*.6)*.007*HD.buzz;}
   packStep(dt);cigStep(dt);lighterStep(dt);drinkStep(dt);

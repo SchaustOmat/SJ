@@ -161,12 +161,24 @@ const CH_FING=['thumb','index','middle','ring','pinky'],CH_FINGER_RE=/^(thumb|in
 const CH_IKBONES=['spine_01','spine_02','neck_01','upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l'];
 ['r','l'].forEach(sd=>CH_FING.forEach(f=>{for(let j=1;j<=3;j++)CH_IKBONES.push(f+'_0'+j+'_'+sd);}));
 // Fingerhaltung je Finger (Daumen, Zeige, Mittel, Ring, Klein): 0 = gestreckt (Datei-Pose), 1 = so gekrümmt wie in der Animation (Faust)
-const CH_FPOSE={flat:[.35,.12,.12,.15,.2],press:[.5,0,.8,.9,.95],cig:[.45,.15,.2,.85,.95],glass:[.55,.5,.55,.6,.65]};
+// Fingerhaltung je Finger (Daumen, Zeige, Mittel, Ring, Klein): Beugung der drei Glieder in Grad ab der gestreckten Datei-Pose.
+// Gedreht wird um die lokale X-Achse des Fingerknochens (so beugen auch die Animationen, an der Faust gemessen), das Daumen-Grundglied
+// um seine gemessene Achse. Feste Winkel statt Mischung mit der Animation: so sehen die Finger in jedem Clip gleich sauber aus.
+const CH_FPOSE={
+  flat:[[6,8,12],[8,10,6],[10,12,8],[12,14,10],[14,16,12]],        // Hand liegt flach auf dem Pult
+  press:[[14,20,30],[6,6,4],[68,80,55],[76,85,60],[80,88,65]],     // Zeigefinger drückt, die anderen eingerollt
+  cig:[[10,14,22],[16,16,10],[20,18,12],[70,82,58],[76,86,62]],    // Kippe zwischen Zeige- und Mittelfinger, Ring/Klein locker eingerollt
+  glass:[[14,22,34],[46,58,30],[50,62,34],[50,62,34],[52,64,38]],  // Finger ums Glas
+  pack:[[12,18,22],[8,12,10],[8,12,10],[10,14,12],[12,16,14]]};   // Schachtel in der Hand (Finger liegen flach an der Rückseite, Daumen vorn)
+const CH_THUMB_AX=new THREE.Vector3(.55,.8,-.23).normalize(); // Daumen-Grundglied: Drehachse aus den Animationen gemessen (links gespiegelt)
 function chBoneBase(bone){const u=bone.userData;if(!u.q0){u.q0=new THREE.Quaternion();u.q1=new THREE.Quaternion();u.qset=false;}
   if(u.qset&&bone.quaternion.equals(u.q1))bone.quaternion.copy(u.q0);u.q0.copy(bone.quaternion);}
 function chBoneDone(bone){const u=bone.userData;u.q1.copy(bone.quaternion);u.qset=true;}
 function boneRotWorld(bone,axis,angle){ // dreht den Knochen um eine Welt-Achse
   if(!bone||!angle)return;ikQ.setFromAxisAngle(ikC.copy(axis).normalize(),angle);const pq=bone.parent.getWorldQuaternion(ikQ2);const lq=ikQ3.copy(pq).invert().multiply(ikQ).multiply(pq);bone.quaternion.premultiply(lq);bone.updateMatrixWorld(true);
+}
+function boneRotWorldQ(bone,q){ // dreht den Knochen um eine Welt-Drehung q (Quaternion)
+  if(!bone)return;const pq=bone.parent.getWorldQuaternion(ikQ2);const lq=ikQ3.copy(pq).invert().multiply(q).multiply(pq);bone.quaternion.premultiply(lq);bone.updateMatrixWorld(true);
 }
 function chArmIK(n,side,target,w,pole){
   const B=n.rig.bones,up=B['upperarm_'+side],lo=B['lowerarm_'+side],ha=B['hand_'+side];if(!up||!lo||!ha||w<=0)return;
@@ -179,26 +191,84 @@ function chArmIK(n,side,target,w,pole){
   const E2=lo.getWorldPosition(new THREE.Vector3()),W2=ha.getWorldPosition(new THREE.Vector3());
   boneAim(lo,W2.sub(E2),S.clone().add(toT).sub(E2),w);
 }
+// Handgelenk: gewünschte Finger- (fd) und Handflächenrichtung (pal). Die Verdrehung um die Unterarm-Achse übernimmt der Unterarm
+// (Pronation/Supination, höchstens ~95°), die Hand selbst beugt nur noch (höchstens ~70°) – so verdreht sich das Handgelenk nie unnatürlich.
+const wrM=new THREE.Matrix4(),wrQ=new THREE.Quaternion(),wrQ2=new THREE.Quaternion(),wrT=new THREE.Quaternion();
+function chFrameQ(fw,pal,out){const c=new THREE.Vector3().crossVectors(fw,pal).normalize();wrM.makeBasis(fw,pal,c);return out.setFromRotationMatrix(wrM);}
+function chTwist(q,axis,out){ // Anteil der Drehung q um die Achse (Swing-Twist-Zerlegung), Winkel mit Vorzeichen
+  const d=q.x*axis.x+q.y*axis.y+q.z*axis.z;out.set(axis.x*d,axis.y*d,axis.z*d,q.w);if(out.lengthSq()<1e-10)out.set(0,0,0,1);else out.normalize();
+  let a=2*Math.atan2(out.x*axis.x+out.y*axis.y+out.z*axis.z,out.w);if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;return a;}
+function chWrist(B,sd,fd,pal,w){
+  const hb=B['hand_'+sd],lo=B['lowerarm_'+sd];if(!hb||!lo||w<=0)return;
+  const want=fd.clone().normalize();let pd=pal?pal.clone():null;if(pd){pd.sub(want.clone().multiplyScalar(pd.dot(want)));if(pd.lengthSq()<1e-6)pd=null;else pd.normalize();}
+  const u=hb.getWorldPosition(new THREE.Vector3()).sub(lo.getWorldPosition(new THREE.Vector3())).normalize();
+  for(let pass=0;pass<2;pass++){
+    const pw=chPalmWorld(B,sd);if(!pw)return;
+    let q;if(pd){chFrameQ(pw.fw,pw.pal,wrQ);chFrameQ(want,pd,wrQ2);q=wrQ2.clone().multiply(wrQ.invert());}else q=new THREE.Quaternion().setFromUnitVectors(pw.fw,want);
+    const tw=chTwist(q,u,wrT);
+    if(pass===0){const roll=Math.max(-1.66,Math.min(1.66,tw));if(Math.abs(roll)>1e-4)boneRotWorld(lo,u,roll*w);} // Unterarm rollt
+    else{const sw=q.multiply(wrT.clone().invert());const ang=2*Math.acos(Math.min(1,Math.abs(sw.w)));if(ang<1e-4)return; // Rest = Beugen/Seitneigen der Hand
+      const lim=1.22;if(ang>lim)sw.slerp(ikI,1-lim/ang);if(w<1)sw.slerp(ikI,1-w);boneRotWorldQ(hb,sw);}
+  }
+}
 CHR.press=null;
 // Taste am Automaten gedrückt (von pressButton): die passende Hand geht zur Taste (sitzend immer, stehend bis 1,7 m)
 function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
   const k=key==='KARTE'?'RISIKO':key;CHR.press={m,key:m.btns[k]?k:'START',side:chBtnSide(k),t:0};}
 function chBtnSide(k){return /INFO|LINIEN|EINSATZ|AUTO/.test(k)?'l':'r';}
 function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
-// Handgelenk-Ziel über einer Taste: etwas zum Spieler hin und darüber, damit die Finger auf der Taste liegen (k=1: gedrückt)
-function chBtnWrist(m,key,fx,fz,k,press){const b=chBtnPos(m,key,new THREE.Vector3());if(!b)return null;
-  if(press){b.x-=fx*.12;b.z-=fz*.12;b.y+=.195-.04*(k||0);}else{b.x-=fx*.085;b.z-=fz*.085;b.y+=.085;}return b;}
-function chBtnFd(fx,fz,press){return press?new THREE.Vector3(fx*.75,-.65,fz*.75).normalize():new THREE.Vector3(fx*.92,-.4,fz*.92).normalize();}
-// Handposen (Welt): Handgelenk p, Fingerrichtung fd, Handflächenrichtung pal; pt(vor,rechts,unter) ab Auge/Kopf, f/r = vorn/rechts
-function chHandPose(kind,pt,f,r,mouth){
-  const v=(a,b,c)=>new THREE.Vector3(f.x*a+r.x*b,c,f.z*a+r.z*b).normalize(); // a=vor, b=rechts, c=hoch
+// Handgelenk-Ziel beim Drücken: hinter und über der Taste, der gestreckte Zeigefinger (ca. 23 cm ab Handgelenk) zeigt schräg nach vorn-unten auf die Taste (k=1: gedrückt)
+function chBtnWrist(m,key,fx,fz,k){const b=chBtnPos(m,key,new THREE.Vector3());if(!b)return null;b.x-=fx*.175;b.z-=fz*.175;b.y+=.135-.015*(k||0);return b;}
+function chBtnFd(fx,fz){return new THREE.Vector3(fx*.78,-.63,fz*.78).normalize();}
+// Ruhelage am Pult: Handballen liegt vorn auf der schrägen Pultkante, die Finger liegen flach Richtung Taste (rechts START, links EINSATZ)
+const CH_DECK_N=new THREE.Vector3(0,Math.cos(.32),Math.sin(.32)); // Pultfläche ist um 0,32 rad zum Spieler gekippt (buildMachine)
+function chDeckRest(m,key,side){
+  const b=m&&m.btns&&m.btns[key];if(!b||!b.mesh)return null;const g=m.group,q=g.getWorldQuaternion(new THREE.Quaternion());
+  const p=g.localToWorld(new THREE.Vector3(b.mesh.position.x+(side==='r'?.015:-.015),1.015,.56));
+  const fd=new THREE.Vector3(0,.36,-.93).normalize().applyQuaternion(q),pal=CH_DECK_N.clone().negate().applyQuaternion(q);
+  return {p,fd,pal,fp:CH_FPOSE.flat};}
+// Handposen (Welt): Handgelenk p, Fingerrichtung fd, Handflächenrichtung pal (die Kippe ragt aus dem Handrücken, also Richtung -pal), Fingerhaltung fp, Ellbogen-Hinweis pole.
+// F.pt(vor,rechts,unter) ab Auge/Kopf und F.v(vor,rechts,hoch) in Körperrichtung (waagerecht); F.M = Mundpunkt, F.mf/mr/mu = Blickrichtung vorn/rechts/oben
+// (eigene Figur: mit Kamera-Neigung, damit die Hand am Mund immer unten im Bild bleibt, egal wohin man schaut)
+// Eigene Figur (F.fp): die Hände werden so gehalten, dass man sie unten im Bild sieht (Blickrichtung = F.mf/mr/mu, mit Kamera-Neigung),
+// Hochformat rückt sie zur Mitte (F.ax). Mitspieler: natürliche Haltung ab Kopf (F.pt).
+function chHandPose(kind,F){
+  const v=F.v,m=(a,b,c)=>new THREE.Vector3().addScaledVector(F.mf,a).addScaledVector(F.mr,b).addScaledVector(F.mu,c).normalize();
+  const fp=!!F.fp,ax=F.ax||1;
   switch(kind){
-    case 'cig':return {p:pt(.3,.2,.3),fd:v(.45,.1,-.85),pal:v(-.6,-.6,-.3),fp:CH_FPOSE.cig}; // Kippe locker vor dem Bauch, Glut nach vorn-außen
-    case 'cigMouth':{const p=mouth.clone().addScaledVector(f,.03).addScaledVector(r,.075).add(new THREE.Vector3(0,-.045,0));return {p,fd:v(.15,-.9,.35),pal:mouth.clone().sub(p),fp:CH_FPOSE.cig};} // Handfläche zum Mund, Finger quer unter dem Gesicht
-    case 'cigAsh':return {p:pt(.31,.23,.38),fd:v(.7,.2,-.65),pal:v(-.3,-.5,-.8),fp:CH_FPOSE.cig};
-    case 'glass':return {p:pt(.28,-.2,.33),fd:v(.8,.2,-.3),pal:v(-.4,.85,0),fp:CH_FPOSE.glass}; // Glas vor dem Bauch, Handfläche zur Mitte
-    case 'glassSip':{const fd=v(.6,.2,.5),pal=v(-.5,.8,0);const g=mouth.clone().addScaledVector(new THREE.Vector3(f.x,0,f.z),.1).add(new THREE.Vector3(0,-.105,0));return {p:g.addScaledVector(fd,-.055).addScaledVector(pal,-.035),fd,pal,fp:CH_FPOSE.glass};} // Glasboden etwas vor und unter dem Mund, Rand kippt an die Lippen
+    case 'cig':if(fp){const c=m(.3,-.35*ax,.9),fd=m(.7,.55*ax,-.2);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const far=(1-ax)*2; // Hand vor der Brust, Handrücken zum Auge (Knöchel sichtbar), Kippe steht nach vorn-oben heraus; Hochformat etwas weiter weg (kleiner)
+        return {p:F.sp(.23+.05*far,.08*ax,.14+.02*far),fd,pal:c.negate(),fp:CH_FPOSE.cig};}
+      return {p:F.pt(.12,.21,.36),fd:v(.5,.05,-.85),pal:v(-.45,-.85,-.25),fp:CH_FPOSE.cig}; // Arm hängt locker (Schulter liegt ~27 cm hinter dem Auge), Kippe zeigt nach vorn-außen
+    case 'cigAsh':if(fp){const fd=m(.5,.2*ax,-.84),pal=m(-.3,-.9,-.2);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();return {p:F.sp(.24,.13*ax,.15),fd,pal,fp:CH_FPOSE.cig};} // Hand kippt: Finger nach vorn-unten, Handfläche nach innen, Glut zeigt nach unten
+      return {p:F.pt(.08,.25,.40),fd:v(.75,.2,-.6),pal:v(-.1,-.35,.93),fp:CH_FPOSE.cig};
+    case 'cigMouth':{const c=m(.8,.1,.6),fd=m(-.3,-.7,.52);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const pal=c.clone().negate(); // Filter an den Lippen, Finger quer vor dem Mund nach oben-links, Kippe zeigt nach vorn-oben
+      const at=F.M.clone();if(fp)at.addScaledVector(F.mf,.05+.08*(1-ax)*2).addScaledVector(F.mu,-.01); // eigene Figur: die Lippen liegen unter dem Bildrand, darum Hand und Kippe nach vorn (unten im Bild sichtbar; Hochformat weiter weg, sonst füllt die Hand das Bild)
+      return {p:at.clone().addScaledVector(fd,-.13).addScaledVector(pal,-.02),at,fd,pal,fp:CH_FPOSE.cig,pole:m(.2,.5,-1)};}
+    case 'glass':if(fp){const fd=m(.55,.8*ax,-.25),pal=m(-.5,.4,.3);return {p:F.sp(.24,-.16*ax,.13),fd,pal,fp:CH_FPOSE.glass};} // Glas vor der Brust, Handfläche zur Mitte
+      return {p:F.pt(.12,-.21,.36),fd:v(.8,.2,-.3),pal:v(-.4,.85,0),fp:CH_FPOSE.glass}; // Glas hängt locker an der Seite, Handfläche zur Mitte
+    case 'glassSip':{const fd=m(.6,.2,.5),pal=m(-.5,.8,0);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();
+      const axv=F.mu.clone().multiplyScalar(Math.cos(.8)).addScaledVector(F.mf,-Math.sin(.8)); // Glasachse beim Schluck (wie drinkStep/itemsAvatarsStep: Rand kippt zum Gesicht)
+      const rim=fp?F.sp(.13,-.01,.055):F.M.clone(); // eigene Figur: Glasrand am unteren Bildrand (die Lippen selbst liegen darunter)
+      const base=rim.addScaledVector(axv,-.085);
+      return {p:base.clone().addScaledVector(fd,-.12).addScaledVector(pal,-.04),at:base,fd,pal,fp:CH_FPOSE.glass,pole:m(.2,-.5,-1)};}
   }return null;
+}
+// Griff-Korrektur: hängt der Gegenstand (Kippe, Glas, Schachtel) schon am Handknochen, wird das Handgelenk so gesetzt, dass der
+// Gegenstand selbst am Zielpunkt (pose.at) landet. Der Versatz Handgelenk -> Gegenstand ist in Handkoordinaten fest (item.position) und wird
+// mit der GEWÜNSCHTEN Handlage in die Welt gedreht (nicht mit der aktuellen, sonst schaukelt sich Ziel und Lage gegenseitig auf)
+function chGripFix(pose,item,B,sd){const hand=B&&B['hand_'+sd];if(!pose||!pose.at||!item||!hand||item.parent!==hand||typeof hdHandFrame!=='function')return pose;
+  const fr=hdHandFrame(B,sd);if(!fr||!fr.pal)return pose;
+  const fd=pose.fd.clone().normalize();const pd=pose.pal?pose.pal.clone():null;if(!pd)return pose;pd.sub(fd.clone().multiplyScalar(pd.dot(fd)));if(pd.lengthSq()<1e-6)return pose;pd.normalize();
+  chFrameQ(fr.fd,fr.pal,wrQ);chFrameQ(fd,pd,wrQ2);const R=wrQ2.clone().multiply(wrQ.invert()); // Handkoordinaten -> gewünschte Weltlage
+  pose.p.copy(pose.at).sub(item.position.clone().applyQuaternion(R));return pose;}
+// Schachtel in der Hand: Schachtelmitte an den Zielpunkt vor der Kamera (hdPackTarget), Finger schräg über die Rückseite, Handfläche zur Kamera
+function chPackPose(n,side){
+  if(typeof HD==='undefined'||!HD.pack||!HD.pack.visible||!HD.pack.parent||!HD.pack.parent.isBone)return null;
+  const hand=n.rig.bones['hand_'+side];if(HD.pack.parent!==hand)return null;
+  const cq=camera.quaternion,t=hdPackTarget();const e=Math.min(1,HD.packT/.35),lift=HD.packSt==='out'?e:HD.packSt==='in'?1-e:0;t[1]-=.3*lift; // Rausholen: kommt von unten, Wegstecken: geht nach unten
+  const P=camera.position.clone().addScaledVector(new THREE.Vector3(1,0,0).applyQuaternion(cq),t[0]).addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(cq),t[1]).addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(cq),-t[2]);
+  const W=hdPackFrame(side);const pole=new THREE.Vector3(0,-1,0);
+  return chGripFix({p:P.clone(),at:P,fd:W.fd,pal:W.pal,fp:CH_FPOSE.pack,pole},HD.pack,n.rig.bones,side);
 }
 // Ziele für beide Hände je nach Lage, dann IK mit weicher Gewichtung (auch für Mitspieler-Figuren)
 function chArmsStep(n,dt,ctx){
@@ -207,17 +277,12 @@ function chArmsStep(n,dt,ctx){
   ik.lean=(ik.lean||0)+((ctx.lean||0)-(ik.lean||0))*Math.min(1,dt*5);
   if(ik.lean>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz);boneRotWorld(B.spine_01,ax,-ik.lean*.26);boneRotWorld(B.spine_02,ax,-ik.lean*.34);boneRotWorld(B.neck_01,ax,ik.lean*.4);} // vorbeugen zum Pult, Kopf bleibt am Bildschirm
   const want={r:ctx.r||null,l:ctx.l||null};
-  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.1?p.t/.1:p.t<.28?1:Math.max(0,1-(p.t-.28)/.17);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k,true);if(b)want[p.side]={p:b,fd:chBtnFd(ctx.fx,ctx.fz,true),pal:new THREE.Vector3(0,-1,0),fp:CH_FPOSE.press};}
+  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.1?p.t/.1:p.t<.28?1:Math.max(0,1-(p.t-.28)/.17);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k);if(b)want[p.side]={p:b,fd:chBtnFd(ctx.fx,ctx.fz),pal:new THREE.Vector3(0,-1,0),fp:CH_FPOSE.press};}
   ['r','l'].forEach(sd=>{const K=ik[sd],tgt=want[sd];
-    if(tgt){if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:10)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;}
+    if(tgt){if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:10)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;}
     else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0)K.has=false;}
-    if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
-      const hb=B['hand_'+sd],mid=B['middle_01_'+sd];
-      if(hb&&mid&&K.fd){const hp=hb.getWorldPosition(new THREE.Vector3()),mp=mid.getWorldPosition(new THREE.Vector3());boneAim(hb,mp.sub(hp),K.fd,K.w);} // Finger in Zielrichtung
-      const pw=K.pal?chPalmWorld(B,sd):null;
-      if(pw){ // Handfläche: um die Fingerachse drehen, bis sie in die gewünschte Richtung zeigt
-        const fw=pw.fw,pc=pw.pal.clone(),pd=K.pal.clone().sub(fw.clone().multiplyScalar(K.pal.dot(fw)));
-        if(pc.lengthSq()>1e-6&&pd.lengthSq()>1e-6){pc.normalize();pd.normalize();const ang=Math.atan2(new THREE.Vector3().crossVectors(pc,pd).dot(fw),pc.dot(pd));boneRotWorld(hb,fw,ang*K.w);}}
+    if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=K.pole||new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
+      if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w);
       chFingers(B,sd,K,dt);}});
   CH_IKBONES.forEach(k=>{if(B[k])chBoneDone(B[k]);});
 }
@@ -227,12 +292,14 @@ function chPalmWorld(B,sd){const hb=B['hand_'+sd],mid=B['middle_01_'+sd],i1=B['i
   const ac=p1.getWorldPosition(new THREE.Vector3()).sub(i1.getWorldPosition(new THREE.Vector3()));
   const pal=sd==='r'?new THREE.Vector3().crossVectors(fw,ac):new THREE.Vector3().crossVectors(ac,fw);pal.sub(fw.clone().multiplyScalar(pal.dot(fw)));if(pal.lengthSq()<1e-8)return null;pal.normalize();
   return {h,fw,pal};}
-// Finger: je Finger weich zwischen gestreckt (Datei-Pose) und Animations-Krümmung mischen, Gewicht wie der Arm
+// Finger: jedes Glied weich auf seinen Zielwinkel (ab Datei-Pose), Gewicht wie der Arm
+const chFAx=new THREE.Vector3();
 function chFingers(B,sd,K,dt){
-  if(!K.fp&&!K.fc)return;const tgt=K.fp||[1,1,1,1,1];if(!K.fc)K.fc=tgt.slice();
-  for(let i=0;i<5;i++){K.fc[i]+=(tgt[i]-K.fc[i])*Math.min(1,dt*10);const c=K.fc[i];
-    for(let j=1;j<=3;j++){const b=B[CH_FING[i]+'_0'+j+'_'+sd];if(!b||!b.userData.rest)continue;
-      ikQ.copy(b.quaternion);ikQ2.copy(b.userData.rest).slerp(ikQ,c);b.quaternion.slerp(ikQ2,K.w);}}
+  if(!K.fp&&!K.fc)return;const tgt=K.fp||CH_FPOSE.flat;if(!K.fc)K.fc=tgt.map(f=>f.slice());
+  for(let i=0;i<5;i++)for(let j=0;j<3;j++){const b=B[CH_FING[i]+'_0'+(j+1)+'_'+sd];if(!b||!b.userData.rest)continue;
+    K.fc[i][j]+=(tgt[i][j]-K.fc[i][j])*Math.min(1,dt*10);
+    if(i===0&&j===0){chFAx.copy(CH_THUMB_AX);if(sd==='l'){chFAx.y=-chFAx.y;chFAx.z=-chFAx.z;}}else chFAx.set(1,0,0);
+    ikQ.setFromAxisAngle(chFAx,K.fc[i][j]*Math.PI/180);ikQ2.copy(b.userData.rest).multiply(ikQ);b.quaternion.slerp(ikQ2,K.w);}
   if(!K.fp&&K.w<=0)K.fc=null;
 }
 // ---- eigener Körper in der Ich-Perspektive ----
@@ -248,7 +315,7 @@ function chFPStep(dt){
   const d=Math.hypot(s.x-n.lx,s.z-n.lz);n.lx=s.x;n.lz=s.z;const v=dt>0?d/dt:0;n.v+=(v-n.v)*Math.min(1,dt*10);
   if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
   R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
-  n.root.visible=!locked&&EL.phase!=='moving'&&!(openId);
+  n.root.visible=!locked&&EL.phase!=='moving'&&!(openId)&&(!focus||focus.type==='slot'); // nur frei laufend oder am Automaten; an Crash-Terminal/Tischen stünde der Körper vor der Kamera (Nutzer 2026-10-22)
   chAnimate(n,dt);n.root.updateMatrixWorld(true);
   chFPArms(n,dt,s,sitting);
 }
@@ -258,15 +325,21 @@ function chFPArms(n,dt,s,sitting){
   const eye=camera.position;const f=chV.set(0,0,-1).applyQuaternion(camera.quaternion);f.y=0;if(f.lengthSq()<1e-6)f.set(-Math.sin(P.yaw),0,-Math.cos(P.yaw));f.normalize();
   if(slotM)f.set(Math.sin(s.y),0,Math.cos(s.y)); // am Automaten zählt die Sitzrichtung (Kamera fährt erst noch hin)
   const fx=f.x,fz=f.z,rx=-fz,rz=fx;const r=new THREE.Vector3(rx,0,rz); // rechts = vorn x oben
-  const pt=(fw,ri,d)=>new THREE.Vector3(eye.x+fx*fw+rx*ri,eye.y-d,eye.z+fz*fw+rz*ri);const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};
-  const dn=chBtnFd(fx,fz,false),down=new THREE.Vector3(0,-1,0); // flache Hand: Finger nach vorn, Handfläche aufs Pult
-  if(slotM){ctx.lean=1;const pr=chBtnWrist(slotM,'START',fx,fz,0),pl=chBtnWrist(slotM,'EINSATZ',fx,fz,0);if(pr)ctx.r={p:pr,fd:dn,pal:down,fp:CH_FPOSE.flat};if(pl)ctx.l={p:pl,fd:dn,pal:down,fp:CH_FPOSE.flat};}
-  if(typeof HD!=='undefined'){const C=HD.cig;const mouth=pt(.07,0,.1);
-    if(C&&C.where==='hand'){const st=HD.seq.length?HD.seq[0].to:'hand';ctx.r=chHandPose(st==='handMouth'?'cigMouth':st==='handAsh'?'cigAsh':'cig',pt,f,r,mouth);ctx.fast=st==='handAsh';}
+  const ax=typeof HD!=='undefined'&&HD.ax?HD.ax:1; // Hochformat: seitliche Posen näher zur Mitte, sonst sind sie aus dem Bild
+  const F={fp:true,ax,pt:(fw,ri,d)=>new THREE.Vector3(eye.x+fx*fw+rx*ri*ax,eye.y-d,eye.z+fz*fw+rz*ri*ax),v:(a,b,c)=>new THREE.Vector3(fx*a+rx*b,c,fz*a+rz*b).normalize()};
+  F.sp=(fw,ri,d)=>eye.clone().addScaledVector(F.mf,fw).addScaledVector(F.mr,ri).addScaledVector(F.mu,-d); // Punkt im Blick (vor, rechts, unter dem Auge), folgt der Kamera-Neigung
+  if(slotM){const H=n.rig.bones.Head.getWorldPosition(new THREE.Vector3());F.M=H.clone().addScaledVector(f,.1).add(new THREE.Vector3(0,.04,0));F.mf=f.clone();F.mr=r.clone();F.mu=new THREE.Vector3(0,1,0);} // sitzend: Mund am Kopfknochen (Kamera steht vorm Bildschirm)
+  else{const cq=camera.quaternion;F.mf=new THREE.Vector3(0,0,-1).applyQuaternion(cq);F.mr=new THREE.Vector3(1,0,0).applyQuaternion(cq);F.mu=new THREE.Vector3(0,1,0).applyQuaternion(cq);
+    const mp=typeof HD_MOUTH!=='undefined'?HD_MOUTH:[.012,-.064,-.084];F.M=eye.clone().addScaledVector(F.mr,mp[0]).addScaledVector(F.mu,mp[1]).addScaledVector(F.mf,-mp[2]);} // Mund = Lippen unterhalb der Kamera, wie die Kippe im Mund (hdMouth)
+  const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};
+  if(slotM){ctx.lean=1;const pr=chDeckRest(slotM,'START','r');if(pr)ctx.r=pr;} // nur die rechte Hand liegt am Pult (START), die linke bleibt im Schoß (Nutzer 2026-10-22)
+  if(typeof HD!=='undefined'){const C=HD.cig,B=n.rig.bones;
+    if(C&&C.where==='hand'){const st=HD.seq.length?HD.seq[0].to:'hand';ctx.r=chGripFix(chHandPose(st==='handMouth'?'cigMouth':st==='handAsh'?'cigAsh':'cig',F),HD.mc,B,'r');ctx.fast=st==='handAsh';}
     if(HD.drink){const st=HD.gq&&HD.gq.length?HD.gq[0].to:'glass';
-      if(st==='glassSip')ctx.l=chHandPose('glassSip',pt,f,r,mouth);
-      else if(slotM){const b=chBtnWrist(slotM,'EINSATZ',fx,fz,0);if(b){b.y+=.06;ctx.l={p:b,fd:new THREE.Vector3(fx*.8-rx*.2,-.3,fz*.8-rz*.2).normalize(),pal:new THREE.Vector3(-fx*.4+rx*.85,0,-fz*.4+rz*.85).normalize(),fp:CH_FPOSE.glass};}}
-      else ctx.l=chHandPose('glass',pt,f,r,mouth);}}
+      if(st==='glassSip')ctx.l=chGripFix(chHandPose('glassSip',F),HD.glass,B,'l');
+      else if(slotM){const g=slotM.group;ctx.l={p:g.localToWorld(new THREE.Vector3(-.36,1.1,.64)),fd:F.v(.86,0,-.5),pal:F.v(0,1,0),fp:CH_FPOSE.glass};} // Glas aufrecht in der Hand links vorn am Pult (Handfläche zur Mitte)
+      else ctx.l=chHandPose('glass',F);}
+    if(HD.packSt!=='off'){const pr=chPackPose(n,'r'),pl=chPackPose(n,'l');if(pr)ctx.r=pr;if(pl)ctx.l=pl;}} // Schachtel in der Hand (links, beim Trinken rechts)
   if(CHR.press){ctx.press=CHR.press;if(CHR.press.t>.45)CHR.press=null;}
   if(ctx.r||ctx.l||ctx.press||ctx.lean||(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))chArmsStep(n,dt,ctx);
 }
@@ -277,11 +350,11 @@ function chAvatarArms(a,dt){
   if(!slot&&!(it&&(it.c===2||it.d))&&!a.press&&!(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))return;
   n.root.updateMatrixWorld(true);const f=chV.set(0,0,1).applyQuaternion(n.root.getWorldQuaternion(ikQ2));f.y=0;if(f.lengthSq()<1e-6)return;f.normalize();
   const fx=f.x,fz=f.z,rx=-fz,rz=fx;const r=new THREE.Vector3(rx,0,rz);const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};const H=n.head.getWorldPosition(new THREE.Vector3());
-  const pt=(fw,ri,d)=>new THREE.Vector3(H.x+fx*fw+rx*ri,H.y-d,H.z+fz*fw+rz*ri);
-  const dn=chBtnFd(fx,fz,false),down=new THREE.Vector3(0,-1,0),mouth=pt(.1,0,-.04);
-  if(slot){ctx.lean=1;const pr=chBtnWrist(slot,'START',fx,fz,0),pl=chBtnWrist(slot,'EINSATZ',fx,fz,0);if(pr)ctx.r={p:pr,fd:dn,pal:down,fp:CH_FPOSE.flat};if(pl)ctx.l={p:pl,fd:dn,pal:down,fp:CH_FPOSE.flat};}
-  if(it&&it.c===2)ctx.r=chHandPose((a.itDrag&&now-a.itDrag<1.3)?'cigMouth':'cig',pt,f.clone(),r,mouth);
-  if(it&&it.d)ctx.l=chHandPose((a.itSip&&now-a.itSip<1.2)?'glassSip':'glass',pt,f.clone(),r,mouth);
+  const F={pt:(fw,ri,d)=>new THREE.Vector3(H.x+fx*fw+rx*ri,H.y-d,H.z+fz*fw+rz*ri),v:(a,b,c)=>new THREE.Vector3(fx*a+rx*b,c,fz*a+rz*b).normalize(),
+    M:H.clone().addScaledVector(f,.1).add(new THREE.Vector3(0,.04,0)),mf:f.clone(),mr:r.clone(),mu:new THREE.Vector3(0,1,0)};F.sp=F.pt;
+  if(slot){ctx.lean=1;const pr=chDeckRest(slot,'START','r');if(pr)ctx.r=pr;} // wie beim eigenen Körper: nur die rechte Hand am Pult
+  const I=n.items;if(it&&it.c===2)ctx.r=chGripFix(chHandPose((a.itDrag&&now-a.itDrag<1.3)?'cigMouth':'cig',F),I&&I.ch,n.rig.bones,'r');
+  if(it&&it.d)ctx.l=chGripFix(chHandPose((a.itSip&&now-a.itSip<1.2)?'glassSip':'glass',F),I&&I.gl,n.rig.bones,'l');
   if(a.press){ctx.press=a.press;if(a.press.t>.45)a.press=null;}
   chArmsStep(n,dt,ctx);
 }

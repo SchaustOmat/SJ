@@ -106,7 +106,8 @@ body.pcmode #itBar{display:none}
 @media (max-height:460px){#itBar{left:auto;right:max(10px,env(safe-area-inset-right,0px));transform:none;top:calc(env(safe-area-inset-top,0px) + 54px);flex-direction:column;max-width:150px}}
 #itHint{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;pointer-events:none;font-family:var(--f-title);font-size:11px;letter-spacing:.08em;color:var(--gold);background:rgba(10,6,16,.7);padding:5px 10px;border:1px solid rgba(214,160,42,.4);border-radius:6px;white-space:nowrap}
 body:not(.pcmode) #itHint{display:none}
-#itBar.fc{top:calc(env(safe-area-inset-top,0px) + 8px);z-index:16}#itHint.fc{z-index:16;bottom:auto;top:8px}
+#itBar.fc{top:calc(env(safe-area-inset-top,0px) + 52px);z-index:16}#itHint.fc{z-index:16;bottom:auto;top:8px} /* am Automaten unter AUFSTEHEN/KARTE ZIEHEN (Hochformat) */
+@media (max-height:460px){#itBar.fc{top:calc(env(safe-area-inset-top,0px) + 54px)}}
 #barList{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 #pLook{left:auto;right:12px;top:72px;bottom:auto;transform:none;margin:0;width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 100px);overflow:auto}
 body.lookopen #veil{background:transparent!important}
