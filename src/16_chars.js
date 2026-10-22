@@ -173,7 +173,7 @@ const CH_FPOSE={
   press:[[14,20,30],[12,20,12],[12,20,12],[14,22,14],[16,24,16]],  // Taste flach mit vier Fingern drücken (Nutzer 2026-10-22), Daumen locker
   cig:[[10,14,22],[16,16,10],[20,18,12],[70,82,58],[76,86,62]],    // Kippe zwischen Zeige- und Mittelfinger, Ring/Klein locker eingerollt
   glass:[[14,22,34],[46,58,30],[50,62,34],[50,62,34],[52,64,38]],  // Finger ums Glas
-  pack:[[16,24,28],[4,26,34],[6,28,36],[8,30,38],[10,32,40]]};   // Schachtel in der Hand: Finger liegen hinten flach an, nur die Spitzen greifen über die Oberkante, Daumen vorn
+  pack:[[14,20,22],[2,20,26],[4,22,28],[6,24,30],[8,26,32]]};   // locker: Finger liegen hinten an, Spitzen leicht über der Oberkante   // Schachtel in der Hand: Finger liegen hinten flach an, nur die Spitzen greifen über die Oberkante, Daumen vorn
 const CH_THUMB_AX=new THREE.Vector3(.55,.8,-.23).normalize(); // Daumen-Grundglied: Drehachse aus den Animationen gemessen (links gespiegelt)
 function chBoneBase(bone){const u=bone.userData;if(!u.q0){u.q0=new THREE.Quaternion();u.q1=new THREE.Quaternion();u.qset=false;}
   if(u.qset&&bone.quaternion.equals(u.q1))bone.quaternion.copy(u.q0);u.q0.copy(bone.quaternion);}
@@ -220,7 +220,8 @@ CHR.press=null;
 function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
   const k=key==='KARTE'?'RISIKO':key,bk=m.btns[k]?k:'START';CHR.press={m,key:bk,side:chBtnSide(k),t:0};CHR.restKey=bk;} // die Hand bleibt danach auf dieser Taste liegen (Nutzer 2026-10-22: bei LEITER nicht zurück zu START)
 // Ruhelage auf einer Taste: Hand liegt locker auf der zuletzt gedrückten Taste (Fingerspitzen knapp über der Taste)
-function chBtnRest(m,key,fx,fz){const b=chBtnWrist(m,m.btns&&m.btns[key]?key:'START',fx,fz,.4);if(!b)return null;const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:chBtnFd(fx,fz),pal,fp:CH_FPOSE.press,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
+function chBtnRest(m,key,fx,fz){const b=chBtnPos(m,m.btns&&m.btns[key]?key:'START',new THREE.Vector3());if(!b)return null;b.x-=fx*.17;b.z-=fz*.17;b.y+=.085; // Ruhelage: Hand flach geneigt (~20°), Fingerspitzen liegen auf der Taste
+  const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:new THREE.Vector3(fx*.94,-.34,fz*.94).normalize(),pal,fp:CH_FPOSE.flat,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
 function chBtnSide(k){return 'r';} // am Automaten bedient nur die rechte Hand alle Tasten (Nutzer 2026-10-22); bei den linken Tasten dreht der Oberkörper mit
 function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
 // Handgelenk-Ziel beim Drücken: hinter und über der Taste, der gestreckte Zeigefinger (ca. 23 cm ab Handgelenk) zeigt schräg nach vorn-unten auf die Taste (k=1: gedrückt)
@@ -272,7 +273,7 @@ function chGripFix(pose,item,B,sd){const hand=B&&B['hand_'+sd];if(!pose||!pose.a
 // von der Schulter aus dazugerechnet. p = Handgelenk oder at = Ankerpunkt des Gegenstands am Handknochen (das Handgelenk ergibt sich daraus),
 // fd = Fingerrichtung, pal = Handflächenrichtung (aus der Fläche heraus), pole = Ellbogenrichtung, fp = Fingerhaltung, rate = Tempo pro s
 const CH_FPV={
-  pack:{fd:[.32,.86,.4],pal:[.38,-.22,-.9],fdP:[.18,.9,.4],palP:[.2,-.2,-.96],pole:[-.9,-.8,-.3],fp:'pack',rate:9}, // Hochformat (fdP/palP): frontaler, weil der weite Bildwinkel nahe Dinge am Rand stark verzerrt // Schachtel liegt in der Handfläche: Hand schräg von unten links, Vorderseite leicht gedreht und gekippt zur Kamera (man sieht die Oberseite), Daumen vorn, Finger hinten herum
+  pack:{fd:[.06,.95,.3],pal:[.06,-.28,-.96],pole:[-.9,-.8,-.3],fp:'pack',rate:9}, // gerade gehalten, Vorderseite schaut zu dir (Nutzer 2026-10-22) // Hochformat (fdP/palP): frontaler, weil der weite Bildwinkel nahe Dinge am Rand stark verzerrt // Schachtel liegt in der Handfläche: Hand schräg von unten links, Vorderseite leicht gedreht und gekippt zur Kamera (man sieht die Oberseite), Daumen vorn, Finger hinten herum
 };
 const fpvV=(cm,a)=>new THREE.Vector3().addScaledVector(cm.cx,a[0]).addScaledVector(cm.cy,a[1]).addScaledVector(cm.cz,a[2]); // Kamera -> Welt (Richtung)
 const fpvP=(cm,a)=>cm.eye.clone().add(fpvV(cm,a)); // Kamera -> Welt (Punkt)

@@ -29,7 +29,9 @@ const POSE={
 // und an derselben Stelle; am Automaten rückt die Kippe ganz über die Tastenleiste, damit man sie richtig sieht (Nutzer 2026-10-22)
 function hdK(){return Math.tan((LW()<LH()?82:64)*Math.PI/360)/Math.tan(camera.fov*Math.PI/360);}
 function hdBarTop(){ // Oberkante der Tastenleiste am Automaten als Bildanteil von unten (0 = keine Leiste)
-  if(!atSlot())return 0;const d=$('.sv-side');if(!d||SV.el.hidden)return 0;const r=d.getBoundingClientRect();return r.height>0?Math.max(0,(LH()-r.top)/LH()):0;}
+  if(!atSlot())return 0;const d=$('.sv-side');if(!d||SV.el.hidden)return 0;const r=d.getBoundingClientRect();if(!(r.height>0))return 0;
+  const top=Math.min(...[[r.left,r.top],[r.right,r.top],[r.left,r.bottom],[r.right,r.bottom]].map(p=>typeof toLocal==='function'?toLocal(p[0],p[1])[1]:p[1])); // Handy im gedrehten Querformat: Bildschirm- in Spielkoordinaten umrechnen (sonst lag die Kippe oben im Bild)
+  return Math.max(0,(LH()-top)/LH());}
 const HD_MOUTH=POSE.mouth.p; // Lippen im Kamera-Raum (auch Ziel der Hand beim Ziehen, chFPArms)
 // Kippe im Mund: immer dieselbe Pose wie im Stehen (Filter unter dem Bildrand, Spitze nach vorn-oben, hdK gleicht den Bildwinkel aus).
 // Am Automaten verdeckt die Tastenleiste den unteren Bildrand: dort wird die Pose nur so weit angehoben, dass das Filterende knapp
