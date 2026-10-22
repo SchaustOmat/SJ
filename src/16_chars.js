@@ -68,17 +68,21 @@ function chLibPrep(scene){
     for(let i=0;i<n;i++){const x=pos.getX(i),y=pos.getY(i),zz=pos.getZ(i),ax=Math.abs(x);let v=1;
       if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.41)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
       z[i]=v;}
-    g.setAttribute('zone',new THREE.BufferAttribute(z,1));});
+    g.setAttribute('zone',new THREE.BufferAttribute(z,1));
+    // Arm-Kennung (T-Pose: Arme waagerecht): 1 = Arm/Hand, 0 = Rest – für die Ich-Perspektive am Automaten (nur Arme zeichnen)
+    let y0=1e9,y1=-1e9;for(let i=0;i<n;i++){if(Math.abs(pos.getX(i))>H*.3){const y=pos.getY(i);if(y<y0)y0=y;if(y>y1)y1=y;}}
+    const aw=new Float32Array(n);for(let i=0;i<n;i++){const y=pos.getY(i);aw[i]=(Math.abs(pos.getX(i))>H*.135&&y>y0-H*.01&&y<y1+H*.01)?1:0;}
+    g.setAttribute('armw',new THREE.BufferAttribute(aw,1));});
   return scene;
 }
 // Körper-Material: Textur für Haut, Kleidungszonen in Figurfarben (Shader-Zusatz auf Lambert)
 function chBodyMat(map,cols){
   const m=new THREE.MeshLambertMaterial({map,skinning:true});
-  m.userData.pal=cols.map(c=>new THREE.Color(c));
-  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;varying float vZone;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;uniform vec3 pal[5];')
-      .replace('#include <map_fragment>','#include <map_fragment>\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
+  m.userData.pal=cols.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
+  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;attribute float armw;varying float vZone;varying float vArm;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;vArm=armw;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;varying float vArm;uniform vec3 pal[5];uniform float fpCut;')
+      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
@@ -166,10 +170,10 @@ const CH_IKBONES=['spine_01','spine_02','neck_01','upperarm_r','lowerarm_r','han
 // um seine gemessene Achse. Feste Winkel statt Mischung mit der Animation: so sehen die Finger in jedem Clip gleich sauber aus.
 const CH_FPOSE={
   flat:[[6,8,12],[8,10,6],[10,12,8],[12,14,10],[14,16,12]],        // Hand liegt flach auf dem Pult
-  press:[[14,20,30],[6,6,4],[68,80,55],[76,85,60],[80,88,65]],     // Zeigefinger drückt, die anderen eingerollt
+  press:[[14,20,30],[12,20,12],[12,20,12],[14,22,14],[16,24,16]],  // Taste flach mit vier Fingern drücken (Nutzer 2026-10-22), Daumen locker
   cig:[[10,14,22],[16,16,10],[20,18,12],[70,82,58],[76,86,62]],    // Kippe zwischen Zeige- und Mittelfinger, Ring/Klein locker eingerollt
   glass:[[14,22,34],[46,58,30],[50,62,34],[50,62,34],[52,64,38]],  // Finger ums Glas
-  pack:[[12,18,22],[8,12,10],[8,12,10],[10,14,12],[12,16,14]]};   // Schachtel in der Hand (Finger liegen flach an der Rückseite, Daumen vorn)
+  pack:[[16,24,28],[4,26,34],[6,28,36],[8,30,38],[10,32,40]]};   // Schachtel in der Hand: Finger liegen hinten flach an, nur die Spitzen greifen über die Oberkante, Daumen vorn
 const CH_THUMB_AX=new THREE.Vector3(.55,.8,-.23).normalize(); // Daumen-Grundglied: Drehachse aus den Animationen gemessen (links gespiegelt)
 function chBoneBase(bone){const u=bone.userData;if(!u.q0){u.q0=new THREE.Quaternion();u.q1=new THREE.Quaternion();u.qset=false;}
   if(u.qset&&bone.quaternion.equals(u.q1))bone.quaternion.copy(u.q0);u.q0.copy(bone.quaternion);}
@@ -198,28 +202,30 @@ function chFrameQ(fw,pal,out){const c=new THREE.Vector3().crossVectors(fw,pal).n
 function chTwist(q,axis,out){ // Anteil der Drehung q um die Achse (Swing-Twist-Zerlegung), Winkel mit Vorzeichen
   const d=q.x*axis.x+q.y*axis.y+q.z*axis.z;out.set(axis.x*d,axis.y*d,axis.z*d,q.w);if(out.lengthSq()<1e-10)out.set(0,0,0,1);else out.normalize();
   let a=2*Math.atan2(out.x*axis.x+out.y*axis.y+out.z*axis.z,out.w);if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;return a;}
-function chWrist(B,sd,fd,pal,w){
-  const hb=B['hand_'+sd],lo=B['lowerarm_'+sd];if(!hb||!lo||w<=0)return;
+function chWrist(B,sd,fd,pal,w,free){ // free: eigene Figur mit Pose fest im Bild – weitere Grenzen (~150° / ~90°), damit die Hand so liegt wie gezeichnet
+  const hb=B['hand_'+sd],lo=B['lowerarm_'+sd];if(!hb||!lo||w<=0)return;const rollMax=free?2.6:1.66,swingMax=free?1.57:1.22;
   const want=fd.clone().normalize();let pd=pal?pal.clone():null;if(pd){pd.sub(want.clone().multiplyScalar(pd.dot(want)));if(pd.lengthSq()<1e-6)pd=null;else pd.normalize();}
   const u=hb.getWorldPosition(new THREE.Vector3()).sub(lo.getWorldPosition(new THREE.Vector3())).normalize();
   for(let pass=0;pass<2;pass++){
     const pw=chPalmWorld(B,sd);if(!pw)return;
     let q;if(pd){chFrameQ(pw.fw,pw.pal,wrQ);chFrameQ(want,pd,wrQ2);q=wrQ2.clone().multiply(wrQ.invert());}else q=new THREE.Quaternion().setFromUnitVectors(pw.fw,want);
     const tw=chTwist(q,u,wrT);
-    if(pass===0){const roll=Math.max(-1.66,Math.min(1.66,tw));if(Math.abs(roll)>1e-4)boneRotWorld(lo,u,roll*w);} // Unterarm rollt
+    if(pass===0){const roll=Math.max(-rollMax,Math.min(rollMax,tw));if(Math.abs(roll)>1e-4)boneRotWorld(lo,u,roll*w);} // Unterarm rollt
     else{const sw=q.multiply(wrT.clone().invert());const ang=2*Math.acos(Math.min(1,Math.abs(sw.w)));if(ang<1e-4)return; // Rest = Beugen/Seitneigen der Hand
-      const lim=1.22;if(ang>lim)sw.slerp(ikI,1-lim/ang);if(w<1)sw.slerp(ikI,1-w);boneRotWorldQ(hb,sw);}
+      if(ang>swingMax)sw.slerp(ikI,1-swingMax/ang);if(w<1)sw.slerp(ikI,1-w);boneRotWorldQ(hb,sw);}
   }
 }
 CHR.press=null;
 // Taste am Automaten gedrückt (von pressButton): die passende Hand geht zur Taste (sitzend immer, stehend bis 1,7 m)
 function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
-  const k=key==='KARTE'?'RISIKO':key;CHR.press={m,key:m.btns[k]?k:'START',side:chBtnSide(k),t:0};}
-function chBtnSide(k){return /INFO|LINIEN|EINSATZ|AUTO/.test(k)?'l':'r';}
+  const k=key==='KARTE'?'RISIKO':key,bk=m.btns[k]?k:'START';CHR.press={m,key:bk,side:chBtnSide(k),t:0};CHR.restKey=bk;} // die Hand bleibt danach auf dieser Taste liegen (Nutzer 2026-10-22: bei LEITER nicht zurück zu START)
+// Ruhelage auf einer Taste: Hand liegt locker auf der zuletzt gedrückten Taste (Fingerspitzen knapp über der Taste)
+function chBtnRest(m,key,fx,fz){const b=chBtnWrist(m,m.btns&&m.btns[key]?key:'START',fx,fz,.4);if(!b)return null;const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:chBtnFd(fx,fz),pal,fp:CH_FPOSE.press,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
+function chBtnSide(k){return 'r';} // am Automaten bedient nur die rechte Hand alle Tasten (Nutzer 2026-10-22); bei den linken Tasten dreht der Oberkörper mit
 function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
 // Handgelenk-Ziel beim Drücken: hinter und über der Taste, der gestreckte Zeigefinger (ca. 23 cm ab Handgelenk) zeigt schräg nach vorn-unten auf die Taste (k=1: gedrückt)
-function chBtnWrist(m,key,fx,fz,k){const b=chBtnPos(m,key,new THREE.Vector3());if(!b)return null;b.x-=fx*.175;b.z-=fz*.175;b.y+=.135-.015*(k||0);return b;}
-function chBtnFd(fx,fz){return new THREE.Vector3(fx*.78,-.63,fz*.78).normalize();}
+function chBtnWrist(m,key,fx,fz,k){const b=chBtnPos(m,key,new THREE.Vector3());if(!b)return null;b.x-=fx*.15;b.z-=fz*.15;b.y+=.17-.012*(k||0);return b;} // Fingerspitzen (ca. 19 cm ab Handgelenk, flach ~35° abwärts) landen auf der Taste
+function chBtnFd(fx,fz){return new THREE.Vector3(fx*.82,-.57,fz*.82).normalize();}
 // Ruhelage am Pult: Handballen liegt vorn auf der schrägen Pultkante, die Finger liegen flach Richtung Taste (rechts START, links EINSATZ)
 const CH_DECK_N=new THREE.Vector3(0,Math.cos(.32),Math.sin(.32)); // Pultfläche ist um 0,32 rad zum Spieler gekippt (buildMachine)
 function chDeckRest(m,key,side){
@@ -261,14 +267,33 @@ function chGripFix(pose,item,B,sd){const hand=B&&B['hand_'+sd];if(!pose||!pose.a
   const fd=pose.fd.clone().normalize();const pd=pose.pal?pose.pal.clone():null;if(!pd)return pose;pd.sub(fd.clone().multiplyScalar(pd.dot(fd)));if(pd.lengthSq()<1e-6)return pose;pd.normalize();
   chFrameQ(fr.fd,fr.pal,wrQ);chFrameQ(fd,pd,wrQ2);const R=wrQ2.clone().multiply(wrQ.invert()); // Handkoordinaten -> gewünschte Weltlage
   pose.p.copy(pose.at).sub(item.position.clone().applyQuaternion(R));return pose;}
-// Schachtel in der Hand: Schachtelmitte an den Zielpunkt vor der Kamera (hdPackTarget), Finger schräg über die Rückseite, Handfläche zur Kamera
-function chPackPose(n,side){
+// ---- Posen fest im Bild (Kamera-Koordinaten: x rechts, y hoch, z vorn, in m ab Auge) ----
+// Die Hand steht damit wie in einem Ego-Shooter fest vor der Kamera (kein Nachziehen beim Laufen, kein Schaukeln), der Arm wird per IK
+// von der Schulter aus dazugerechnet. p = Handgelenk oder at = Ankerpunkt des Gegenstands am Handknochen (das Handgelenk ergibt sich daraus),
+// fd = Fingerrichtung, pal = Handflächenrichtung (aus der Fläche heraus), pole = Ellbogenrichtung, fp = Fingerhaltung, rate = Tempo pro s
+const CH_FPV={
+  pack:{fd:[.32,.86,.4],pal:[.38,-.22,-.9],fdP:[.18,.9,.4],palP:[.2,-.2,-.96],pole:[-.9,-.8,-.3],fp:'pack',rate:9}, // Hochformat (fdP/palP): frontaler, weil der weite Bildwinkel nahe Dinge am Rand stark verzerrt // Schachtel liegt in der Handfläche: Hand schräg von unten links, Vorderseite leicht gedreht und gekippt zur Kamera (man sieht die Oberseite), Daumen vorn, Finger hinten herum
+};
+const fpvV=(cm,a)=>new THREE.Vector3().addScaledVector(cm.cx,a[0]).addScaledVector(cm.cy,a[1]).addScaledVector(cm.cz,a[2]); // Kamera -> Welt (Richtung)
+const fpvP=(cm,a)=>cm.eye.clone().add(fpvV(cm,a)); // Kamera -> Welt (Punkt)
+function chCamFrame(){const cq=camera.quaternion;return {eye:camera.position,cx:new THREE.Vector3(1,0,0).applyQuaternion(cq),cy:new THREE.Vector3(0,1,0).applyQuaternion(cq),cz:new THREE.Vector3(0,0,-1).applyQuaternion(cq),ax:typeof HD!=='undefined'&&HD.ax?HD.ax:1};}
+function chCamPose(kind,cm,item,B,sd,at){
+  const D=CH_FPV[kind];if(!D)return null;const mir=sd==='r'&&D.mirror!==false?-1:1; // Posen sind für die linke Hand gedacht, rechts gespiegelt
+  const port=cm.ax<.9,Dfd=port&&D.fdP?D.fdP:D.fd,Dpal=port&&D.palP?D.palP:D.pal;const fd=new THREE.Vector3(Dfd[0]*mir,Dfd[1],Dfd[2]).normalize(),pal=new THREE.Vector3(Dpal[0]*mir,Dpal[1],Dpal[2]);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();
+  const q=chFrameQ(fd,pal,new THREE.Quaternion());let p;
+  const anchor=at?new THREE.Vector3().fromArray(at):D.at?new THREE.Vector3(D.at[0]*mir*cm.ax,D.at[1],D.at[2]):null;
+  if(anchor){const fr=item&&B&&typeof hdHandFrame==='function'?hdHandFrame(B,sd):null;
+    if(fr&&fr.pal&&item.parent===B['hand_'+sd]){chFrameQ(fr.fd,fr.pal,wrQ);const R=q.clone().multiply(wrQ.clone().invert());p=anchor.clone().sub(item.position.clone().applyQuaternion(R));} // Versatz Handgelenk->Gegenstand mit der gewünschten Handlage gedreht
+    else p=anchor.clone().addScaledVector(fd,-.12);}
+  else p=new THREE.Vector3(D.p[0]*mir*cm.ax,D.p[1],D.p[2]);
+  return {cam:true,p,q,pole:D.pole?new THREE.Vector3(D.pole[0]*mir,D.pole[1],D.pole[2]):null,fp:CH_FPOSE[D.fp]||CH_FPOSE.flat,rate:D.rate||8};
+}
+// Schachtel in der Hand: Schachtelmitte fest vor der Kamera (hdPackTarget), beim Rausholen/Wegstecken kommt sie von unten / geht nach unten
+function chPackPose(n,side,cm){
   if(typeof HD==='undefined'||!HD.pack||!HD.pack.visible||!HD.pack.parent||!HD.pack.parent.isBone)return null;
   const hand=n.rig.bones['hand_'+side];if(HD.pack.parent!==hand)return null;
-  const cq=camera.quaternion,t=hdPackTarget();const e=Math.min(1,HD.packT/.35),lift=HD.packSt==='out'?e:HD.packSt==='in'?1-e:0;t[1]-=.3*lift; // Rausholen: kommt von unten, Wegstecken: geht nach unten
-  const P=camera.position.clone().addScaledVector(new THREE.Vector3(1,0,0).applyQuaternion(cq),t[0]).addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(cq),t[1]).addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(cq),-t[2]);
-  const W=hdPackFrame(side);const pole=new THREE.Vector3(0,-1,0);
-  return chGripFix({p:P.clone(),at:P,fd:W.fd,pal:W.pal,fp:CH_FPOSE.pack,pole},HD.pack,n.rig.bones,side);
+  const t=hdPackTarget();const e=Math.min(1,HD.packT/.35),lift=HD.packSt==='out'?e:HD.packSt==='in'?1-e:0;
+  return chCamPose('pack',cm,HD.pack,n.rig.bones,side,[t[0],t[1]-.3*lift,-t[2]]);
 }
 // Ziele für beide Hände je nach Lage, dann IK mit weicher Gewichtung (auch für Mitspieler-Figuren)
 function chArmsStep(n,dt,ctx){
@@ -277,12 +302,26 @@ function chArmsStep(n,dt,ctx){
   ik.lean=(ik.lean||0)+((ctx.lean||0)-(ik.lean||0))*Math.min(1,dt*5);
   if(ik.lean>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz);boneRotWorld(B.spine_01,ax,-ik.lean*.26);boneRotWorld(B.spine_02,ax,-ik.lean*.34);boneRotWorld(B.neck_01,ax,ik.lean*.4);} // vorbeugen zum Pult, Kopf bleibt am Bildschirm
   const want={r:ctx.r||null,l:ctx.l||null};
-  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.1?p.t/.1:p.t<.28?1:Math.max(0,1-(p.t-.28)/.17);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k);if(b)want[p.side]={p:b,fd:chBtnFd(ctx.fx,ctx.fz),pal:new THREE.Vector3(0,-1,0),fp:CH_FPOSE.press};}
+  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.14?p.t/.14:p.t<.34?1:Math.max(0,1-(p.t-.34)/.16);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k);
+    if(b){const pal=CH_DECK_N.clone().negate().applyQuaternion(p.m.group.getWorldQuaternion(ikQ2));want[p.side]={p:b,fd:chBtnFd(ctx.fx,ctx.fz),pal,fp:CH_FPOSE.press,pole:new THREE.Vector3(-ctx.fx,-.35,-ctx.fz),free:true};
+    }}
+  // weit entfernte Tasten (links): Oberkörper dreht und beugt sich mit, statt dass der Arm sich verkrampft streckt
+  {const t=want.r;ik.helpT=0;if(t&&t.free&&B.upperarm_r){const d=B.upperarm_r.getWorldPosition(new THREE.Vector3()).distanceTo(t.p);ik.helpT=Math.max(0,Math.min(1,(d-.46)/.18));}} // auch in der Ruhelage auf einer linken Taste bleibt der Oberkörper gedreht
+  ik.help=(ik.help||0)+((ik.helpT||0)-(ik.help||0))*Math.min(1,dt*4);
+  if(ik.help>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz),up=new THREE.Vector3(0,1,0);boneRotWorld(B.spine_01,up,ik.help*.3);boneRotWorld(B.spine_02,up,ik.help*.35);boneRotWorld(B.spine_02,ax,-ik.help*.3);boneRotWorld(B.neck_01,up,-ik.help*.5);} // Drehung um die Hochachse bringt die rechte Schulter nach vorn-links, Kopf bleibt am Bildschirm
   ['r','l'].forEach(sd=>{const K=ik[sd],tgt=want[sd];
-    if(tgt){if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:10)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;}
-    else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0)K.has=false;}
+    if(tgt&&tgt.cam){const cm=ctx.cam,k=Math.min(1,dt*(tgt.rate||8)); // Pose fest im Bild: Glättung in Kamera-Koordinaten (zieht beim Laufen nicht nach)
+      if(!K.cp){K.cp=new THREE.Vector3();K.cq=new THREE.Quaternion();}
+      if(!K.camMode||!K.has){const hb=B['hand_'+sd],hp=hb.getWorldPosition(new THREE.Vector3()).sub(cm.eye);K.cp.set(hp.dot(cm.cx),hp.dot(cm.cy),hp.dot(cm.cz)); // Einstieg: ab der jetzigen Handlage
+        const pw=chPalmWorld(B,sd);let ok=false;if(pw){const f=new THREE.Vector3(pw.fw.dot(cm.cx),pw.fw.dot(cm.cy),pw.fw.dot(cm.cz)).normalize(),pl=new THREE.Vector3(pw.pal.dot(cm.cx),pw.pal.dot(cm.cy),pw.pal.dot(cm.cz));pl.sub(f.clone().multiplyScalar(pl.dot(f)));if(pl.lengthSq()>1e-6){chFrameQ(f,pl.normalize(),K.cq);ok=true;}}
+        if(!ok)K.cq.copy(tgt.q);K.camMode=true;K.has=true;}
+      K.cp.lerp(tgt.p,k);K.cq.slerp(tgt.q,k);K.cur.copy(fpvP(cm,K.cp.toArray()));
+      K.fd=fpvV(cm,new THREE.Vector3(1,0,0).applyQuaternion(K.cq).toArray());K.pal=fpvV(cm,new THREE.Vector3(0,1,0).applyQuaternion(K.cq).toArray());K.pole=tgt.pole?fpvV(cm,tgt.pole.toArray()):null;K.free=true;
+      K.w=Math.min(1,K.w+dt*4);K.fp=tgt.fp||null;}
+    else if(tgt){K.camMode=false;K.free=!!tgt.free;if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:7)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach
+    else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0){K.has=false;K.camMode=false;}}
     if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=K.pole||new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
-      if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w);
+      if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w,K.free);
       chFingers(B,sd,K,dt);}});
   CH_IKBONES.forEach(k=>{if(B[k])chBoneDone(B[k]);});
 }
@@ -316,6 +355,7 @@ function chFPStep(dt){
   if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
   R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
   n.root.visible=!locked&&EL.phase!=='moving'&&!(openId)&&(!focus||focus.type==='slot'); // nur frei laufend oder am Automaten; an Crash-Terminal/Tischen stünde der Körper vor der Kamera (Nutzer 2026-10-22)
+  const cut=sitting&&s.a==='slot'?1:0;if(R.cutVal!==cut){R.cutVal=cut;R.model.traverse(x=>{if(x.isSkinnedMesh&&x.material&&x.material.userData.cut)x.material.userData.cut.value=cut;});} // am Automaten nur Arme + Hände (Shader-Schnitt)
   chAnimate(n,dt);n.root.updateMatrixWorld(true);
   chFPArms(n,dt,s,sitting);
 }
@@ -331,16 +371,16 @@ function chFPArms(n,dt,s,sitting){
   if(slotM){const H=n.rig.bones.Head.getWorldPosition(new THREE.Vector3());F.M=H.clone().addScaledVector(f,.1).add(new THREE.Vector3(0,.04,0));F.mf=f.clone();F.mr=r.clone();F.mu=new THREE.Vector3(0,1,0);} // sitzend: Mund am Kopfknochen (Kamera steht vorm Bildschirm)
   else{const cq=camera.quaternion;F.mf=new THREE.Vector3(0,0,-1).applyQuaternion(cq);F.mr=new THREE.Vector3(1,0,0).applyQuaternion(cq);F.mu=new THREE.Vector3(0,1,0).applyQuaternion(cq);
     const mp=typeof HD_MOUTH!=='undefined'?HD_MOUTH:[.012,-.064,-.084];F.M=eye.clone().addScaledVector(F.mr,mp[0]).addScaledVector(F.mu,mp[1]).addScaledVector(F.mf,-mp[2]);} // Mund = Lippen unterhalb der Kamera, wie die Kippe im Mund (hdMouth)
-  const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};
-  if(slotM){ctx.lean=1;const pr=chDeckRest(slotM,'START','r');if(pr)ctx.r=pr;} // nur die rechte Hand liegt am Pult (START), die linke bleibt im Schoß (Nutzer 2026-10-22)
+  const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false,cam:chCamFrame()};
+  if(slotM){ctx.lean=1;const pr=chBtnRest(slotM,CHR.restKey||'START',fx,fz);if(pr)ctx.r=pr;} // nur die rechte Hand liegt am Pult (START), die linke bleibt im Schoß (Nutzer 2026-10-22)
   if(typeof HD!=='undefined'){const C=HD.cig,B=n.rig.bones;
     if(C&&C.where==='hand'){const st=HD.seq.length?HD.seq[0].to:'hand';ctx.r=chGripFix(chHandPose(st==='handMouth'?'cigMouth':st==='handAsh'?'cigAsh':'cig',F),HD.mc,B,'r');ctx.fast=st==='handAsh';}
     if(HD.drink){const st=HD.gq&&HD.gq.length?HD.gq[0].to:'glass';
       if(st==='glassSip')ctx.l=chGripFix(chHandPose('glassSip',F),HD.glass,B,'l');
       else if(slotM){const g=slotM.group;ctx.l={p:g.localToWorld(new THREE.Vector3(-.36,1.1,.64)),fd:F.v(.86,0,-.5),pal:F.v(0,1,0),fp:CH_FPOSE.glass};} // Glas aufrecht in der Hand links vorn am Pult (Handfläche zur Mitte)
       else ctx.l=chHandPose('glass',F);}
-    if(HD.packSt!=='off'){const pr=chPackPose(n,'r'),pl=chPackPose(n,'l');if(pr)ctx.r=pr;if(pl)ctx.l=pl;}} // Schachtel in der Hand (links, beim Trinken rechts)
-  if(CHR.press){ctx.press=CHR.press;if(CHR.press.t>.45)CHR.press=null;}
+    if(HD.packSt!=='off'){const pr=chPackPose(n,'r',ctx.cam),pl=chPackPose(n,'l',ctx.cam);if(pr)ctx.r=pr;if(pl)ctx.l=pl;}} // Schachtel in der Hand (links, beim Trinken rechts), fest im Bild
+  if(CHR.press){ctx.press=CHR.press;if(CHR.press.t>.5)CHR.press=null;}
   if(ctx.r||ctx.l||ctx.press||ctx.lean||(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))chArmsStep(n,dt,ctx);
 }
 // Mitspieler: Arm zum Mund beim Ziehen oder Schluck, Hand an der Starttaste beim neuen Dreh, am Automaten Hände aufs Pult
@@ -352,10 +392,10 @@ function chAvatarArms(a,dt){
   const fx=f.x,fz=f.z,rx=-fz,rz=fx;const r=new THREE.Vector3(rx,0,rz);const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};const H=n.head.getWorldPosition(new THREE.Vector3());
   const F={pt:(fw,ri,d)=>new THREE.Vector3(H.x+fx*fw+rx*ri,H.y-d,H.z+fz*fw+rz*ri),v:(a,b,c)=>new THREE.Vector3(fx*a+rx*b,c,fz*a+rz*b).normalize(),
     M:H.clone().addScaledVector(f,.1).add(new THREE.Vector3(0,.04,0)),mf:f.clone(),mr:r.clone(),mu:new THREE.Vector3(0,1,0)};F.sp=F.pt;
-  if(slot){ctx.lean=1;const pr=chDeckRest(slot,'START','r');if(pr)ctx.r=pr;} // wie beim eigenen Körper: nur die rechte Hand am Pult
+  if(slot){ctx.lean=1;const pr=chBtnRest(slot,a.restKey||'START',fx,fz);if(pr)ctx.r=pr;} // wie beim eigenen Körper: nur die rechte Hand am Pult
   const I=n.items;if(it&&it.c===2)ctx.r=chGripFix(chHandPose((a.itDrag&&now-a.itDrag<1.3)?'cigMouth':'cig',F),I&&I.ch,n.rig.bones,'r');
   if(it&&it.d)ctx.l=chGripFix(chHandPose((a.itSip&&now-a.itSip<1.2)?'glassSip':'glass',F),I&&I.gl,n.rig.bones,'l');
-  if(a.press){ctx.press=a.press;if(a.press.t>.45)a.press=null;}
+  if(a.press){ctx.press=a.press;if(a.press.t>.5)a.press=null;}
   chArmsStep(n,dt,ctx);
 }
 // Kamera weich am Kopfknochen: v wird gefüllt, true wenn verfügbar (nur beim Gehen/Stehen, nicht im Spiel-Fokus)

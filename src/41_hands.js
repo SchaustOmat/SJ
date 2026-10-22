@@ -42,10 +42,10 @@ function hdMouth(){
 // Handy nah und groß (zum Tippen), am Automaten weiter weg und über der Tastenleiste (Hochformat mittig, quer rechts neben den Walzen)
 function hdPackTarget(){
   const tv=Math.tan(camera.fov*Math.PI/360),asp=LW()/LH();let d,sx,sy;
-  if(atSlot()){const bt=hdBarTop();d=.4;sy=(-1+2*bt)+.06+(.046*hdPackScale()/d)/tv;sx=asp<1?0:.5;} // am Automaten: Einblendung (Kamera steht weit vom Körper)
-  else if(PC){d=.27;sx=.07;sy=-.62;}else if(asp<1){d=.135;sx=0;sy=-.46;}else{d=.17;sx=.06;sy=-.32;} // Handy: nah und groß (Nutzer 2026-10-22)
+  if(atSlot()){const bt=hdBarTop();d=PC?.32:asp<1?.34:.3;sy=(-1+2*bt)+.05+(.046*hdPackScale()/d)/tv;sx=asp<1?.42:.5;} // am Automaten: Einblendung über der Tastenleiste (quer rechts neben den Walzen)
+  else if(PC){d=.27;sx=.05;sy=-.6;}else if(asp<1){d=.27;sx=.08;sy=-.45;}else{d=.26;sx=.02;sy=-.5;} // in der Hand: Handy etwas näher (Nutzer 2026-10-22: groß genug zum Tippen, aber nicht riesig)
   return [tv*asp*sx*d,tv*sy*d,-d];}
-function hdPackScale(){return PC?1:LW()<LH()?(atSlot()?1.7:2.2):(atSlot()?1.5:1.7);} // Einblendung (ohne Körper / am Automaten): Handy-Schachtel groß genug zum Tippen (Nutzer 2026-10-22)
+function hdPackScale(){return atSlot()?1:PC?1.15:LW()<LH()?1.3:1.25;} // Schachtel etwas größer als echt, am Handy deutlich (zum Tippen, Nutzer 2026-10-22)
 function hdPose(name){
   if(name&&typeof name==='object')return name;
   if(name==='mouth'||name==='mouthSlot')return hdMouth();
@@ -166,7 +166,7 @@ function packStep(dt){
   HD.packT+=dt;const k=Math.min(1,HD.packT/.35),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
   const rig=atSlot()?null:hdFpRig();
   if(rig){ // Schachtel liegt in der echten Hand (Arm per IK, Ziel in chFPArms); beim Wegstecken sinkt sie mit dem Arm
-    const side=HD.drink?'r':'l',hb=rig.bones['hand_'+side];if(Pk.parent!==hb){hb.add(Pk);Pk.scale.setScalar(1);HD.handL.visible=false;}
+    const side=HD.drink?'r':'l',hb=rig.bones['hand_'+side];if(Pk.parent!==hb){hb.add(Pk);Pk.scale.setScalar(hdPackScale());HD.handL.visible=false;}
     const fr=hdHandFrame(rig.bones,side);if(fr)hdPackToHand(Pk,fr,side);}
   else{if(Pk.parent!==HD.rig){HD.rig.add(Pk);Pk.scale.setScalar(hdPackScale());HD.handL.visible=true;}
     const fr=hdPose(HD.packSt==='out'?'packIn':'packOut'),tt=hdPose(HD.packSt==='out'?'packOut':'packIn'),fp=PX(fr.p),tp=PX(tt.p);
@@ -264,12 +264,11 @@ function hdHandFrame(B,side){const hb=B['hand_'+side],mid=B['middle_01_'+side];i
 // (etwa 40° von der Handflächen-Normalen zu den Fingerspitzen hin, wie beim echten Halten), der Filter sitzt 2 cm hinter dem Griffpunkt
 function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const dir=fr.pal.clone().multiplyScalar(-.75).addScaledVector(fr.fd,.65).normalize();const base=fr.grip?fr.grip.clone().addScaledVector(fr.fd,.012):fr.fd.clone().multiplyScalar(.105);obj.position.copy(base).addScaledVector(dir,-.022);obj.quaternion.setFromUnitVectors(hdY,dir);}
   else{obj.position.copy(fr.fd.clone().multiplyScalar(.1));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
-// Schachtel in der Hand: Boden-Ecke im Handballen, Finger schräg über die Rückseite, Daumen vorn; Vorderseite zeigt zur Kamera, oben kippt leicht weg
-function hdPackFrame(side){const cq=camera.quaternion,f=new THREE.Vector3(0,0,-1).applyQuaternion(cq),u=new THREE.Vector3(0,1,0).applyQuaternion(cq);
-  const up=u.clone().multiplyScalar(.9).addScaledVector(f,.44).normalize(),front=u.clone().multiplyScalar(.44).addScaledVector(f,-.9).normalize(),right=new THREE.Vector3().crossVectors(up,front).normalize();
-  return {up,front,right,fd:up.clone().multiplyScalar(.85).addScaledVector(right,side==='l'?.53:-.53).normalize(),pal:front};} // Finger laufen schräg nach oben über die Rückseite
-function hdPackToHand(obj,fr,side){if(!fr)return;const base=fr.knuck?fr.knuck.clone():fr.fd.clone().multiplyScalar(.11);obj.position.copy(base).addScaledVector(fr.fd,.055);if(fr.pal)obj.position.addScaledVector(fr.pal,.024); // Knöchel unter der Unterkante, Rückseite liegt auf den Fingern
-  const W=hdPackFrame(side);hdM4.makeBasis(W.right,W.up,W.front);obj.quaternion.copy(fr.hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromRotationMatrix(hdM4));}
+// Schachtel in der Hand: starr am Handknochen (Rückseite liegt auf den Fingern, Daumen vorn); Lage nur aus der Handform (Knöchel, Finger-,
+// Handflächenrichtung), nicht aus der Kamera – so klebt und wackelt nichts. Wohin die Schachtel im Bild kommt, bestimmt die Handpose (CH_FPV.pack)
+function hdPackToHand(obj,fr,side){if(!fr||!fr.pal)return;const sc=obj.scale.x||1;const base=fr.knuck?fr.knuck.clone():fr.fd.clone().multiplyScalar(.11);
+  obj.position.copy(base).addScaledVector(fr.fd,.025*sc).addScaledVector(fr.pal,.011*sc+.02); // Rückseite liegt auf den Fingern (2 cm vor der Handfläche), Oberkante knapp unter den Fingerspitzen
+  const x=new THREE.Vector3().crossVectors(fr.fd,fr.pal).normalize();hdM4.makeBasis(x,fr.fd,fr.pal);obj.quaternion.setFromRotationMatrix(hdM4);} // oben = Finger, vorn = aus der Handfläche
 const hdM4=new THREE.Matrix4();
 function hdGlassToHand(obj,fr){if(!fr)return;const base=fr.knuck?fr.knuck.clone().addScaledVector(fr.fd,.005):fr.fd.clone().multiplyScalar(.075);obj.position.copy(base);if(fr.pal)obj.position.addScaledVector(fr.pal,.04);}
 function cigTipWorld(){const P=HD.mc.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0);HD.rig.updateMatrixWorld(true);return HD.mc.localToWorld(hdTmp.clone());}
