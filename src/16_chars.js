@@ -68,6 +68,7 @@ function chLibPrep(scene){
     for(let i=0;i<n;i++){const x=pos.getX(i),y=pos.getY(i),zz=pos.getZ(i),ax=Math.abs(x);let v=1;
       if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.41)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
       z[i]=v;}
+    for(let i=0;i<n;i++)if(z[i]===1&&Math.abs(pos.getX(i))>H*.135)z[i]=5; // Ärmel (Jacke an den Armen) = Zone 5, Weste/Jacke am Rumpf bleibt 1
     g.setAttribute('zone',new THREE.BufferAttribute(z,1));
     // Arm-Kennung (T-Pose: Arme waagerecht): 1 = Arm/Hand, 0 = Rest – für die Ich-Perspektive am Automaten (nur Arme zeichnen)
     let y0=1e9,y1=-1e9;for(let i=0;i<n;i++){if(Math.abs(pos.getX(i))>H*.3){const y=pos.getY(i);if(y<y0)y0=y;if(y>y1)y1=y;}}
@@ -81,8 +82,8 @@ function chBodyMat(map,cols){
   m.userData.pal=cols.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
   m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;attribute float armw;varying float vZone;varying float vArm;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;vArm=armw;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;varying float vArm;uniform vec3 pal[5];uniform float fpCut;')
-      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:pal[4]*sh_;diffuseColor.rgb=c;}');};
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;varying float vArm;uniform vec3 pal[6];uniform float fpCut;')
+      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:vZone<4.5?pal[4]*sh_:pal[5]*sh_;diffuseColor.rgb=c;}');};
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
@@ -95,16 +96,17 @@ function chAttach(n,o){
   let model;const bones={};
   if(CHR.lib){
     model=THREE.SkeletonUtils.clone(CHR.lib);model.traverse(x=>{if(x.isBone){bones[x.name]=x;if(CH_FINGER_RE.test(x.name))x.userData.rest=x.quaternion.clone();}});
-    const hairName=o.hairStyle||(fem?CH_HAIR_F[seed%CH_HAIR_F.length]:CH_HAIR_M[seed%2]);const beard=o.beard!==undefined?!!o.beard:(!fem&&(seed%3===0));const skin=o.skin||CH_SKIN[(seed*5+1)%CH_SKIN.length];
-    const hairCol=o.hair!==undefined?o.hair:CH_HAIR[(seed*7+3)%CH_HAIR.length];
-    const shirt=0xf0ece4,shoes=0x151214,trousers=o.pants||col;
-    const sk=new THREE.Color(skin,skin,skin);const pal=fem?[sk,col,col,shoes,shirt]:[sk,col,trousers,shoes,shirt];
+    const hairName=o.hairStyle||(fem?CH_HAIR_F[(seed*3+1)%CH_HAIR_F.length]:CH_HAIR_M[(seed*2+1)%3]);const beard=o.beard!==undefined?!!o.beard:(!fem&&(seed%3===0));const skin=o.skin||CH_SKIN[(seed*3+1)%CH_SKIN.length];
+    const hairCol=o.hair!==undefined?o.hair:CH_HAIR[(seed*2+3)%CH_HAIR.length]; // (Faktoren teilerfremd zur Listenlänge, sonst hätten alle denselben Ton – war bis 2026-10-22 so)
+    const vest=o.vest!==undefined?!!o.vest:/CROUPIER|DEALERIN|KARTENGEBER/.test(o.name||''); // Croupier: schwarze Weste, weißes Hemd mit weißen Ärmeln (Sinan 2026-10-22)
+    const shirt=vest?0xf6f4ee:0xf0ece4,shoes=0x151214,trousers=vest?0x101014:(o.pants||col),jacket=vest?0x101014:col,sleeves=vest?0xf6f4ee:col;
+    const sk=new THREE.Color(skin,skin,skin);const pal=fem?[sk,jacket,jacket,shoes,shirt,sleeves]:[sk,jacket,trousers,shoes,shirt,sleeves];
     model.traverse(x=>{if(!x.isSkinnedMesh)return;const nm=x.name;const bodyOf=fem?'F':'M';
       const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
       x.visible=show;if(!show)return;
       const src=Array.isArray(x.material)?x.material[0]:x.material;
       if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal);
-      else if(nm.startsWith('Hair_'))x.material=chLamMat(src,hairCol);
+      else if(nm.startsWith('Hair_')||nm.startsWith('Brows_'))x.material=chLamMat(src,hairCol); // Brauen in Haarfarbe (waren weiß, Sinan 2026-10-22)
       else x.material=chLamMat(src);
       if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}});
   }else{ // Rückfall: Mannequin aus anim.glb

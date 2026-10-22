@@ -707,7 +707,7 @@ function startGamble(m,kind){
 const LAD_REAL=[15,30,60,120,240,400,800,1200,2000,3200,5200,8400,10000,14000,18000,22000,26000,30000];
 // Über 2 € Einsatz wächst die ganze Leiter mit (×Einsatz/2 €, ganze Faktoren): höher spielen lohnt sich, Chancen bleiben gleich
 const LADC={};
-function ladFactor(m){return Math.max(1,Math.round(totalBet(m)/200));}
+function ladFactor(m){return 1;} // Leiter bleibt immer bei 0,15 … 140 € / RISIKO+ bis 300 € (Sinan 2026-10-22: „Leiter nur bis 300 €“; Einsätze gehen eh nur bis 2 €)
 const F_I=12;   // 100 € – Mindestrückfall in RISIKO+
 const TOP_I=13; // 140 € – Spitze der normalen Leiter, ab hier RISIKO+
 const PLUS_I=14; // erste Stufe der Risiko+-Spalte (180 €)
@@ -1011,7 +1011,7 @@ function goldSword(){if(goldSword.c)return goldSword.c;const c=document.createEl
   x.globalCompositeOperation='source-atop';const gr=x.createLinearGradient(0,0,48,48);gr.addColorStop(0,'rgba(255,250,190,.75)');gr.addColorStop(.5,'rgba(255,190,30,.6)');gr.addColorStop(1,'rgba(180,90,0,.7)');x.fillStyle=gr;x.fillRect(0,0,48,48);return goldSword.c=c;}
 // Tizona: Freispiele kaufen (100× Einsatz): 10 Freispiele auf Kauf-Walzen mit mehr Schwertern, die Schwerter müssen erst einlaufen -> im Schnitt ~98 % zurück
 const TZ_BUY={x:58,y:3,w:76,h:16};
-function tzBuyable(m){return m.G.walkWild&&!m.fs&&!m.remote&&(m.state==='idle'||m.state==='show')&&!wwPend(m)&&!m.info;}
+function tzBuyable(m){return false;} // Freispiele kaufen ist abgeschaltet (Sinan 2026-10-22); Code bleibt für später
 function tzBuyTap(m,uv){if(!tzBuyable(m)||!uv)return false;const x=uv.x*320,y=(1-uv.y)*240,B=TZ_BUY;
   if(x<B.x-3||x>B.x+B.w+3||y<B.y-3||y>B.y+B.h+3)return false;
   const price=100*totalBet(m);
