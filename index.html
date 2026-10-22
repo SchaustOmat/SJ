@@ -753,7 +753,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792620466";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792629114";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -1925,6 +1925,74 @@ function chAnimate(n,dt){
   R.mixer.update(dt*R.speed*(R.tScale||1));
   if(R.hideHead){R.bones.Head.scale.setScalar(.001);}
 }
+// ---- Arm-Steuerung (zwei Knochen: Oberarm, Unterarm; Ziel = Handgelenk in Weltkoordinaten) ----
+const ikI=new THREE.Quaternion(),ikA=new THREE.Vector3(),ikB=new THREE.Vector3(),ikQ=new THREE.Quaternion(),ikQ2=new THREE.Quaternion(),ikQ3=new THREE.Quaternion();
+function boneAim(bone,fromW,toW,w){ // dreht den Knochen in der Welt so, dass Richtung fromW zu toW wird (Anteil w)
+  const cur=ikA.copy(fromW).normalize(),des=ikB.copy(toW).normalize();if(cur.lengthSq()<1e-8||des.lengthSq()<1e-8)return;
+  ikQ.setFromUnitVectors(cur,des);if(w<1)ikQ.slerp(ikI,1-w);
+  const pq=bone.parent.getWorldQuaternion(ikQ2);const lq=ikQ3.copy(pq).invert().multiply(ikQ).multiply(pq);bone.quaternion.premultiply(lq);bone.updateMatrixWorld(true);
+}
+const ikC=new THREE.Vector3();
+// three.js schreibt einen Knochen nur neu, wenn sich der Animationswert ändert; bei ruhigen Posen bliebe unsere Drehung
+// sonst stehen und würde sich Bild für Bild aufsummieren -> Ausgangswert merken und vor jeder Änderung zurücksetzen
+const CH_IKBONES=['spine_01','spine_02','neck_01','upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l'];
+function chBoneBase(bone){const u=bone.userData;if(!u.q0){u.q0=new THREE.Quaternion();u.q1=new THREE.Quaternion();u.qset=false;}
+  if(u.qset&&bone.quaternion.equals(u.q1))bone.quaternion.copy(u.q0);u.q0.copy(bone.quaternion);}
+function chBoneDone(bone){const u=bone.userData;u.q1.copy(bone.quaternion);u.qset=true;}
+function boneRotWorld(bone,axis,angle){ // dreht den Knochen um eine Welt-Achse
+  if(!bone||!angle)return;ikQ.setFromAxisAngle(ikC.copy(axis).normalize(),angle);const pq=bone.parent.getWorldQuaternion(ikQ2);const lq=ikQ3.copy(pq).invert().multiply(ikQ).multiply(pq);bone.quaternion.premultiply(lq);bone.updateMatrixWorld(true);
+}
+function chArmIK(n,side,target,w,pole){
+  const B=n.rig.bones,up=B['upperarm_'+side],lo=B['lowerarm_'+side],ha=B['hand_'+side];if(!up||!lo||!ha||w<=0)return;
+  const S=up.getWorldPosition(new THREE.Vector3()),E=lo.getWorldPosition(new THREE.Vector3()),W=ha.getWorldPosition(new THREE.Vector3());
+  const L1=S.distanceTo(E),L2=E.distanceTo(W);const toT=target.clone().sub(S);let d=toT.length();const dmax=(L1+L2)*.985;if(d>dmax){toT.multiplyScalar(dmax/d);d=dmax;}if(d<.02)return;
+  const cosA=Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d))),a=Math.acos(cosA);
+  const dir=toT.clone().normalize();const pv=(pole?pole.clone():new THREE.Vector3(0,-1,0));pv.sub(dir.clone().multiplyScalar(pv.dot(dir)));if(pv.lengthSq()<1e-6){pv.set(0,-1,0);pv.sub(dir.clone().multiplyScalar(pv.dot(dir)));}if(pv.lengthSq()<1e-6)return;pv.normalize();
+  const Edes=S.clone().add(dir.clone().multiplyScalar(Math.cos(a)*L1)).add(pv.multiplyScalar(Math.sin(a)*L1));
+  boneAim(up,E.clone().sub(S),Edes.sub(S),w);
+  const E2=lo.getWorldPosition(new THREE.Vector3()),W2=ha.getWorldPosition(new THREE.Vector3());
+  boneAim(lo,W2.sub(E2),S.clone().add(toT).sub(E2),w);
+}
+CHR.press=null;
+// Taste am Automaten gedrückt (von pressButton): die passende Hand geht zur Taste (sitzend immer, stehend bis 1,7 m)
+function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
+  const k=key==='KARTE'?'RISIKO':key;CHR.press={m,key:m.btns[k]?k:'START',side:chBtnSide(k),t:0};}
+function chBtnSide(k){return /INFO|LINIEN|EINSATZ|AUTO/.test(k)?'l':'r';}
+function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
+// Handgelenk-Ziel über einer Taste: etwas zum Spieler hin und darüber, damit die Finger auf der Taste liegen (k=1: gedrückt)
+function chBtnWrist(m,key,fx,fz,k){const b=chBtnPos(m,key,new THREE.Vector3());if(!b)return null;b.x-=fx*.085;b.z-=fz*.085;b.y+=.075-.04*(k||0);return b;}
+// Handposen (Welt): Handgelenk p, Fingerrichtung fd, Handflächenrichtung pal; pt(vor,rechts,unter) ab Auge/Kopf, f/r = vorn/rechts
+function chHandPose(kind,pt,f,r,mouth){
+  const v=(a,b,c)=>new THREE.Vector3(f.x*a+r.x*b,c,f.z*a+r.z*b).normalize(); // a=vor, b=rechts, c=hoch
+  switch(kind){
+    case 'cig':return {p:pt(.3,.2,.3),fd:v(.45,.1,-.85),pal:v(-.6,-.6,-.3)}; // Kippe locker vor dem Bauch, Glut nach vorn-außen
+    case 'cigMouth':{const p=pt(.12,.07,.17);return {p,fd:v(.15,-.9,.35),pal:mouth.clone().sub(p)};} // Handfläche zum Mund, Finger quer unter dem Gesicht
+    case 'cigAsh':return {p:pt(.31,.23,.38),fd:v(.7,.2,-.65),pal:v(-.3,-.5,-.8)};
+    case 'glass':return {p:pt(.28,-.2,.33),fd:v(.8,.2,-.3),pal:v(-.4,.85,0)}; // Glas vor dem Bauch, Handfläche zur Mitte
+    case 'glassSip':{const fd=v(.6,.2,.5),pal=v(-.5,.8,0);const g=mouth.clone().addScaledVector(new THREE.Vector3(f.x,0,f.z),.05).add(new THREE.Vector3(0,-.04,0));return {p:g.addScaledVector(fd,-.055).addScaledVector(pal,-.035),fd,pal};} // Glasboden etwas vor und unter dem Mund, Rand kippt an die Lippen
+  }return null;
+}
+// Ziele für beide Hände je nach Lage, dann IK mit weicher Gewichtung (auch für Mitspieler-Figuren)
+function chArmsStep(n,dt,ctx){
+  const ik=n.ik||(n.ik={r:{w:0,cur:new THREE.Vector3(),has:false},l:{w:0,cur:new THREE.Vector3(),has:false},lean:0});
+  const B=n.rig.bones;CH_IKBONES.forEach(k=>{if(B[k])chBoneBase(B[k]);});n.root.updateMatrixWorld(true);
+  ik.lean=(ik.lean||0)+((ctx.lean||0)-(ik.lean||0))*Math.min(1,dt*5);
+  if(ik.lean>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz);boneRotWorld(B.spine_01,ax,-ik.lean*.26);boneRotWorld(B.spine_02,ax,-ik.lean*.34);boneRotWorld(B.neck_01,ax,ik.lean*.4);} // vorbeugen zum Pult, Kopf bleibt am Bildschirm
+  const want={r:ctx.r||null,l:ctx.l||null};
+  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.1?p.t/.1:p.t<.28?1:Math.max(0,1-(p.t-.28)/.17);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k);if(b)want[p.side]={p:b,fd:new THREE.Vector3(ctx.fx*.8,-.6,ctx.fz*.8),pal:new THREE.Vector3(0,-1,0)};}
+  ['r','l'].forEach(sd=>{const K=ik[sd],tgt=want[sd];
+    if(tgt){if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:10)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;}
+    else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0)K.has=false;}
+    if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
+      const hb=B['hand_'+sd],mid=B['middle_01_'+sd],th=B['thumb_01_'+sd];
+      if(hb&&mid&&K.fd){const hp=hb.getWorldPosition(new THREE.Vector3()),mp=mid.getWorldPosition(new THREE.Vector3());boneAim(hb,mp.sub(hp),K.fd,K.w);} // Finger in Zielrichtung
+      if(hb&&mid&&th&&K.pal){ // Handfläche: um die Fingerachse drehen, bis sie in die gewünschte Richtung zeigt
+        const hp=hb.getWorldPosition(new THREE.Vector3()),fw=mid.getWorldPosition(new THREE.Vector3()).sub(hp).normalize(),tw=th.getWorldPosition(new THREE.Vector3()).sub(hp).normalize();
+        const cur=sd==='r'?new THREE.Vector3().crossVectors(fw,tw):new THREE.Vector3().crossVectors(tw,fw); // aus der Handfläche heraus
+        const pc=cur.sub(fw.clone().multiplyScalar(cur.dot(fw))),pd=K.pal.clone().sub(fw.clone().multiplyScalar(K.pal.dot(fw)));
+        if(pc.lengthSq()>1e-6&&pd.lengthSq()>1e-6){pc.normalize();pd.normalize();const ang=Math.atan2(new THREE.Vector3().crossVectors(pc,pd).dot(fw),pc.dot(pd));boneRotWorld(hb,fw,ang*K.w);}}}});
+  CH_IKBONES.forEach(k=>{if(B[k])chBoneDone(B[k]);});
+}
 // ---- eigener Körper in der Ich-Perspektive ----
 function chFPStep(dt){
   if(CHR.fail||!CHR.ready||!started)return;
@@ -1934,12 +2002,46 @@ function chFPStep(dt){
   const s=typeof mpLocalState==='function'?mpLocalState():{x:P.x,z:P.z,y:P.yaw+Math.PI,a:'walk'};
   const sitting=s.a==='slot'||s.a==='poker'||s.a==='hilo'||s.a==='mtable';
   if(sitting!==R.sit){R.sit=sitting;R.model.position.y=sitting?chSitOffset(n):0;}
-  n.root.position.set(s.x,0,s.z);n.root.rotation.y=s.y;
+  const lean=s.a==='slot'&&n.ik?n.ik.lean||0:0;n.root.position.set(s.x+Math.sin(s.y)*.18*lean,0,s.z+Math.cos(s.y)*.18*lean);n.root.rotation.y=s.y; // am Automaten etwas vorrücken (Hände ans Pult)
   const d=Math.hypot(s.x-n.lx,s.z-n.lz);n.lx=s.x;n.lz=s.z;const v=dt>0?d/dt:0;n.v+=(v-n.v)*Math.min(1,dt*10);
   if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
   R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
   n.root.visible=!locked&&EL.phase!=='moving'&&!(openId);
   chAnimate(n,dt);n.root.updateMatrixWorld(true);
+  chFPArms(n,dt,s,sitting);
+}
+// Hände des eigenen Körpers: am Pult, an Tasten, mit Kippe oder Glas
+function chFPArms(n,dt,s,sitting){
+  const slotM=sitting&&s.a==='slot'&&typeof focus!=='undefined'&&focus&&focus.m?focus.m:null;
+  const eye=camera.position;const f=chV.set(0,0,-1).applyQuaternion(camera.quaternion);f.y=0;if(f.lengthSq()<1e-6)f.set(-Math.sin(P.yaw),0,-Math.cos(P.yaw));f.normalize();
+  if(slotM)f.set(Math.sin(s.y),0,Math.cos(s.y)); // am Automaten zählt die Sitzrichtung (Kamera fährt erst noch hin)
+  const fx=f.x,fz=f.z,rx=-fz,rz=fx;const r=new THREE.Vector3(rx,0,rz); // rechts = vorn x oben
+  const pt=(fw,ri,d)=>new THREE.Vector3(eye.x+fx*fw+rx*ri,eye.y-d,eye.z+fz*fw+rz*ri);const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};
+  const dn=new THREE.Vector3(fx*.8,-.6,fz*.8),down=new THREE.Vector3(0,-1,0); // Finger nach vorn-unten, Handfläche aufs Pult
+  if(slotM){ctx.lean=1;const pr=chBtnWrist(slotM,'START',fx,fz,0),pl=chBtnWrist(slotM,'EINSATZ',fx,fz,0);if(pr)ctx.r={p:pr,fd:dn,pal:down};if(pl)ctx.l={p:pl,fd:dn,pal:down};}
+  if(typeof HD!=='undefined'){const C=HD.cig;const mouth=pt(.07,0,.1);
+    if(C&&C.where==='hand'){const st=HD.seq.length?HD.seq[0].to:'hand';ctx.r=chHandPose(st==='handMouth'?'cigMouth':st==='handAsh'?'cigAsh':'cig',pt,f,r,mouth);ctx.fast=st==='handAsh';}
+    if(HD.drink){const st=HD.gq&&HD.gq.length?HD.gq[0].to:'glass';
+      if(st==='glassSip')ctx.l=chHandPose('glassSip',pt,f,r,mouth);
+      else if(slotM){const b=chBtnWrist(slotM,'EINSATZ',fx,fz,0);if(b){b.y+=.06;ctx.l={p:b,fd:new THREE.Vector3(fx*.8-rx*.2,-.3,fz*.8-rz*.2).normalize(),pal:new THREE.Vector3(-fx*.4+rx*.85,0,-fz*.4+rz*.85).normalize()};}}
+      else ctx.l=chHandPose('glass',pt,f,r,mouth);}}
+  if(CHR.press){ctx.press=CHR.press;if(CHR.press.t>.45)CHR.press=null;}
+  if(ctx.r||ctx.l||ctx.press||ctx.lean||(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))chArmsStep(n,dt,ctx);
+}
+// Mitspieler: Arm zum Mund beim Ziehen oder Schluck, Hand an der Starttaste beim neuen Dreh, am Automaten Hände aufs Pult
+function chAvatarArms(a,dt){
+  const n=a.n;if(!n||!n.rig||!n.root.visible)return;const it=a.it;
+  const slot=a.mirror&&n.rig.sit&&a.mirror.btns?a.mirror:null;const L=n.ik?n.ik.lean||0:0;n.root.position.z=slot||L>.001?.18*L:0;
+  if(!slot&&!(it&&(it.c===2||it.d))&&!a.press&&!(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))return;
+  n.root.updateMatrixWorld(true);const f=chV.set(0,0,1).applyQuaternion(n.root.getWorldQuaternion(ikQ2));f.y=0;if(f.lengthSq()<1e-6)return;f.normalize();
+  const fx=f.x,fz=f.z,rx=-fz,rz=fx;const r=new THREE.Vector3(rx,0,rz);const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false};const H=n.head.getWorldPosition(new THREE.Vector3());
+  const pt=(fw,ri,d)=>new THREE.Vector3(H.x+fx*fw+rx*ri,H.y-d,H.z+fz*fw+rz*ri);
+  const dn=new THREE.Vector3(fx*.8,-.6,fz*.8),down=new THREE.Vector3(0,-1,0),mouth=pt(.1,0,-.04);
+  if(slot){ctx.lean=1;const pr=chBtnWrist(slot,'START',fx,fz,0),pl=chBtnWrist(slot,'EINSATZ',fx,fz,0);if(pr)ctx.r={p:pr,fd:dn,pal:down};if(pl)ctx.l={p:pl,fd:dn,pal:down};}
+  if(it&&it.c===2)ctx.r=chHandPose((a.itDrag&&now-a.itDrag<1.3)?'cigMouth':'cig',pt,f.clone(),r,mouth);
+  if(it&&it.d)ctx.l=chHandPose((a.itSip&&now-a.itSip<1.2)?'glassSip':'glass',pt,f.clone(),r,mouth);
+  if(a.press){ctx.press=a.press;if(a.press.t>.45)a.press=null;}
+  chArmsStep(n,dt,ctx);
 }
 // Kamera weich am Kopfknochen: v wird gefüllt, true wenn verfügbar (nur beim Gehen/Stehen, nicht im Spiel-Fokus)
 function chEye(v){
@@ -2185,7 +2287,8 @@ function updateButtons(m){
   for(const k in map){const b=o[map[k]];setBtn(m,k,b.label,b.color,b.lit,b.blink);}
   if(typeof svButtons==='function')svButtons(m);
 }
-function pressButton(m,key){
+function pressButton(m,key){if(typeof chPress==='function')chPress(m,key); // eigene Hand geht zur Taste
+  
   if(key==='RISIKO')key='KARTE';
   // Leiter ist immer drückbar (Anzeige wird sofort abgeschlossen) – nur die AUSSPIELUNG läuft immer komplett durch
   if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;{const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
@@ -5741,7 +5844,7 @@ function mirrorInto(a,m,gx,credit){
   if(m.fs&&gx.fs){m.fs.n=gx.fs[0];m.fs.total=gx.fs[1];m.fs.special=spc;if(m.fs.sh!==gx.sh){m.fs.sh=gx.sh;m.topDirty=true;}}
   if(!gx.fs&&m.fs){m.fs=null;m.topDirty=true;}
   // neuer Spin: Ergebnis steht schon fest -> Walzen im selben Takt wie beim Spieler drehen und anhalten lassen
-  if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
+  if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;if(a.mirror===m&&a.n&&a.n.rig)a.press={m,key:'START',side:'r',t:0};m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
     m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,(gx.uf===2?'buy':!!gx.uf))[i].length);m.useFs=gx.uf===2?'buy':!!gx.uf;m.grid=SlotEngine.grid(m.G,m.stops,(gx.uf===2?'buy':!!gx.uf));const el=gx.el||0,f=gx.fa||1;
     m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.target=m.stops[i];r.teased=false;r.land=null;r.vel=0;r.speed=28;
       r.t0=now-el+i*.045;r.stopAt=Math.max(now+.05+i*.06,now-el+(m.G.special?.75:(.55+i*.2))*f);});}
@@ -6672,7 +6775,7 @@ function hdBuild(){
   const gm=new THREE.MeshPhongMaterial({color:0xe8f4ff,transparent:true,opacity:.28,shininess:120,specular:0xffffff,side:THREE.DoubleSide});
   mesh(new THREE.CylinderGeometry(.03,.025,.085,16,1,true),gm,0,.0425,0,Gl);mesh(new THREE.CylinderGeometry(.025,.025,.004,16),gm,0,.002,0,Gl);
   HD.liquid=mesh(new THREE.CylinderGeometry(.027,.023,.07,16),lam({color:0xf0b020,transparent:true,opacity:.9}),0,.04,0,Gl);
-  const hg=handMesh(-1);hg.position.set(-.012,-.03,.028);hg.rotation.set(.5,0,.2);Gl.add(hg);
+  const hg=handMesh(-1);hg.position.set(-.012,-.03,.028);hg.rotation.set(.5,0,.2);hg.userData.hand=true;Gl.add(hg);
   // Rauch in der Welt (Pool)
   const st=canvasTex(64,64,g=>{const gr=g.createRadialGradient(32,32,2,32,32,32);gr.addColorStop(0,'rgba(220,220,230,.55)');gr.addColorStop(.5,'rgba(200,200,210,.22)');gr.addColorStop(1,'rgba(200,200,210,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);},0,0,true);
   HD.smoke=[];for(let i=0;i<90;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:st,transparent:true,depthWrite:false,opacity:0}));s.visible=false;scene.add(s);HD.smoke.push({s,life:0,dur:1,v:new THREE.Vector3(),s0:.1,s1:.3,a:.5});}
@@ -6785,6 +6888,17 @@ function cigAsh(){const C=HD.cig;if(!C||HD.seq.length||HD.lighterOn)return;
 function cigThrow(){const C=HD.cig;if(!C||HD.lighterOn)return;HD.seq=[];HSFX.throw();
   const tip=cigTipWorld();if(C.lit)smokePuff(tip,new THREE.Vector3(0,.2,0),3,.03,.1,1.2,.2,.4);
   HD.cig=null;HD.mc.visible=false;HD.handR.visible=false;mpItems();hdUi();}
+const hdY=new THREE.Vector3(0,1,0);
+function hdFpRig(){const n=typeof CHR!=='undefined'?CHR.fp:null;return n&&n.rig&&n.root.visible&&n.rig.bones.hand_r&&n.rig.bones.hand_l&&n.rig.bones.middle_01_r&&n.rig.bones.middle_01_l?n.rig:null;}
+function hdFingerDir(hand,mid){const a=hand.getWorldPosition(new THREE.Vector3()),b=mid.getWorldPosition(new THREE.Vector3());return b.sub(a).applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();}
+// Handkoordinaten in Knochen-Koordinaten: fd = Richtung Finger, pal = aus der Handfläche heraus (über den Daumen bestimmt)
+function hdHandFrame(B,side){const hb=B['hand_'+side],mid=B['middle_01_'+side],th=B['thumb_01_'+side];if(!hb||!mid)return null;const fd=hdFingerDir(hb,mid);let pal=null;
+  if(th){const tw=hdFingerDir(hb,th);pal=side==='r'?new THREE.Vector3().crossVectors(fd,tw):new THREE.Vector3().crossVectors(tw,fd);pal.sub(fd.clone().multiplyScalar(pal.dot(fd)));if(pal.lengthSq()<1e-6)pal=null;else pal.normalize();}
+  return {hb,fd,pal};}
+// Kippe in die Finger legen: quer zwischen Zeige- und Mittelfinger, Filter zur Handfläche (Mund), Glut aus dem Handrücken heraus
+function hdCigToHand(obj,fr){if(fr.pal){obj.position.copy(fr.fd.clone().multiplyScalar(.055)).add(fr.pal.clone().multiplyScalar(.018));obj.quaternion.setFromUnitVectors(hdY,fr.pal.clone().negate());}
+  else{obj.position.copy(fr.fd.clone().multiplyScalar(.075));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
+function hdGlassToHand(obj,fr){obj.position.copy(fr.fd.clone().multiplyScalar(.055));if(fr.pal)obj.position.add(fr.pal.clone().multiplyScalar(.035));}
 function cigTipWorld(){const P=HD.mc.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0);HD.rig.updateMatrixWorld(true);return HD.mc.localToWorld(hdTmp.clone());}
 function cigStep(dt){
   const C=HD.cig;if(!C)return;
@@ -6798,8 +6912,11 @@ function cigStep(dt){
     HD.smokeT-=dt;if(HD.smokeT<=0){HD.smokeT=C.dragT>0?.08:.3;const tip=cigTipWorld();smokePuff(tip,new THREE.Vector3(0,.18,0),1,.02,.12,2.2,.06,.3);}
     if(C.burn>=1){toast('Die Kippe ist runter.');cigThrow();return;}}
   cigApply(HD.mc,C.burn,C.ash,C.ember,C.lit);
-  if(C.where==='hand'){ // Zigarette sitzt zwischen Zeige- und Mittelfinger
-    if(HD.mc.parent!==HD.handR){HD.handR.add(HD.mc);HD.mc.visible=true;}HD.mc.position.set(.0,.058,-.004);HD.mc.rotation.set(-.35,0,0);}
+  if(C.where==='hand'){ // Zigarette zwischen Zeige- und Mittelfinger – an der echten Hand des eigenen Körpers (Arm per IK), sonst an der gezeichneten Hand
+    const fp=hdFpRig();
+    if(fp){const hb=fp.bones.hand_r;HD.handR.visible=false;
+      if(HD.mc.parent!==hb){hb.add(HD.mc);HD.mc.visible=true;hdCigToHand(HD.mc,hdHandFrame(fp.bones,'r'));}}
+    else{if(HD.mc.parent!==HD.handR){HD.handR.add(HD.mc);HD.mc.visible=true;}HD.mc.position.set(.0,.058,-.004);HD.mc.rotation.set(-.35,0,0);}}
   else{if(HD.mc.parent!==HD.rig){HD.rig.add(HD.mc);HD.mc.position.fromArray(PX(POSE[mouthP()].p));HD.mc.rotation.fromArray(POSE[mouthP()].r);}
     if(!HD.seq.length){const mp=POSE[mouthP()];HD.mc.position.lerp(hdTmp2.fromArray(PX(mp.p)),Math.min(1,dt*8));}} // Mund-Pose wechselt weich beim Hinsetzen/Aufstehen
 }
@@ -6818,8 +6935,18 @@ function drinkSip(){const D=HD.drink;if(!D||HD.gq.length)return;if(D.level<=.02)
   HD.gq=[{to:'glassSip',dur:.5},{to:'glassSip',dur:.7,at(){HSFX.sip();D.level=Math.max(0,D.level-.17);D.sips++;const a=DRINKS[D.kind].alc;if(a)HD.buzz=Math.min(1.3,HD.buzz+a*.2);mpItems();}},{to:'glass',dur:.5,end(){if(D.level<=.02){toast('Leer. Noch eins an der Bar?');setTimeout(()=>{if(HD.drink===D){HD.drink=null;HD.glass.visible=false;hdUi();mpItems();}},1500);}}}];HD.gqFrom=null;hdUi();}
 function drinkStep(dt){
   if(!HD.drink)return;const Gl=HD.glass;const L=HD.drink.level;HD.liquid.scale.y=Math.max(.02,L);HD.liquid.position.y=.006+.035*L;
+  // Glas in der echten linken Hand des eigenen Körpers (Arm per IK): bleibt aufrecht, kippt beim Schluck zum Mund
+  const fp=hdFpRig();
+  if(fp){const hb=fp.bones.hand_l;
+    if(Gl.parent!==hb){hb.add(Gl);Gl.visible=true;hdGlassToHand(Gl,hdHandFrame(fp.bones,'l'));Gl.children.forEach(c=>{if(c.userData.hand)c.visible=false;});HD.gTilt=0;}
+    const sip=HD.gq&&HD.gq.length&&HD.gq[0].to==='glassSip'&&HD.gq.length<=2;HD.gTilt=(HD.gTilt||0)+((sip?.95:0)-(HD.gTilt||0))*Math.min(1,dt*6);
+    const f=hdTmp.set(0,0,-1).applyQuaternion(camera.quaternion);f.y=0;if(f.lengthSq()>1e-6){f.normalize();const right=hdTmp2.set(-f.z,0,f.x);
+      const des=new THREE.Quaternion().setFromAxisAngle(right,HD.gTilt);Gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(des);}
+    if(!HD.gq||!HD.gq.length)return;const s=HD.gq[0];if(HD.gqFrom===null||HD.gqFrom===undefined){HD.gqFrom={};HD.gqT=0;if(s.at)s.at();}
+    HD.gqT+=dt;if(HD.gqT>=s.dur){if(s.end)s.end();HD.gq.shift();HD.gqFrom=null;}return;}
+  else if(Gl.parent!==HD.rig){HD.rig.add(Gl);Gl.children.forEach(c=>{if(c.userData.hand)c.visible=true;});Gl.position.fromArray(PX(POSE.glass.p));Gl.rotation.fromArray(POSE.glass.r);}
   if(!HD.gq||!HD.gq.length)return;const s=HD.gq[0];
-  if(HD.gqFrom===null||HD.gqFrom===undefined){HD.gqFrom={p:Gl.position.clone(),r:Gl.rotation.clone()};HD.gqT=0;if(s.at)s.at();}
+  if(!HD.gqFrom||!HD.gqFrom.p){const first=!HD.gqFrom;HD.gqFrom={p:Gl.position.clone(),r:Gl.rotation.clone()};if(first){HD.gqT=0;if(s.at)s.at();}}
   HD.gqT+=dt;const k=Math.min(1,HD.gqT/s.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,to=POSE[s.to],tp=PX(to.p);
   Gl.position.set(HD.gqFrom.p.x+(tp[0]-HD.gqFrom.p.x)*e,HD.gqFrom.p.y+(tp[1]-HD.gqFrom.p.y)*e,HD.gqFrom.p.z+(tp[2]-HD.gqFrom.p.z)*e);
   Gl.rotation.set(HD.gqFrom.r.x+(to.r[0]-HD.gqFrom.r.x)*e,HD.gqFrom.r.y+(to.r[1]-HD.gqFrom.r.y)*e,HD.gqFrom.r.z+(to.r[2]-HD.gqFrom.r.z)*e);
@@ -6862,20 +6989,24 @@ function avItems(n){ // Anbauten an ein Figuren-Modell (stehend oder sitzend); b
     {const q=qi(n.head),fwd=rootFwd.clone().applyQuaternion(q).normalize(),up=Y.clone().applyQuaternion(q).normalize();
       c.position.copy(up.clone().multiplyScalar(.05)).add(fwd.clone().multiplyScalar(.1));c.quaternion.setFromUnitVectors(Y,fwd.clone().multiplyScalar(.94).add(up.clone().multiplyScalar(-.34)).normalize());}
     const fingerDir=(hand,mid)=>{const a=hand.getWorldPosition(new THREE.Vector3()),bb=mid.getWorldPosition(new THREE.Vector3());return bb.sub(a).applyQuaternion(qi(hand)).normalize();};
-    if(B.middle_01_r){const fd=fingerDir(B.hand_r,B.middle_01_r);ch.position.copy(fd.clone().multiplyScalar(.075));ch.quaternion.setFromUnitVectors(Y,fd);}
-    if(B.middle_01_l){const fd=fingerDir(B.hand_l,B.middle_01_l),up=Y.clone().applyQuaternion(qi(B.hand_l)).normalize();gl.position.copy(fd.clone().multiplyScalar(.06)).add(up.clone().multiplyScalar(-.03));gl.quaternion.setFromUnitVectors(Y,up);}
+    {const fr=hdHandFrame(B,'r');if(fr)hdCigToHand(ch,fr);}
+    {const fr=hdHandFrame(B,'l');if(fr){hdGlassToHand(gl,fr);const up=Y.clone().applyQuaternion(qi(B.hand_l)).normalize();gl.quaternion.setFromUnitVectors(Y,up);}}
   }else{c.position.set(.018,-.062,.13);c.rotation.set(1.72,0,.1);ch.position.set(0,-.62,.03);ch.rotation.set(-1.2,0,0);gl.position.set(0,-.64,.03);}
-  const gm=new THREE.MeshPhongMaterial({color:0xe8f4ff,transparent:true,opacity:.3,shininess:100});mesh(new THREE.CylinderGeometry(.03,.025,.085,12,1,true),gm,0,.04,0,gl);const liq=mesh(new THREE.CylinderGeometry(.026,.022,.06,12),lam({color:0xf0b020,transparent:true,opacity:.9}),0,.035,0,gl);
+  const gm=new THREE.MeshPhongMaterial({color:0xe8f4ff,transparent:true,opacity:.3,shininess:100});mesh(new THREE.CylinderGeometry(.03,.025,.085,12,1,true),gm,0,.04,0,gl);const liq=mesh(new THREE.CylinderGeometry(.026,.022,.06,12),lam({color:0xf0b020}),0,.035,0,gl);gm.depthWrite=false;
   return n.items={cm:c,ch,gl,liq};}
 function itemsPeer(a,pr){const it=pr&&pr.it&&typeof pr.it==='object'?pr.it:null;a.it=it?{c:+it.c===2?2:(+it.c===1?1:0),l:it.l?1:0,x:Math.max(0,Math.round(+it.x||0)),d:DRINKS[it.d]?it.d:'',s:Math.max(0,Math.round(+it.s||0))}:null;
   if(a.it&&a.itX!==undefined&&a.it.x!==a.itX&&a.it.l){const n=a.n;n.head.getWorldPosition(hdTmp);hdTmp.y-=.02;const dir=new THREE.Vector3(0,0,1).applyQuaternion(n.head.getWorldQuaternion(new THREE.Quaternion()));
     smokePuff(hdTmp.addScaledVector(dir,.16),dir.multiplyScalar(.4).add(new THREE.Vector3(0,.12,0)),10,.08,.4,2.6,.25,.4);a.itDrag=now;}
+  if(a.it&&a.itS!==undefined&&a.it.s!==a.itS&&a.it.d)a.itSip=now;a.itS=a.it?a.it.s:undefined;
   a.itX=a.it?a.it.x:undefined;}
 function itemsAvatarsStep(dt){
   if(typeof MP==='undefined')return;
-  MP.avatars.forEach(a=>{[a.m.st,a.m.si].forEach(n=>{const I=avItems(n);const it=a.it;const vis=n.root.visible;
+  MP.avatars.forEach(a=>{if(typeof chAvatarArms==='function'&&a.f===floorIdx)chAvatarArms(a,dt);
+    [a.m.st,a.m.si].forEach(n=>{const I=avItems(n);const it=a.it;const vis=n.root.visible;
     I.cm.visible=!!(it&&it.c===1)&&vis;I.ch.visible=!!(it&&it.c===2)&&vis;I.gl.visible=!!(it&&it.d)&&vis;
-    if(it&&it.d){I.liq.material.color.setHex(DRINKS[it.d].c);}
+    if(it&&it.d){I.liq.material.color.setHex(DRINKS[it.d].c);
+      if(n.rig&&vis&&I.gl.parent){const hb=I.gl.parent;const f=new THREE.Vector3(0,0,1).applyQuaternion(n.root.getWorldQuaternion(new THREE.Quaternion()));f.y=0;if(f.lengthSq()>1e-6){f.normalize();const right=new THREE.Vector3(-f.z,0,f.x);
+        a.gTilt=(a.gTilt||0)+(((a.itSip&&now-a.itSip<1.2)?.9:0)-(a.gTilt||0))*Math.min(1,dt*6);I.gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromAxisAngle(right,a.gTilt));}}}
     if(it&&it.l&&vis){const g=it.c===2?I.ch:I.cm;cigApply(g,.3,.3,.3+.2*Math.sin(now*6),true);if(it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=a.itDrag&&now-a.itDrag<1.3?-2.3:-1.35;n.armR.rotation.z=.25;}}
     else if(it&&it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=-1.35;n.armR.rotation.z=.25;}
     if(it&&it.d&&n===a.n&&n.anim!=='drink'&&!n.rig){n.armL.rotation.x=-1.2;}});

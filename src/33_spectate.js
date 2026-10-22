@@ -104,7 +104,7 @@ function mirrorInto(a,m,gx,credit){
   if(m.fs&&gx.fs){m.fs.n=gx.fs[0];m.fs.total=gx.fs[1];m.fs.special=spc;if(m.fs.sh!==gx.sh){m.fs.sh=gx.sh;m.topDirty=true;}}
   if(!gx.fs&&m.fs){m.fs=null;m.topDirty=true;}
   // neuer Spin: Ergebnis steht schon fest -> Walzen im selben Takt wie beim Spieler drehen und anhalten lassen
-  if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
+  if(gx.sp&&gx.sid&&gx.sid!==m.rSid&&gx.st&&gx.st.length===5){m.rSid=gx.sid;if(a.mirror===m&&a.n&&a.n.rig)a.press={m,key:'START',side:'r',t:0};m.state='rstop';m.present=null;m.expand=null;m.ssHeld=null;m.ovr=null;m.myst=null;
     m.stops=gx.st.map((s,i)=>s%SlotEngine.stripsOf(m.G,(gx.uf===2?'buy':!!gx.uf))[i].length);m.useFs=gx.uf===2?'buy':!!gx.uf;m.grid=SlotEngine.grid(m.G,m.stops,(gx.uf===2?'buy':!!gx.uf));const el=gx.el||0,f=gx.fa||1;
     m.reels.forEach((r,i)=>{if(m.G.special&&i!==2)return;r.spin=true;r.target=m.stops[i];r.teased=false;r.land=null;r.vel=0;r.speed=28;
       r.t0=now-el+i*.045;r.stopAt=Math.max(now+.05+i*.06,now-el+(m.G.special?.75:(.55+i*.2))*f);});}

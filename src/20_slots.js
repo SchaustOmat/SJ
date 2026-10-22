@@ -228,7 +228,8 @@ function updateButtons(m){
   for(const k in map){const b=o[map[k]];setBtn(m,k,b.label,b.color,b.lit,b.blink);}
   if(typeof svButtons==='function')svButtons(m);
 }
-function pressButton(m,key){
+function pressButton(m,key){if(typeof chPress==='function')chPress(m,key); // eigene Hand geht zur Taste
+  
   if(key==='RISIKO')key='KARTE';
   // Leiter ist immer drückbar (Anzeige wird sofort abgeschlossen) – nur die AUSSPIELUNG läuft immer komplett durch
   if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;{const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
