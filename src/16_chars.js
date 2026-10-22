@@ -320,8 +320,8 @@ function chArmsStep(n,dt,ctx){
       K.cp.lerp(tgt.p,k);K.cq.slerp(tgt.q,k);K.cur.copy(fpvP(cm,K.cp.toArray()));
       K.fd=fpvV(cm,new THREE.Vector3(1,0,0).applyQuaternion(K.cq).toArray());K.pal=fpvV(cm,new THREE.Vector3(0,1,0).applyQuaternion(K.cq).toArray());K.pole=tgt.pole?fpvV(cm,tgt.pole.toArray()):null;K.free=true;
       K.w=Math.min(1,K.w+dt*4);K.fp=tgt.fp||null;K.coll=tgt.coll||null;}
-    else if(tgt){K.camMode=false;K.free=!!tgt.free;K.coll=tgt.coll||null;if(!K.has){K.cur.copy(tgt.p);K.has=true;}else K.cur.lerp(tgt.p,Math.min(1,dt*(ctx.fast?18:7)));K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach
-    else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0){K.has=false;K.camMode=false;}}
+    else if(tgt){K.camMode=false;K.free=!!tgt.free;K.coll=tgt.coll||null;const rp=n.root.getWorldPosition(new THREE.Vector3()),off=tgt.p.clone().sub(rp);if(!K.has||!K.off){K.off=off;K.has=true;}else K.off.lerp(off,Math.min(1,dt*(ctx.fast?18:7)));K.cur.copy(rp).add(K.off);K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach, relativ zum Körper (beim Laufen bleibt die Hand im Bild, Nutzer 2026-10-22)
+    else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0){K.has=false;K.camMode=false;K.off=null;}}
     if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=K.pole||new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
       if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w,K.free);
       chFingers(B,sd,K,dt);}});
