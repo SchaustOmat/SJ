@@ -616,10 +616,11 @@ function frame(){
       if(!canMove){P.vx=0;P.vz=0;}
       const vm=Math.hypot(P.vx,P.vz);if(vm>.02){const [nx,nz]=collide(P.x+P.vx*dt,P.z+P.vz*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;if(real<vm*dt*.3){P.vx*=.5;P.vz*=.5;}
         P.bob+=real*3.1*(1-(P.spr||0)*.3);P.stepAcc+=real;if(P.stepAcc>.85*(1+(P.spr||0)*.8)&&now-(P.stepT||0)>.3){P.stepAcc=0;P.stepT=now;SFX.step();}}}
+    if(typeof chFPStep==='function')chFPStep(dt); // eigener Körper zuerst, damit die Kamera am aktuellen Kopf sitzt
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
-    else{if(!(typeof chEye==='function'&&chEye(tmpV)))tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);tp=tmpV;ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
+    else{if(!(typeof chEye==='function'&&chEye(tmpV,dt)))tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);tp=tmpV;ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
     if(camAnim){camAnim.t+=dt;const k=ease(Math.min(1,camAnim.t/camAnim.dur));
       camera.position.lerpVectors(camAnim.fromPos,tp,k);camera.rotation.set(camAnim.fromPitch+(tpi-camAnim.fromPitch)*k,angLerp(camAnim.fromYaw,ty,k),0);camera.fov=camAnim.fromFov+(tf-camAnim.fromFov)*k;
       if(camAnim.t>=camAnim.dur)camAnim=null;}
@@ -633,7 +634,7 @@ function frame(){
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
-    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);if(typeof chFPStep==='function')chFPStep(dt);
+    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);
     if(!locked&&!focus){chatterT-=dt;if(chatterT<=0){chatterT=6+Math.random()*6;const near=F.npcs.filter(n=>Math.hypot(n.root.position.x-P.x,n.root.position.z-P.z)<9&&n.bubbleUntil<now);
       if(near.length){const n=near[Math.random()*near.length|0];say(n,n.lines[Math.random()*n.lines.length|0]);}}}
     const lw=LW(),lh=LH();

@@ -286,13 +286,16 @@ function chAvatarArms(a,dt){
   chArmsStep(n,dt,ctx);
 }
 // Kamera weich am Kopfknochen: v wird gefüllt, true wenn verfügbar (nur beim Gehen/Stehen, nicht im Spiel-Fokus)
-function chEye(v){
+function chEye(v,dt){
   const n=CHR.fp;if(!n||!n.rig||!n.root.visible||n.rig.sit)return false;
   const h=n.rig.bones.Head.getWorldPosition(chV);const r=n.root.position;const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);
-  // Auge ein Stück vor dem Kopfknochen (Gesicht), sonst sieht man Schultern und Hals von innen; seitliches Wiegen nur halb
-  const tx=P.x+(h.x-r.x)*.5+fx*.13,tz=P.z+(h.z-r.z)*.5+fz*.13,ty=1.6*.35+(h.y+.06)*.65;
-  if(!CHR.eye)CHR.eye=new THREE.Vector3(tx,ty,tz);else{const k=Math.min(1,.2);CHR.eye.x+=(tx-CHR.eye.x)*k;CHR.eye.y+=(ty-CHR.eye.y)*k;CHR.eye.z+=(tz-CHR.eye.z)*k;}
-  if(Math.hypot(CHR.eye.x-P.x,CHR.eye.z-P.z)>.5){CHR.eye.set(tx,ty,tz);}
-  v.copy(CHR.eye);return true;
+  // Auge = Versatz zum Kopfknochen (seitliches Wiegen halb, 13 cm vor das Gesicht, sonst sieht man Hals und Schultern von innen).
+  // Nur der Versatz wird geglättet, nie die Spielerposition selbst: sonst hängt die Kamera beim Laufen hinter dem Kopf im Körper (Handy, 30 fps)
+  // Kopf-Versatz zum Körper: nach vorn voll (Lauf- und Sprint-Animation beugen den Kopf 10-25 cm vor), seitlich nur halb (Wiegen)
+  const dx=h.x-r.x,dz=h.z-r.z,fw=dx*fx+dz*fz,sx=dx-fx*fw,sz=dz-fz*fw;
+  const ox=fx*(fw+.13)+sx*.5,oz=fz*(fw+.13)+sz*.5,oy=1.6*.35+(h.y+.06)*.65;
+  const k=1-Math.exp(-(dt||.016)*14);
+  if(!CHR.eye)CHR.eye=new THREE.Vector3(ox,oy,oz);else{CHR.eye.x+=(ox-CHR.eye.x)*k;CHR.eye.y+=(oy-CHR.eye.y)*k;CHR.eye.z+=(oz-CHR.eye.z)*k;}
+  v.set(P.x+CHR.eye.x,CHR.eye.y,P.z+CHR.eye.z);return true;
 }
 chLoad();

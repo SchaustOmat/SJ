@@ -753,7 +753,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792640171";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792642055";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -2064,14 +2064,17 @@ function chAvatarArms(a,dt){
   chArmsStep(n,dt,ctx);
 }
 // Kamera weich am Kopfknochen: v wird gefüllt, true wenn verfügbar (nur beim Gehen/Stehen, nicht im Spiel-Fokus)
-function chEye(v){
+function chEye(v,dt){
   const n=CHR.fp;if(!n||!n.rig||!n.root.visible||n.rig.sit)return false;
   const h=n.rig.bones.Head.getWorldPosition(chV);const r=n.root.position;const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);
-  // Auge ein Stück vor dem Kopfknochen (Gesicht), sonst sieht man Schultern und Hals von innen; seitliches Wiegen nur halb
-  const tx=P.x+(h.x-r.x)*.5+fx*.13,tz=P.z+(h.z-r.z)*.5+fz*.13,ty=1.6*.35+(h.y+.06)*.65;
-  if(!CHR.eye)CHR.eye=new THREE.Vector3(tx,ty,tz);else{const k=Math.min(1,.2);CHR.eye.x+=(tx-CHR.eye.x)*k;CHR.eye.y+=(ty-CHR.eye.y)*k;CHR.eye.z+=(tz-CHR.eye.z)*k;}
-  if(Math.hypot(CHR.eye.x-P.x,CHR.eye.z-P.z)>.5){CHR.eye.set(tx,ty,tz);}
-  v.copy(CHR.eye);return true;
+  // Auge = Versatz zum Kopfknochen (seitliches Wiegen halb, 13 cm vor das Gesicht, sonst sieht man Hals und Schultern von innen).
+  // Nur der Versatz wird geglättet, nie die Spielerposition selbst: sonst hängt die Kamera beim Laufen hinter dem Kopf im Körper (Handy, 30 fps)
+  // Kopf-Versatz zum Körper: nach vorn voll (Lauf- und Sprint-Animation beugen den Kopf 10-25 cm vor), seitlich nur halb (Wiegen)
+  const dx=h.x-r.x,dz=h.z-r.z,fw=dx*fx+dz*fz,sx=dx-fx*fw,sz=dz-fz*fw;
+  const ox=fx*(fw+.13)+sx*.5,oz=fz*(fw+.13)+sz*.5,oy=1.6*.35+(h.y+.06)*.65;
+  const k=1-Math.exp(-(dt||.016)*14);
+  if(!CHR.eye)CHR.eye=new THREE.Vector3(ox,oy,oz);else{CHR.eye.x+=(ox-CHR.eye.x)*k;CHR.eye.y+=(oy-CHR.eye.y)*k;CHR.eye.z+=(oz-CHR.eye.z)*k;}
+  v.set(P.x+CHR.eye.x,CHR.eye.y,P.z+CHR.eye.z);return true;
 }
 chLoad();
 
@@ -7670,10 +7673,11 @@ function frame(){
       if(!canMove){P.vx=0;P.vz=0;}
       const vm=Math.hypot(P.vx,P.vz);if(vm>.02){const [nx,nz]=collide(P.x+P.vx*dt,P.z+P.vz*dt);const real=Math.hypot(nx-P.x,nz-P.z);P.x=nx;P.z=nz;if(real<vm*dt*.3){P.vx*=.5;P.vz*=.5;}
         P.bob+=real*3.1*(1-(P.spr||0)*.3);P.stepAcc+=real;if(P.stepAcc>.85*(1+(P.spr||0)*.8)&&now-(P.stepT||0)>.3){P.stepAcc=0;P.stepT=now;SFX.step();}}}
+    if(typeof chFPStep==='function')chFPStep(dt); // eigener Körper zuerst, damit die Kamera am aktuellen Kopf sitzt
     // camera
     let tp,ty,tpi,tf;
     if(focus){const fp=focusPose();tp=fp.pos;ty=fp.yaw;tpi=fp.pitch;tf=fp.fov;}
-    else{if(!(typeof chEye==='function'&&chEye(tmpV)))tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);tp=tmpV;ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
+    else{if(!(typeof chEye==='function'&&chEye(tmpV,dt)))tmpV.set(P.x,1.6+Math.sin(P.bob)*.035,P.z);tp=tmpV;ty=P.yaw;tpi=P.pitch;tf=(LW()<LH()?82:64)+(P.spr||0)*7;}
     if(camAnim){camAnim.t+=dt;const k=ease(Math.min(1,camAnim.t/camAnim.dur));
       camera.position.lerpVectors(camAnim.fromPos,tp,k);camera.rotation.set(camAnim.fromPitch+(tpi-camAnim.fromPitch)*k,angLerp(camAnim.fromYaw,ty,k),0);camera.fov=camAnim.fromFov+(tf-camAnim.fromFov)*k;
       if(camAnim.t>=camAnim.dur)camAnim=null;}
@@ -7687,7 +7691,7 @@ function frame(){
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);
-    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);if(typeof chFPStep==='function')chFPStep(dt);
+    pokerStep(dt);hilloStep(dt);crStep(dt);mpStep(dt);
     if(!locked&&!focus){chatterT-=dt;if(chatterT<=0){chatterT=6+Math.random()*6;const near=F.npcs.filter(n=>Math.hypot(n.root.position.x-P.x,n.root.position.z-P.z)<9&&n.bubbleUntil<now);
       if(near.length){const n=near[Math.random()*near.length|0];say(n,n.lines[Math.random()*n.lines.length|0]);}}}
     const lw=LW(),lh=LH();
