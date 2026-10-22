@@ -173,7 +173,8 @@ const CH_FPOSE={
   press:[[14,20,30],[12,20,12],[12,20,12],[14,22,14],[16,24,16]],  // Taste flach mit vier Fingern drücken (Nutzer 2026-10-22), Daumen locker
   cig:[[10,14,22],[16,16,10],[20,18,12],[70,82,58],[76,86,62]],    // Kippe zwischen Zeige- und Mittelfinger, Ring/Klein locker eingerollt
   glass:[[14,22,34],[46,58,30],[50,62,34],[50,62,34],[52,64,38]],  // Finger ums Glas
-  pack:[[14,20,22],[2,20,26],[4,22,28],[6,24,30],[8,26,32]]};   // locker: Finger liegen hinten an, Spitzen leicht über der Oberkante   // Schachtel in der Hand: Finger liegen hinten flach an, nur die Spitzen greifen über die Oberkante, Daumen vorn
+  pack:[[30,40,20],[45,60,35],[48,62,36],[50,64,38],[52,66,40]],  // Schachtel steht in der Handfläche, Finger greifen hinten hoch, Daumen liegt quer vorn auf (wie Nutzer-Video)
+  packPush:[[10,10,5],[45,60,35],[48,62,36],[50,64,38],[52,66,40]]}; // Daumen streckt sich nach oben und drückt den Deckel auf // Daumen gestreckt nach oben: drückt den Deckel auf   // Schachtel in der Hand: Finger liegen hinten flach an, nur die Spitzen greifen über die Oberkante, Daumen vorn
 const CH_THUMB_AX=new THREE.Vector3(.55,.8,-.23).normalize(); // Daumen-Grundglied: Drehachse aus den Animationen gemessen (links gespiegelt)
 function chBoneBase(bone){const u=bone.userData;if(!u.q0){u.q0=new THREE.Quaternion();u.q1=new THREE.Quaternion();u.qset=false;}
   if(u.qset&&bone.quaternion.equals(u.q1))bone.quaternion.copy(u.q0);u.q0.copy(bone.quaternion);}
@@ -273,7 +274,7 @@ function chGripFix(pose,item,B,sd){const hand=B&&B['hand_'+sd];if(!pose||!pose.a
 // von der Schulter aus dazugerechnet. p = Handgelenk oder at = Ankerpunkt des Gegenstands am Handknochen (das Handgelenk ergibt sich daraus),
 // fd = Fingerrichtung, pal = Handflächenrichtung (aus der Fläche heraus), pole = Ellbogenrichtung, fp = Fingerhaltung, rate = Tempo pro s
 const CH_FPV={
-  pack:{fd:[.06,.95,.3],pal:[.06,-.28,-.96],pole:[-.9,-.8,-.3],fp:'pack',rate:9}, // gerade gehalten, Vorderseite schaut zu dir (Nutzer 2026-10-22) // Hochformat (fdP/palP): frontaler, weil der weite Bildwinkel nahe Dinge am Rand stark verzerrt // Schachtel liegt in der Handfläche: Hand schräg von unten links, Vorderseite leicht gedreht und gekippt zur Kamera (man sieht die Oberseite), Daumen vorn, Finger hinten herum
+  pack:{fd:[.15,.4,.9],pal:[.5,.85,-.1],pole:[-.9,-.8,-.3],fp:'pack',rate:9,packUp:[0,.96,.28],packFront:[-.12,.28,-.95],packAt:[.03,.07,.045]}, // Schachtel seitlich gehalten wie im Nutzer-Video: Handfläche hinten links, Finger hinten herum, Daumen vorn; Schachtel aufrecht, Vorderseite zu dir // gerade gehalten, Vorderseite schaut zu dir (Nutzer 2026-10-22) // Hochformat (fdP/palP): frontaler, weil der weite Bildwinkel nahe Dinge am Rand stark verzerrt // Schachtel liegt in der Handfläche: Hand schräg von unten links, Vorderseite leicht gedreht und gekippt zur Kamera (man sieht die Oberseite), Daumen vorn, Finger hinten herum
 };
 const fpvV=(cm,a)=>new THREE.Vector3().addScaledVector(cm.cx,a[0]).addScaledVector(cm.cy,a[1]).addScaledVector(cm.cz,a[2]); // Kamera -> Welt (Richtung)
 const fpvP=(cm,a)=>cm.eye.clone().add(fpvV(cm,a)); // Kamera -> Welt (Punkt)
@@ -294,7 +295,7 @@ function chPackPose(n,side,cm){
   if(typeof HD==='undefined'||!HD.pack||!HD.pack.visible||!HD.pack.parent||!HD.pack.parent.isBone)return null;
   const hand=n.rig.bones['hand_'+side];if(HD.pack.parent!==hand)return null;
   const t=hdPackTarget();const e=Math.min(1,HD.packT/.35),lift=HD.packSt==='out'?e:HD.packSt==='in'?1-e:0;
-  return chCamPose('pack',cm,HD.pack,n.rig.bones,side,[t[0],t[1]-.3*lift,-t[2]]);
+  const P=chCamPose('pack',cm,HD.pack,n.rig.bones,side,[t[0],t[1]-.3*lift,-t[2]]);if(P&&HD.thumbPush&&now-HD.thumbPush<.45)P.fp=CH_FPOSE.packPush;return P; // beim Öffnen streckt sich der Daumen zum Deckel
 }
 // Ziele für beide Hände je nach Lage, dann IK mit weicher Gewichtung (auch für Mitspieler-Figuren)
 function chArmsStep(n,dt,ctx){

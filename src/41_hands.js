@@ -45,7 +45,7 @@ function hdMouth(){
 function hdPackTarget(){
   const tv=Math.tan(camera.fov*Math.PI/360),asp=LW()/LH();let d,sx,sy;
   if(atSlot()){const bt=hdBarTop();d=PC?.32:asp<1?.34:.3;sy=(-1+2*bt)+.05+(.046*hdPackScale()/d)/tv;sx=asp<1?.42:.5;} // am Automaten: Einblendung über der Tastenleiste (quer rechts neben den Walzen)
-  else if(PC){d=.27;sx=.05;sy=-.6;}else if(asp<1){d=.27;sx=.08;sy=-.45;}else{d=.26;sx=.02;sy=-.5;} // in der Hand: Handy etwas näher (Nutzer 2026-10-22: groß genug zum Tippen, aber nicht riesig)
+  else if(PC){d=.42;sx=.04;sy=-.55;}else if(asp<1){d=.36;sx=.1;sy=-.42;}else{d=.26;sx=.02;sy=-.48;} // in der Hand: Handy etwas näher (Nutzer 2026-10-22: groß genug zum Tippen, aber nicht riesig)
   return [tv*asp*sx*d,tv*sy*d,-d];}
 function hdPackScale(){return atSlot()?1:PC?1.15:LW()<LH()?1.3:1.25;} // Schachtel etwas größer als echt, am Handy deutlich (zum Tippen, Nutzer 2026-10-22)
 function hdPose(name){
@@ -158,10 +158,10 @@ function hdPick(x,y){if(!HD.pack.visible)return null;hdV.set(x/LW()*2-1,-(y/LH()
 // ---- Schachtel ----
 function packShow(){
   if(HD.packSt!=='off')return;if(HD.cig&&HD.cig.where==='hand'){toast('Erst die Kippe in den Mund (H).');return;}
-  HD.packSt='in';HD.packT=0;HD.pack.visible=true;HD.pack.scale.setScalar(hdPackScale());HD.pack.position.fromArray(PX(hdPose('packOut').p));HD.pack.rotation.fromArray(POSE.packOut.r);HD.lidOpen=0;HD.hover=-1;
+  HD.packSt='in';HD.packT=0;HD.pack.visible=true;HD.pack.scale.setScalar(hdPackScale());HD.pack.position.fromArray(PX(hdPose('packOut').p));HD.pack.rotation.fromArray(POSE.packOut.r);HD.lidOpen=0;HD.lidWant=false;HD.lidWas=false;HD.thumbPush=0;HD.hover=-1;
   HD.cx=LW()/2;HD.cy=LH()*.62;hdSyncCigs();HSFX.take();hdUi();
 }
-function packHide(){if(HD.packSt==='off')return;HD.packSt='out';HD.packT=0;HD.hover=-1;if(HD.lidOpen>.5)HSFX.packClose();hdUi();}
+function packHide(){if(HD.packSt==='off')return;HD.lidWant=false;HD.packSt='out';HD.packT=0;HD.hover=-1;if(HD.lidOpen>.5)HSFX.packClose();hdUi();}
 function hdSyncCigs(){HD.cigs.forEach((c,i)=>{c.visible=i<INV.cigs;});}
 function packStep(dt){
   const Pk=HD.pack;if(HD.packSt==='off')return;
@@ -174,22 +174,24 @@ function packStep(dt){
     const fr=hdPose(HD.packSt==='out'?'packIn':'packOut'),tt=hdPose(HD.packSt==='out'?'packOut':'packIn'),fp=PX(fr.p),tp=PX(tt.p);
     Pk.position.set(fp[0]+(tp[0]-fp[0])*e,fp[1]+(tp[1]-fp[1])*e,fp[2]+(tp[2]-fp[2])*e);}
   if(HD.packSt==='out'&&k>=1){HD.packSt='off';Pk.visible=false;hdUi();return;}
-  if(HD.packSt==='in'&&k>=1){HD.packSt='open';if(!PC){HD.lidOpen=.51;HSFX.packOpen();}} // Handy: Deckel geht gleich auf (kein Drüberfahren möglich)
+  if(HD.packSt==='in'&&k>=1){HD.packSt='open';if(!PC)HD.lidWant=true;} // Handy: Deckel geht gleich auf (kein Drüberfahren möglich)
   // Deckel: Maus auf der Schachtel = auf
-  let want=HD.lidOpen>.5?1:0,hov=-1;
+  let want=HD.lidWant?1:0,hov=-1;
   if(HD.packSt==='open'&&!HD.fly){const pt=handsPointer();const u=hdPick(pt[0],pt[1]);if(u){if(u.part==='pack')want=1;if(u.part==='cig'&&HD.lidOpen>.9&&u.idx<INV.cigs){hov=u.idx;want=1;}}}
-  if(want&&HD.lidOpen<.01)HSFX.packOpen();
-  HD.lidOpen+=((want?1:0)-HD.lidOpen)*Math.min(1,dt*9);HD.lid.rotation.x=-HD.lidOpen*1.95; // Deckel klappt nach hinten weg (Nutzer 2026-10-22)
+  if(want&&!HD.lidWas){HSFX.packOpen();HD.thumbPush=now;}HD.lidWas=!!want;
+  // Deckel: der Daumen drückt ihn hoch (erst ansetzen, dann klappt er nach hinten auf), zu geht er von selbst
+  {const k=HD.thumbPush?now-HD.thumbPush:9;const lidT=want?(k<.15?0:Math.min(1,(k-.15)/.3)):0;HD.lidOpen+=(lidT-HD.lidOpen)*Math.min(1,dt*(want?14:9));}
+  HD.lid.rotation.x=-HD.lidOpen*1.95; // nach hinten (vom Spieler weg)
   if(hov!==HD.hover){HD.hover=hov;if(hov>=0)noise(.02,.03,3000);}
   HD.cigs.forEach((c,i)=>{const u=c.userData;u.rise+=((i===hov?1:0)-u.rise)*Math.min(1,dt*12);c.position.y=u.base+u.rise*.02;});
 }
 // Klick/Tipp auf die Schachtel oder eine Zigarette
 function handsTap(x,y){
   if(HD.packSt==='open'&&!HD.fly){const pt=handsCursorActive()?[HD.cx,HD.cy]:(PC&&!mouseLocked()?[CUR.x,CUR.y]:[x,y]);const u=hdPick(pt[0],pt[1]);
-    if(u&&HD.lidOpen<.5){HD.lidOpen=.51;HSFX.packOpen();return true;} // erster Tipp auf die Schachtel: Deckel auf
+    if(u&&!HD.lidWant&&HD.lidOpen<.5){HD.lidWant=true;return true;} // erster Tipp auf die Schachtel: Deckel auf
     if(u&&u.part==='cig'&&u.idx<INV.cigs&&HD.lidOpen>.6){cigTake(u.idx);return true;}
     if(!PC&&HD.lidOpen>.6){const i=hdNearCig(pt[0],pt[1]);if(i!==null){cigTake(i);return true;}} // Handy: dicker Finger – nächste Zigarette zum Tipp
-    if(u&&u.part==='pack'){HD.lidOpen=.49;return true;}
+    if(u&&u.part==='pack'){HD.lidWant=false;return true;}
     return true; // bei offener Schachtel geht kein Klick in die Welt
   }
   return false;
@@ -268,9 +270,20 @@ function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const dir=fr.pal.clone().m
   else{obj.position.copy(fr.fd.clone().multiplyScalar(.1));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
 // Schachtel in der Hand: starr am Handknochen (Rückseite liegt auf den Fingern, Daumen vorn); Lage nur aus der Handform (Knöchel, Finger-,
 // Handflächenrichtung), nicht aus der Kamera – so klebt und wackelt nichts. Wohin die Schachtel im Bild kommt, bestimmt die Handpose (CH_FPV.pack)
-function hdPackToHand(obj,fr,side){if(!fr||!fr.pal)return;const sc=obj.scale.x||1;const base=fr.knuck?fr.knuck.clone():fr.fd.clone().multiplyScalar(.11);
-  obj.position.copy(base).addScaledVector(fr.fd,.025*sc).addScaledVector(fr.pal,.011*sc+.02); // Rückseite liegt auf den Fingern (2 cm vor der Handfläche), Oberkante knapp unter den Fingerspitzen
-  const x=new THREE.Vector3().crossVectors(fr.fd,fr.pal).normalize();hdM4.makeBasis(x,fr.fd,fr.pal);obj.quaternion.setFromRotationMatrix(hdM4);} // oben = Finger, vorn = aus der Handfläche
+// Seitlicher Griff wie echt (Nutzer-Video 2026-10-22): Handfläche hinten links an der Schachtel, Finger greifen hinten herum, Daumen liegt vorn.
+// Die Lage der Schachtel zur Hand ist fest (aus der Zielpose der Hand und der Zielpose der Schachtel im Bild berechnet: aufrecht, Vorderseite zu dir),
+// Position: Mittelpunkt in Handkoordinaten (entlang Finger / aus der Handfläche / quer)
+const HD_PACKREL={};
+function hdPackRel(side){if(HD_PACKREL[side])return HD_PACKREL[side];const D=CH_FPV.pack,mir=side==='r'?-1:1;
+  const c=a=>new THREE.Vector3(a[0],a[1],-a[2]); // Bildkoordinaten (z vorn) -> Kamera (z zum Betrachter)
+  const fd=c([D.fd[0]*mir,D.fd[1],D.fd[2]]).normalize(),pal=c([D.pal[0]*mir,D.pal[1],D.pal[2]]);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();
+  const H=chFrameQ(fd,pal,new THREE.Quaternion());
+  const up=c(D.packUp).normalize(),front=c(D.packFront);front.sub(up.clone().multiplyScalar(front.dot(up))).normalize();const x=new THREE.Vector3().crossVectors(up,front).normalize();
+  hdM4.makeBasis(x,up,front);const Pq=new THREE.Quaternion().setFromRotationMatrix(hdM4);const Hi=H.clone().invert();
+  return HD_PACKREL[side]={q:Hi.clone().multiply(Pq),off:c([D.packAt[0]*mir,D.packAt[1],D.packAt[2]]).applyQuaternion(Hi)};} // off: Schachtelmitte ab Handgelenk, im Bild festgelegt
+function hdPackToHand(obj,fr,side){if(!fr||!fr.pal)return;const sc=obj.scale.x||1;const R=hdPackRel(side),Hb=chFrameQ(fr.fd,fr.pal,new THREE.Quaternion());
+  obj.position.copy(R.off).multiplyScalar(.75+.25*sc).applyQuaternion(Hb);
+  obj.quaternion.copy(Hb).multiply(R.q);}
 const hdM4=new THREE.Matrix4();
 function hdGlassToHand(obj,fr){if(!fr)return;const base=fr.knuck?fr.knuck.clone().addScaledVector(fr.fd,.005):fr.fd.clone().multiplyScalar(.075);obj.position.copy(base);if(fr.pal)obj.position.addScaledVector(fr.pal,.04);}
 function cigTipWorld(){const P=HD.mc.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0);HD.rig.updateMatrixWorld(true);return HD.mc.localToWorld(hdTmp.clone());}
