@@ -211,13 +211,15 @@ const hdY=new THREE.Vector3(0,1,0);
 function hdFpRig(){const n=typeof CHR!=='undefined'?CHR.fp:null;return n&&n.rig&&n.root.visible&&n.rig.bones.hand_r&&n.rig.bones.hand_l&&n.rig.bones.middle_01_r&&n.rig.bones.middle_01_l?n.rig:null;}
 function hdFingerDir(hand,mid){const a=hand.getWorldPosition(new THREE.Vector3()),b=mid.getWorldPosition(new THREE.Vector3());return b.sub(a).applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();}
 // Handkoordinaten in Knochen-Koordinaten: fd = Richtung Finger, pal = aus der Handfläche heraus (über den Daumen bestimmt)
-function hdHandFrame(B,side){const hb=B['hand_'+side],mid=B['middle_01_'+side],th=B['thumb_01_'+side];if(!hb||!mid)return null;const fd=hdFingerDir(hb,mid);let pal=null;
-  if(th){const tw=hdFingerDir(hb,th);pal=side==='r'?new THREE.Vector3().crossVectors(fd,tw):new THREE.Vector3().crossVectors(tw,fd);pal.sub(fd.clone().multiplyScalar(pal.dot(fd)));if(pal.lengthSq()<1e-6)pal=null;else pal.normalize();}
-  return {hb,fd,pal};}
+function hdHandFrame(B,side){const hb=B['hand_'+side],mid=B['middle_01_'+side];if(!hb||!mid)return null;const fd=hdFingerDir(hb,mid);let pal=null;
+  const loc=b=>b?hb.worldToLocal(b.getWorldPosition(new THREE.Vector3())):null; // Fingerknochen in Hand-Koordinaten
+  {const i0=loc(B['index_01_'+side]),p0=loc(B['pinky_01_'+side]);if(i0&&p0){const ac=p0.sub(i0);pal=side==='r'?new THREE.Vector3().crossVectors(fd,ac):new THREE.Vector3().crossVectors(ac,fd);pal.sub(fd.clone().multiplyScalar(pal.dot(fd)));if(pal.lengthSq()<1e-8)pal=null;else pal.normalize();}} // Handfläche = Finger x Handbreite (Vorzeichen an der Faust gemessen)
+  const i2=loc(B['index_02_'+side]),m2=loc(B['middle_02_'+side]),i1=loc(B['index_01_'+side]),p1=loc(B['pinky_01_'+side]);
+  return {hb,fd,pal,grip:i2&&m2?i2.add(m2).multiplyScalar(.5):null,knuck:i1&&p1?i1.add(p1).multiplyScalar(.5):null};}
 // Kippe in die Finger legen: quer zwischen Zeige- und Mittelfinger, Filter zur Handfläche (Mund), Glut aus dem Handrücken heraus
-function hdCigToHand(obj,fr){if(fr.pal){obj.position.copy(fr.fd.clone().multiplyScalar(.055)).add(fr.pal.clone().multiplyScalar(.018));obj.quaternion.setFromUnitVectors(hdY,fr.pal.clone().negate());}
-  else{obj.position.copy(fr.fd.clone().multiplyScalar(.075));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
-function hdGlassToHand(obj,fr){obj.position.copy(fr.fd.clone().multiplyScalar(.055));if(fr.pal)obj.position.add(fr.pal.clone().multiplyScalar(.035));}
+function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const base=fr.grip?fr.grip.clone().addScaledVector(fr.fd,.012):fr.fd.clone().multiplyScalar(.105);obj.position.copy(base).addScaledVector(fr.pal,.02);obj.quaternion.setFromUnitVectors(hdY,fr.pal.clone().negate());}
+  else{obj.position.copy(fr.fd.clone().multiplyScalar(.1));obj.quaternion.setFromUnitVectors(hdY,fr.fd);}}
+function hdGlassToHand(obj,fr){if(!fr)return;const base=fr.knuck?fr.knuck.clone().addScaledVector(fr.fd,.005):fr.fd.clone().multiplyScalar(.075);obj.position.copy(base);if(fr.pal)obj.position.addScaledVector(fr.pal,.04);}
 function cigTipWorld(){const P=HD.mc.userData.parts;hdTmp.set(0,P.fl+(P.L-P.fl)*(1-(HD.cig?HD.cig.burn:0)),0);HD.rig.updateMatrixWorld(true);return HD.mc.localToWorld(hdTmp.clone());}
 function cigStep(dt){
   const C=HD.cig;if(!C)return;
@@ -234,7 +236,7 @@ function cigStep(dt){
   if(C.where==='hand'){ // Zigarette zwischen Zeige- und Mittelfinger – an der echten Hand des eigenen Körpers (Arm per IK), sonst an der gezeichneten Hand
     const fp=hdFpRig();
     if(fp){const hb=fp.bones.hand_r;HD.handR.visible=false;
-      if(HD.mc.parent!==hb){hb.add(HD.mc);HD.mc.visible=true;hdCigToHand(HD.mc,hdHandFrame(fp.bones,'r'));}}
+      if(HD.mc.parent!==hb){hb.add(HD.mc);HD.mc.visible=true;}hdCigToHand(HD.mc,hdHandFrame(fp.bones,'r'));}
     else{if(HD.mc.parent!==HD.handR){HD.handR.add(HD.mc);HD.mc.visible=true;}HD.mc.position.set(.0,.058,-.004);HD.mc.rotation.set(-.35,0,0);}}
   else{if(HD.mc.parent!==HD.rig){HD.rig.add(HD.mc);HD.mc.position.fromArray(PX(POSE[mouthP()].p));HD.mc.rotation.fromArray(POSE[mouthP()].r);}
     if(!HD.seq.length){const mp=POSE[mouthP()];HD.mc.position.lerp(hdTmp2.fromArray(PX(mp.p)),Math.min(1,dt*8));}} // Mund-Pose wechselt weich beim Hinsetzen/Aufstehen
@@ -257,8 +259,8 @@ function drinkStep(dt){
   // Glas in der echten linken Hand des eigenen Körpers (Arm per IK): bleibt aufrecht, kippt beim Schluck zum Mund
   const fp=hdFpRig();
   if(fp){const hb=fp.bones.hand_l;
-    if(Gl.parent!==hb){hb.add(Gl);Gl.visible=true;hdGlassToHand(Gl,hdHandFrame(fp.bones,'l'));Gl.children.forEach(c=>{if(c.userData.hand)c.visible=false;});HD.gTilt=0;}
-    const sip=HD.gq&&HD.gq.length&&HD.gq[0].to==='glassSip'&&HD.gq.length<=2;HD.gTilt=(HD.gTilt||0)+((sip?.95:0)-(HD.gTilt||0))*Math.min(1,dt*6);
+    if(Gl.parent!==hb){hb.add(Gl);Gl.visible=true;Gl.children.forEach(c=>{if(c.userData.hand)c.visible=false;});HD.gTilt=0;}hdGlassToHand(Gl,hdHandFrame(fp.bones,'l'));
+    const sip=HD.gq&&HD.gq.length&&HD.gq[0].to==='glassSip'&&HD.gq.length<=2;HD.gTilt=(HD.gTilt||0)+((sip?.8:0)-(HD.gTilt||0))*Math.min(1,dt*6);
     const f=hdTmp.set(0,0,-1).applyQuaternion(camera.quaternion);f.y=0;if(f.lengthSq()>1e-6){f.normalize();const right=hdTmp2.set(-f.z,0,f.x);
       const des=new THREE.Quaternion().setFromAxisAngle(right,HD.gTilt);Gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(des);}
     if(!HD.gq||!HD.gq.length)return;const s=HD.gq[0];if(HD.gqFrom===null||HD.gqFrom===undefined){HD.gqFrom={};HD.gqT=0;if(s.at)s.at();}
@@ -323,9 +325,11 @@ function itemsAvatarsStep(dt){
   MP.avatars.forEach(a=>{if(typeof chAvatarArms==='function'&&a.f===floorIdx)chAvatarArms(a,dt);
     [a.m.st,a.m.si].forEach(n=>{const I=avItems(n);const it=a.it;const vis=n.root.visible;
     I.cm.visible=!!(it&&it.c===1)&&vis;I.ch.visible=!!(it&&it.c===2)&&vis;I.gl.visible=!!(it&&it.d)&&vis;
+    if(n.rig&&vis&&it&&it.c===2)hdCigToHand(I.ch,hdHandFrame(n.rig.bones,'r'));
+    if(n.rig&&vis&&it&&it.d)hdGlassToHand(I.gl,hdHandFrame(n.rig.bones,'l'));
     if(it&&it.d){I.liq.material.color.setHex(DRINKS[it.d].c);
       if(n.rig&&vis&&I.gl.parent){const hb=I.gl.parent;const f=new THREE.Vector3(0,0,1).applyQuaternion(n.root.getWorldQuaternion(new THREE.Quaternion()));f.y=0;if(f.lengthSq()>1e-6){f.normalize();const right=new THREE.Vector3(-f.z,0,f.x);
-        a.gTilt=(a.gTilt||0)+(((a.itSip&&now-a.itSip<1.2)?.9:0)-(a.gTilt||0))*Math.min(1,dt*6);I.gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromAxisAngle(right,a.gTilt));}}}
+        a.gTilt=(a.gTilt||0)+(((a.itSip&&now-a.itSip<1.2)?.8:0)-(a.gTilt||0))*Math.min(1,dt*6);I.gl.quaternion.copy(hb.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(new THREE.Quaternion().setFromAxisAngle(right,a.gTilt));}}}
     if(it&&it.l&&vis){const g=it.c===2?I.ch:I.cm;cigApply(g,.3,.3,.3+.2*Math.sin(now*6),true);if(it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=a.itDrag&&now-a.itDrag<1.3?-2.3:-1.35;n.armR.rotation.z=.25;}}
     else if(it&&it.c===2&&n===a.n&&!n.rig){n.armR.rotation.x=-1.35;n.armR.rotation.z=.25;}
     if(it&&it.d&&n===a.n&&n.anim!=='drink'&&!n.rig){n.armL.rotation.x=-1.2;}});
