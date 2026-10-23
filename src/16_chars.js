@@ -26,7 +26,7 @@ function chLook(){if(CHR.look)return CHR.look;let l=null;try{l=JSON.parse(localS
   CHR.look=chLookClean(l);return CHR.look;}
 function chLookOpts(l){l=chLookClean(l);const fem=l.g===1;return {female:fem,hairStyle:(fem?CH_HAIR_F:CH_HAIR_M)[l.h],hair:CH_HAIR[l.hc],color:fem?CH_DRESS[l.s%CH_DRESS.length]:CH_SUITS[l.s],skin:CH_SKIN[l.k],beard:!fem&&l.b===1};}
 function chLookSet(key,delta){const l=chLook();const max={g:2,h:4,hc:CH_HAIR.length,s:CH_SUITS.length,k:CH_SKIN.length,b:2}[key];if(!max)return;l[key]=((l[key]+delta)%max+max)%max;chLookSave(l);CHR.look=l;
-  const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55},o));if(CHR.mirror)chRelook(CHR.mirror,o);
+  const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55,glow:.45},o));if(CHR.mirror)chRelook(CHR.mirror,o);
   if(typeof MP!=='undefined'&&MP.room){MP.dirty=true;MP.lastSent=0;}chLookUi();}
 // Figur mit neuem Aussehen neu aufbauen (Sitzen/Kopf-ausblenden bleibt)
 function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
@@ -122,15 +122,16 @@ vec3 chCloth(vec3 skin){
   if(y>neckY-0.022&&ax<0.085)c=pal[4]; // Hemdkragen rundum
   return c;
 }`;
-function chBodyMat(map,pal,dim,style){
-  const m=new THREE.MeshLambertMaterial({map,skinning:true});
+function chBodyMat(map,pal,dim,style,glow){
+  const m=new THREE.MeshLambertMaterial({map,skinning:true});m.userData.glow={value:glow||0};
   while(pal.length<8)pal.push(pal[pal.length-1]);
   m.userData.pal=pal.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
   m.userData.dim={value:new THREE.Vector4(dim.wrist,dim.seam,dim.neck,dim.fem)};m.userData.style={value:style||0};
-  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;sh.uniforms.uDim=m.userData.dim;sh.uniforms.uStyle=m.userData.style;sh.uniforms.uH={value:dim.H};
+  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;sh.uniforms.uDim=m.userData.dim;sh.uniforms.uStyle=m.userData.style;sh.uniforms.uH={value:dim.H};sh.uniforms.uGlow=m.userData.glow;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float armw;varying float vArm;varying vec3 vP;uniform float uH;').replace('#include <uv_vertex>','#include <uv_vertex>\nvArm=armw;vP=position/uH;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\n'+CH_CLOTH_GLSL)
-      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\ndiffuseColor.rgb=chCloth(diffuseColor.rgb*pal[0]);');};
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\n'+CH_CLOTH_GLSL+'\nuniform float uGlow;')
+      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\ndiffuseColor.rgb=chCloth(diffuseColor.rgb*pal[0]);')
+      .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uGlow;');}; // uGlow: eigener Körper leuchtet etwas von selbst (Hände am Automaten sonst schwarz)
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
@@ -155,7 +156,7 @@ function chAttach(n,o){
       const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
       x.visible=show;if(!show)return;
       const src=Array.isArray(x.material)?x.material[0]:x.material;
-      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal,x.userData.dim||{H:1.8,wrist:.385,seam:.135,neck:.855,fem:0},style);
+      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal,x.userData.dim||{H:1.8,wrist:.385,seam:.135,neck:.855,fem:0},style,o.glow||0);
       else if(nm.startsWith('Hair_')||nm.startsWith('Brows_'))x.material=chLamMat(src,hairCol); // Brauen in Haarfarbe (waren weiß, Sinan 2026-10-22)
       else x.material=chLamMat(src);
       if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}});
@@ -273,7 +274,7 @@ CHR.press=null;
 function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
   const k=key==='KARTE'?'RISIKO':key,bk=m.btns[k]?k:'START';CHR.press={m,key:bk,side:chBtnSide(k),t:0};CHR.restKey=bk;} // die Hand bleibt danach auf dieser Taste liegen (Nutzer 2026-10-22: bei LEITER nicht zurück zu START)
 // Ruhelage auf einer Taste: Hand liegt locker auf der zuletzt gedrückten Taste (Fingerspitzen knapp über der Taste)
-function chBtnRest(m,key,fx,fz){const b=chBtnPos(m,m.btns&&m.btns[key]?key:'START',new THREE.Vector3());if(!b)return null;b.x-=fx*.17;b.z-=fz*.17;b.y+=.085; // Ruhelage: Hand flach geneigt (~20°), Fingerspitzen liegen auf der Taste
+function chBtnRest(m,key,fx,fz,k){const b=chBtnPos(m,m.btns&&m.btns[key]?key:'START',new THREE.Vector3());if(!b)return null;b.x-=fx*.17;b.z-=fz*.17;b.y+=.085-.022*(k||0); // Ruhelage: Hand flach geneigt (~20°), Fingerspitzen auf der Taste; k = Druck (Hand geht nur 2 cm runter, Nutzer 2026-10-23: kein Hochspringen)
   const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:new THREE.Vector3(fx*.94,-.34,fz*.94).normalize(),pal,fp:CH_FPOSE.flat,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
 function chBtnSide(k){return 'r';} // am Automaten bedient nur die rechte Hand alle Tasten (Nutzer 2026-10-22); bei den linken Tasten dreht der Oberkörper mit
 function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
@@ -356,12 +357,12 @@ function chArmsStep(n,dt,ctx){
   ik.lean=(ik.lean||0)+((ctx.lean||0)-(ik.lean||0))*Math.min(1,dt*5);
   if(ik.lean>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz);boneRotWorld(B.spine_01,ax,-ik.lean*.26);boneRotWorld(B.spine_02,ax,-ik.lean*.34);boneRotWorld(B.neck_01,ax,ik.lean*.4);} // vorbeugen zum Pult, Kopf bleibt am Bildschirm
   const want={r:ctx.r||null,l:ctx.l||null};
-  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.14?p.t/.14:p.t<.34?1:Math.max(0,1-(p.t-.34)/.16);const b=chBtnWrist(p.m,p.key,ctx.fx,ctx.fz,k);
-    if(b){const pal=CH_DECK_N.clone().negate().applyQuaternion(p.m.group.getWorldQuaternion(ikQ2));want[p.side]={p:b,fd:chBtnFd(ctx.fx,ctx.fz),pal,fp:CH_FPOSE.press,pole:new THREE.Vector3(-ctx.fx,-.35,-ctx.fz),free:true};
-    }}
-  // weit entfernte Tasten (links): Oberkörper dreht und beugt sich mit, statt dass der Arm sich verkrampft streckt
-  {const t=want.r;ik.helpT=0;if(t&&t.free&&B.upperarm_r){const d=B.upperarm_r.getWorldPosition(new THREE.Vector3()).distanceTo(t.p);ik.helpT=Math.max(0,Math.min(1,(d-.46)/.18));}} // auch in der Ruhelage auf einer linken Taste bleibt der Oberkörper gedreht
-  ik.help=(ik.help||0)+((ik.helpT||0)-(ik.help||0))*Math.min(1,dt*4);
+  if(ctx.press){const p=ctx.press;p.t+=dt;const k=p.t<.1?p.t/.1:p.t<.26?1:Math.max(0,1-(p.t-.26)/.14);const r=chBtnRest(p.m,p.key,ctx.fx,ctx.fz,k);if(r)want[p.side]=r;} // Druck = Ruhelage, nur 2 cm tiefer
+  // weit entfernte Tasten (links): Mitspieler drehen den Oberkörper mit; die eigene Figur lehnt sich stattdessen seitlich rüber (chFPStep, ik.reach),
+  // sonst schwenkt die Drehung den anderen Arm durchs Bild (Nutzer 2026-10-23)
+  {const t=want.r;ik.helpT=0;ik.reachT=0;if(t&&t.free){if(ctx.fp&&ctx.base){const lat=(t.p.x-ctx.base.x)*ctx.rx+(t.p.z-ctx.base.z)*ctx.rz;ik.reachT=Math.max(0,Math.min(.2,-.25-lat));} // Taste weiter als 42 cm links der Schulter (Schulter sitzt 17 cm rechts der Mitte)
+    else if(B.upperarm_r){const d=B.upperarm_r.getWorldPosition(new THREE.Vector3()).distanceTo(t.p);ik.helpT=Math.max(0,Math.min(1,(d-.46)/.18));}}}
+  ik.help=(ik.help||0)+((ik.helpT||0)-(ik.help||0))*Math.min(1,dt*4);ik.reach=(ik.reach||0)+((ik.reachT||0)-(ik.reach||0))*Math.min(1,dt*5);
   if(ik.help>.001){const ax=new THREE.Vector3(ctx.rx,0,ctx.rz),up=new THREE.Vector3(0,1,0);boneRotWorld(B.spine_01,up,ik.help*.3);boneRotWorld(B.spine_02,up,ik.help*.35);boneRotWorld(B.spine_02,ax,-ik.help*.3);boneRotWorld(B.neck_01,up,-ik.help*.5);} // Drehung um die Hochachse bringt die rechte Schulter nach vorn-links, Kopf bleibt am Bildschirm
   ['r','l'].forEach(sd=>{const K=ik[sd],tgt=want[sd];
     if(tgt&&tgt.cam){const cm=ctx.cam,k=Math.min(1,dt*(tgt.rate||8)); // Pose fest im Bild: Glättung in Kamera-Koordinaten (zieht beim Laufen nicht nach)
@@ -412,13 +413,14 @@ function chFingers(B,sd,K,dt){
 // ---- eigener Körper in der Ich-Perspektive ----
 function chFPStep(dt){
   if(CHR.fail||!CHR.ready||!started)return;
-  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,Object.assign({seatH:.55},chLookOpts(chLook())));if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
+  if(!CHR.fp){const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'ICH',F:null,bubbleUntil:0,bubbleEl:null,lx:P.x,lz:P.z,v:0};scene.add(n.root);chAttach(n,Object.assign({seatH:.55,glow:.45},chLookOpts(chLook())));if(!n.rig)return;n.rig.hideHead=true;CHR.fp=n;}
   if(CHR.mirror&&CHR.mirror.rig)chAnimate(CHR.mirror,dt);
   const n=CHR.fp,R=n.rig;if(!R)return;
   const s=typeof mpLocalState==='function'?mpLocalState():{x:P.x,z:P.z,y:P.yaw+Math.PI,a:'walk'};
   const sitting=s.a==='slot'||s.a==='poker'||s.a==='hilo'||s.a==='mtable';
   if(sitting!==R.sit){R.sit=sitting;R.model.position.y=sitting?chSitOffset(n):0;}
-  const lean=s.a==='slot'&&n.ik?n.ik.lean||0:0;n.root.position.set(s.x+Math.sin(s.y)*.18*lean,0,s.z+Math.cos(s.y)*.18*lean);n.root.rotation.y=s.y; // am Automaten etwas vorrücken (Hände ans Pult)
+  const lean=s.a==='slot'&&n.ik?n.ik.lean||0:0,reach=s.a==='slot'&&n.ik?n.ik.reach||0:0;n.base={x:s.x,z:s.z};
+  n.root.position.set(s.x+Math.sin(s.y)*.18*lean+Math.cos(s.y)*reach,0,s.z+Math.cos(s.y)*.18*lean-Math.sin(s.y)*reach);n.root.rotation.y=s.y; // am Automaten etwas vorrücken (Hände ans Pult) und für linke Tasten nach links lehnen (rechts = (-cos,sin))
   const d=Math.hypot(s.x-n.lx,s.z-n.lz);n.lx=s.x;n.lz=s.z;const v=dt>0?d/dt:0;n.v+=(v-n.v)*Math.min(1,dt*10);
   if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
   R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
@@ -439,7 +441,7 @@ function chFPArms(n,dt,s,sitting){
   if(slotM){const H=n.rig.bones.Head.getWorldPosition(new THREE.Vector3());F.M=H.clone().addScaledVector(f,.1).add(new THREE.Vector3(0,.04,0));F.mf=f.clone();F.mr=r.clone();F.mu=new THREE.Vector3(0,1,0);} // sitzend: Mund am Kopfknochen (Kamera steht vorm Bildschirm)
   else{const cq=camera.quaternion;F.mf=new THREE.Vector3(0,0,-1).applyQuaternion(cq);F.mr=new THREE.Vector3(1,0,0).applyQuaternion(cq);F.mu=new THREE.Vector3(0,1,0).applyQuaternion(cq);
     const mp=typeof HD_MOUTH!=='undefined'?HD_MOUTH:[.012,-.064,-.084];F.M=eye.clone().addScaledVector(F.mr,mp[0]).addScaledVector(F.mu,mp[1]).addScaledVector(F.mf,-mp[2]);} // Mund = Lippen unterhalb der Kamera, wie die Kippe im Mund (hdMouth)
-  const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false,cam:chCamFrame()};
+  const ctx={fx,fz,rx,rz,r:null,l:null,press:null,fast:false,cam:chCamFrame(),fp:true,base:n.base||{x:s.x,z:s.z}};
   if(slotM){ctx.lean=1;const pr=chBtnRest(slotM,CHR.restKey||'START',fx,fz);if(pr)ctx.r=pr;} // nur die rechte Hand liegt am Pult (START), die linke bleibt im Schoß (Nutzer 2026-10-22)
   if(typeof HD!=='undefined'){const C=HD.cig,B=n.rig.bones;
     if(C&&C.where==='hand'){const st=HD.seq.length?HD.seq[0].to:'hand';ctx.r=chGripFix(chHandPose(st==='handMouth'?'cigMouth':st==='handAsh'?'cigAsh':'cig',F),HD.mc,B,'r');ctx.fast=st==='handAsh';}

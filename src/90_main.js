@@ -230,7 +230,7 @@ function freeMouse(){if(mouseLocked())try{document.exitPointerLock();}catch(e){}
 function grabMouse(){if(!PC||mouseLocked())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
 function pcUi(){
   document.body.classList.toggle('pcmode',PC); // nicht 'pc': so heißen die Spielkarten-Elemente
-  {const mb=$('#menuBtn');if(mb&&mb.hidden!==(PC||!started))mb.hidden=PC||!started;}
+  {const mb=$('#menuBtn');if(mb&&mb.hidden!==(PC||!started))mb.hidden=PC||!started;const sb=$('#songBtn2');if(sb&&sb.hidden!==(PC||!started))sb.hidden=PC||!started;}
   const lk=mouseLocked(),hint=PC&&!lockFail&&started&&!lk&&!focus&&!openId,ch=PC&&CUR.on&&started&&!focus&&!openId&&(lk||lockFail);
   if(cross.hidden===lk)cross.hidden=!lk;cross.classList.toggle('cur',CUR.on);if(pcHint.hidden===hint)pcHint.hidden=!hint;const che=$('#curHint');if(che&&che.hidden===ch)che.hidden=!ch;
   const cs=lockFail&&PC?(AIM.hot?'pointer':'crosshair'):'';if(cv.style.cursor!==cs)cv.style.cursor=cs;

@@ -181,7 +181,8 @@ body:not(.pcmode) #hudTop{align-items:center;gap:6px}
 body:not(.pcmode) #hudTop .tag{font-size:12px;padding:8px 9px;max-width:none}
 body:not(.pcmode) #hudTop .mid{order:0;width:auto;flex:1 1 auto;min-width:0;flex-direction:row;justify-content:center;gap:4px}
 body:not(.pcmode) #hudTop .mid .tag{padding:8px 9px;font-size:11px;min-width:0;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
-body:not(.pcmode) #menuBtn{display:grid;flex:none;font-size:20px;line-height:1;pointer-events:auto}
+body:not(.pcmode) #menuBtn,body:not(.pcmode) #songBtn2{display:grid;flex:none;font-size:20px;line-height:1;pointer-events:auto}
+body:not(.pcmode) #hudIcons #songBtn{display:none} /* Handy: Song-Knopf direkt neben dem ≡, nicht im Menü (Nutzer 2026-10-23); PC: in der Symbolreihe */
 #hudTop .ibtn{pointer-events:auto}
 body:not(.pcmode) #menuBtn[aria-expanded="true"]{color:var(--gold);border-color:var(--gold)}
 body:not(.pcmode) #hudTop .icons{display:none;position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 56px);flex-direction:column;gap:2px;min-width:200px;padding:6px;background:rgba(10,7,14,.94);border:1.5px solid var(--gold);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
@@ -560,6 +561,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <button class="ibtn" id="lookBtn" aria-label="Deine Figur" data-ic="☺"><i>ICH</i><span class="l">Deine Figur</span></button>
     <button class="ibtn" id="helpBtn" aria-label="Hilfe und Name" data-ic="?"><i>?</i><span class="l">Hilfe &amp; Name</span></button>
   </div>
+  <button class="ibtn" id="songBtn2" aria-label="Begrüßungs-Song nochmal abspielen" hidden>♬</button>
   <button class="ibtn" id="menuBtn" aria-label="Menü" aria-expanded="false" hidden>≡</button>
 </div>
 <div id="vig"></div>

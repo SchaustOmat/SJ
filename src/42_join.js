@@ -17,4 +17,6 @@ function joinStop(){if(JOIN.el&&!JOIN.el.paused)JOIN.el.pause();}
 // Knopf SONG (Kopfzeile / ≡-Menü): von vorn abspielen, auch wenn er gerade läuft
 function joinReplay(){if(typeof muted!=='undefined'&&muted){toast('Ton ist aus (♪ oben).');return;}if(JOIN.el)JOIN.el.pause();JOIN.last=0;joinSound();}
 {const b=document.getElementById('songBtn');if(b)b.addEventListener('click',()=>{SFX.click();joinReplay();});}
-joinEl(); // schon beim Laden vorladen, damit er beim Start sofort da ist
+joinEl();joinSound(); // sofort beim Laden starten (Nutzer 2026-10-23: „direkt, während man reinlädt“); blockt der Browser, holt der erste Tipp ihn nach
+{const once=()=>{if(JOIN.pending)joinSound();if(!JOIN.pending){removeEventListener('pointerdown',once,true);removeEventListener('keydown',once,true);}};addEventListener('pointerdown',once,true);addEventListener('keydown',once,true);}
+{const b2=document.getElementById('songBtn2');if(b2)b2.addEventListener('click',()=>{SFX.click();joinReplay();});}
