@@ -61,7 +61,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 #joyBase.on{opacity:1;transition:none}
 #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(239,231,210,.42);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(232,192,96,.45)}
 #ytWrap{position:fixed;left:-420px;top:0;width:200px;height:113px;opacity:0;pointer-events:none;z-index:-1}
-#radioBtn{width:auto;min-width:0;padding:0 7px;font-size:8px}
+#radioBtn,#songBtn{width:auto;min-width:0;padding:0 7px;font-size:8px}
 .ibtn.on{background:var(--gold);color:#1a1000;box-shadow:0 0 12px var(--gold)}
 .rd-now{font-family:var(--f-body);font-size:20px;color:var(--gold);margin:0 0 6px;overflow-wrap:anywhere}
 .rd-ctl{align-items:center;gap:8px}.rd-ctl .btn{color:var(--ink)}.rd-ctl b{font-family:var(--f-title);font-size:15.4px;color:var(--ink);margin-left:auto}
@@ -554,6 +554,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <button class="ibtn" id="chatBtn" aria-label="Chat" data-ic="✎" hidden><i>SAG</i><span class="l">Chat</span></button>
     <button class="ibtn" id="friendBtn" aria-label="Freunde" data-ic="✦" hidden><i>FREUNDE</i><span class="l">Freunde</span></button>
     <button class="ibtn" id="radioBtn" aria-label="Radio" data-ic="♫"><i>RADIO</i><span class="l">Radio</span></button>
+    <button class="ibtn" id="songBtn" aria-label="Begrüßungs-Song nochmal abspielen" data-ic="♬"><i>SONG</i><span class="l">Song nochmal</span></button>
     <button class="ibtn" id="rotBtn" aria-label="Querformat drehen" data-ic="⟲" aria-pressed="false"><i>⟲</i><span class="l">Querformat drehen</span></button>
     <button class="ibtn" id="sndBtn" aria-label="Ton an oder aus" data-ic="♪"><i>♪</i><span class="l">Ton an / aus</span></button>
     <button class="ibtn" id="lookBtn" aria-label="Deine Figur" data-ic="☺"><i>ICH</i><span class="l">Deine Figur</span></button>

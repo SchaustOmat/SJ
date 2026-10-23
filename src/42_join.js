@@ -14,4 +14,7 @@ function joinSound(){
   JOIN.last=t;JOIN.pending=false;try{a.currentTime=0;}catch(e){}const p=a.play();if(p&&p.then)p.then(()=>{JOIN.pending=false;},()=>{JOIN.pending=true;JOIN.last=0;}); // geblockt: beim ersten Tipp nachholen
 }
 function joinStop(){if(JOIN.el&&!JOIN.el.paused)JOIN.el.pause();}
+// Knopf SONG (Kopfzeile / ≡-Menü): von vorn abspielen, auch wenn er gerade läuft
+function joinReplay(){if(typeof muted!=='undefined'&&muted){toast('Ton ist aus (♪ oben).');return;}if(JOIN.el)JOIN.el.pause();JOIN.last=0;joinSound();}
+{const b=document.getElementById('songBtn');if(b)b.addEventListener('click',()=>{SFX.click();joinReplay();});}
 joinEl(); // schon beim Laden vorladen, damit er beim Start sofort da ist
