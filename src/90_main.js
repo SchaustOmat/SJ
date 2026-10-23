@@ -140,7 +140,7 @@ function buildWorld(){
   B.rouletteFans=[v1,v2];
   for(let i=0;i<10;i++){const [id,c]=MROW[(i+4)%5];buildMachine(B,11.6,-2.4+i*1.25,-Math.PI/2,id,c);}
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
-  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 300 €, wenn man unter 100 € hat)
+  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 100 €, wenn man unter 100 € hat)
   buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
   npc(B,{x:10.9,z:-6.8,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPERIN',special:'bartender',color:0x1a1a1e,hair:0x8a1a2a,noCol:true});
   npc(B,{x:8.85,z:-5.4,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true,color:0x5a1a6a});
@@ -550,7 +550,7 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
-const BAR_MIN=10000,BAR_GIFT=30000; // unter 100 € gibt der Barkeeper 300 € (Werte in Cent; Sinan 2026-10-22, vorher 1.000 €), nicht wenn mind. 100 € auf dem Konto liegen
+const BAR_MIN=10000,BAR_GIFT=10000; // unter 100 € gibt der Barkeeper 100 € (Werte in Cent; Justin 2026-10-23, davor 300 € und 1.000 €), nicht wenn mind. 100 € auf dem Konto liegen
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 const GFX='sharp'; // immer scharf, keine Auswahl mehr
 function resize(){
