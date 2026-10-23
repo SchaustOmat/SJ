@@ -255,13 +255,14 @@ function focusPose(){
     const g=f.m.group,deck=$('.sv-side'),bh=deck&&!SV.el.hidden?deck.offsetHeight+16:120,top=asp<1?64:12,LHv=LH();
     const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
     const v=asp<1?60:50,tv=Math.tan(v*Math.PI/360),th=tv*asp;
-    const sp=f.m.G.special&&asp>=1; // Alles Spitze quer: Aufsatz mit den Leitern muss mit ins Bild
+    const sp=f.m.G.special&&asp>=1&&!(f.m.state==='menu'||f.m.state==='boot'); // Alles Spitze quer: Aufsatz mit den Leitern muss mit ins Bild – im Spielomat-Menü nicht (da saß man weit weg, Justin 2026-10-23)
     const H=sp?1.2:asp<1?.74:.68,W=.86;
     const d=Math.max(H/(2*tv*free),W/(2*th))+.02,vis=2*d*tv;
     // Hochformat mit Platz: Aufsatz (Spielname) ganz unter die Knöpfe oben schieben, Bildschirm bleibt ganz über der Knopfleiste
     let cy=(sp?1.76:1.47)+shift*vis;const cyTop=2.47-vis*(.5-top/LHv);
     if(asp<1&&cyTop+vis*(.5-(LHv-bh)/LHv)<=1.17)cy=cyTop;
     g.localToWorld(out.pos.set(0,cy,.153+d));out.yaw=g.rotation.y;out.pitch=0;out.fov=v;
+    if(f.sm){const k=1-Math.exp(-(frameDt||.016)*6);f.sm.lerp(out.pos,k);out.pos.copy(f.sm);}else f.sm=out.pos.clone(); // Abstand wechselt weich (Menü <-> Alles Spitze), kein Sprung
   } else if(f.type==='crash'){
     const g=CR.group,bar=$('#crBar'),top=asp<1?64:12,LHv=LH(),bh=bar&&!bar.hidden?bar.offsetHeight+10:150;
     const free=Math.max(.35,(LHv-bh-top)/LHv),shift=(top-bh)/LHv/2;
@@ -585,11 +586,11 @@ $('#chatForm').addEventListener('submit',e=>{e.preventDefault();const i=$('#chat
 $('#chatIn').addEventListener('keydown',e=>e.stopPropagation());
 $('#rotBtn').addEventListener('click',()=>{rot=rot===0?90:rot===90?-90:0;store('nk_rot',rot||null);applyRot();toast(rot?'Querformat: Handy drehen. Nochmal tippen = andere Richtung.':'Hochformat');});
 
-const clock=new THREE.Clock(),tmpV=new THREE.Vector3();
+const clock=new THREE.Clock(),tmpV=new THREE.Vector3();let frameDt=.016;
 let chatterT=4,flickT=0;
 function frame(){
   requestAnimationFrame(frame);
-  const dt=Math.min(.05,clock.getDelta());now+=dt;pcUi();
+  const dt=Math.min(.05,clock.getDelta());frameDt=dt;now+=dt;pcUi();
   if(F){
     updTweens(dt);elevStep(dt);
     let mx=0,mz=0;
