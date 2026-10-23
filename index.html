@@ -754,7 +754,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792735906";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792741644";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -1793,6 +1793,8 @@ function upTex(w,h,draw,k,rx,ry){return hdTex(w*k,h*k,(g)=>{g.scale(k,k);draw(g,
 const CHR={ready:false,fail:false,clips:{},lib:null,male:null,female:null,pending:[],all:[],fp:null,seedN:0,sitOff:null,eye:null,base:(window.NK_ASSET_BASE||''),mats:{}};
 const CH_SUITS=[0x1a1a22,0x2a1a3a,0x3a1414,0x10243a,0x1e2a1a,0x3a2a10,0x262630,0x4a1a2a,0x0e2a2a,0x5a4a3a,0x2a2a2a];
 const CH_HAIR=[0x111111,0x2a1a10,0x4a2a14,0x7a4a20,0xb08a50,0x8a1a2a,0x3a3a3a];
+const CH_DRESS=[0x7a1020,0x101014,0x0e2a4a,0x1e4a2a,0x3a1a4a,0x8a6a1a,0x2a1a3a,0x5a1a2a,0x101010,0x1a3a4a,0x4a1010]; // Kleider: Bordeaux, Schwarz, Nachtblau, Smaragd, Pflaume, Gold, …
+const CH_SHIRTS=[0xf6f4ee,0xf0ece4,0xe4ecf4,0xf4efe0],CH_TIES=[0x6a1020,0x14244a,0x1a1a1e,0x8a6a1a,0x1e3a2a,0x4a1a3a]; // Hemden: Weiß, Ivory, Hellblau; Krawatten: Bordeaux, Navy, Schwarz, Gold, Grün, Aubergine
 const CH_HAIR_F=['Hair_Long','Hair_Buns','Hair_SimpleParted','Hair_BuzzedFemale'],CH_HAIR_M=['Hair_SimpleParted','Hair_Buzzed','Hair_Long','Hair_Buns'];
 const CH_SKIN=[1.32,1.14,1.0,.82,.62]; // Hautton: Faktor auf die Hauttextur (hell … dunkel)
 // ---- eigenes Aussehen (nk_look): g Körper (0 Mann, 1 Frau), h Frisur, hc Haarfarbe, s Anzug/Kleid, k Hautton, b Bart ----
@@ -1801,7 +1803,7 @@ function chLookSave(l){try{localStorage.setItem('nk_look',JSON.stringify(l));}ca
 function chLook(){if(CHR.look)return CHR.look;let l=null;try{l=JSON.parse(localStorage.getItem('nk_look')||'null');}catch(e){}
   if(!l){const r=Math.random;l={g:r()<.5?1:0,h:(r()*4)|0,hc:(r()*CH_HAIR.length)|0,s:(r()*CH_SUITS.length)|0,k:(r()*CH_SKIN.length)|0,b:0};chLookSave(l);}
   CHR.look=chLookClean(l);return CHR.look;}
-function chLookOpts(l){l=chLookClean(l);const fem=l.g===1;return {female:fem,hairStyle:(fem?CH_HAIR_F:CH_HAIR_M)[l.h],hair:CH_HAIR[l.hc],color:CH_SUITS[l.s],skin:CH_SKIN[l.k],beard:!fem&&l.b===1};}
+function chLookOpts(l){l=chLookClean(l);const fem=l.g===1;return {female:fem,hairStyle:(fem?CH_HAIR_F:CH_HAIR_M)[l.h],hair:CH_HAIR[l.hc],color:fem?CH_DRESS[l.s%CH_DRESS.length]:CH_SUITS[l.s],skin:CH_SKIN[l.k],beard:!fem&&l.b===1};}
 function chLookSet(key,delta){const l=chLook();const max={g:2,h:4,hc:CH_HAIR.length,s:CH_SUITS.length,k:CH_SKIN.length,b:2}[key];if(!max)return;l[key]=((l[key]+delta)%max+max)%max;chLookSave(l);CHR.look=l;
   const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55},o));if(CHR.mirror)chRelook(CHR.mirror,o);
   if(typeof MP!=='undefined'&&MP.room){MP.dirty=true;MP.lastSent=0;}chLookUi();}
@@ -1815,7 +1817,7 @@ function chLookUi(){const el=document.getElementById('pLook');if(!el||el.hidden)
   const set=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t;};
   set('lkG',l.g?'Frau':'Mann');set('lkH',['Lang','Dutt','Scheitel','Kurz'][l.g?l.h:[2,3,0,1][l.h]]||String(l.h+1));set('lkB',l.b?'Ja':'Nein');
   const sw=(id,hex)=>{const e=document.getElementById(id);if(e)e.style.background='#'+hex.toString(16).padStart(6,'0');};
-  sw('lkHC',CH_HAIR[l.hc]);sw('lkS',CH_SUITS[l.s]);const k=CH_SKIN[l.k],sk=Math.round(Math.min(255,170*k));const e=document.getElementById('lkK');if(e)e.style.background='rgb('+sk+','+Math.round(sk*.72)+','+Math.round(sk*.55)+')';
+  sw('lkHC',CH_HAIR[l.hc]);sw('lkS',l.g?CH_DRESS[l.s%CH_DRESS.length]:CH_SUITS[l.s]);const k=CH_SKIN[l.k],sk=Math.round(Math.min(255,170*k));const e=document.getElementById('lkK');if(e)e.style.background='rgb('+sk+','+Math.round(sk*.72)+','+Math.round(sk*.55)+')';
   const rb=document.getElementById('lkBrow');if(rb)rb.hidden=!!l.g;}
 {const el=document.getElementById('pLook');if(el)el.addEventListener('click',e=>{const b=e.target.closest('[data-lk]');if(!b)return;SFX.click();chLookSet(b.dataset.lk,+b.dataset.d||1);});}
 const chV=new THREE.Vector3(),chV2=new THREE.Vector3();
@@ -1841,28 +1843,73 @@ function chLibPrep(scene){
     if(m.parent!==arm)arm.add(m);
     m.visible=false;m.userData.part=m.name;});
   [...scene.children].forEach(c=>{if(c!==arm)scene.remove(c);});
-  // Körperzonen für die Kleidung (Bind-Pose = T-Pose): 0 Haut, 1 Jacke/Kleid, 2 Hose, 3 Schuhe, 4 Hemd
+  // Kleidung wird im Shader pro Pixel aus der Bind-Pose-Position gemalt (chBodyMat, seit 2026-10-23 – vorher Zonen je Vertex: gezackte
+  // Kanten und Streifen an den Übergängen). Hier nur noch: Arm-Kennung für die Ich-Perspektive und die Körpermaße (gemessen in der T-Pose, /H)
   ['Body_M','Body_F'].forEach(nm=>{const m=scene.getObjectByName(nm);if(!m)return;const g=m.geometry,pos=g.attributes.position,n=pos.count;g.computeBoundingBox();const H=g.boundingBox.max.y;
-    const z=new Float32Array(n);const fem=nm==='Body_F';
-    for(let i=0;i<n;i++){const x=pos.getX(i),y=pos.getY(i),zz=pos.getZ(i),ax=Math.abs(x);let v=1;
-      if(y>H*.875||(y>H*.845&&ax<H*.05))v=0;else if(ax>H*.41)v=0;else if(y<H*.045)v=3;else if(fem){v=y<H*.33?0:1;}else if(y<H*.53)v=2;else if(zz>H*.015&&ax<H*.036&&y>H*.63&&y<H*.85)v=4; // Kopf und Hals Haut, Hemd als V vom Kragen abwärts, Schultern Jacke
-      z[i]=v;}
-    for(let i=0;i<n;i++)if(z[i]===1&&Math.abs(pos.getX(i))>H*.135)z[i]=5; // Ärmel (Jacke an den Armen) = Zone 5, Weste/Jacke am Rumpf bleibt 1
-    g.setAttribute('zone',new THREE.BufferAttribute(z,1));
+    const fem=nm==='Body_F';
+    m.userData.dim={H,wrist:fem?.35:.385,seam:fem?.115:.135,neck:fem?.84:.855,fem:fem?1:0}; // Handgelenk, Ärmelnaht an der Schulter, Halsansatz (alles /H)
     // Arm-Kennung (T-Pose: Arme waagerecht): 1 = Arm/Hand, 0 = Rest – für die Ich-Perspektive am Automaten (nur Arme zeichnen)
     let y0=1e9,y1=-1e9;for(let i=0;i<n;i++){if(Math.abs(pos.getX(i))>H*.3){const y=pos.getY(i);if(y<y0)y0=y;if(y>y1)y1=y;}}
     const aw=new Float32Array(n);for(let i=0;i<n;i++){const y=pos.getY(i);aw[i]=(Math.abs(pos.getX(i))>H*.135&&y>y0-H*.01&&y<y1+H*.01)?1:0;}
     g.setAttribute('armw',new THREE.BufferAttribute(aw,1));});
   return scene;
 }
-// Körper-Material: Textur für Haut, Kleidungszonen in Figurfarben (Shader-Zusatz auf Lambert)
-function chBodyMat(map,cols){
+// Körper-Material: Haut aus der Textur (getönt), Kleidung flächig pro Pixel aus der Bind-Pose-Position (Shader-Zusatz auf Lambert).
+// pal: 0 Hautton, 1 Jacke/Weste/Kleid, 2 Hose, 3 Schuhe, 4 Hemd, 5 Ärmel, 6 Krawatte/Fliege, 7 Schmuck/Knöpfe. style 0 Anzug, 1 Kleid, 2 Weste (Croupier).
+// Alle Maße in Anteilen der Körperhöhe (T-Pose, gemessen 2026-10-23): Handgelenk, Ärmelnaht, Halsansatz je Körper (dim)
+const CH_CLOTH_GLSL=`
+varying vec3 vP;varying float vArm;uniform vec3 pal[8];uniform float fpCut;uniform vec4 uDim;uniform float uStyle;
+float chBand(float v,float a,float b){return step(a,v)*step(v,b);}
+vec3 chCloth(vec3 skin){
+  float ax=abs(vP.x),y=vP.y,z=vP.z;float wrist=uDim.x,seam=uDim.y,neckY=uDim.z,fem=uDim.w;
+  vec3 c=skin;
+  if(y<0.05){return pal[3];} // Schuhe
+  if(uStyle>0.5&&uStyle<1.5){ // ---- Kleid: runder Ausschnitt, kurze Ärmel, Saum am Knie, Taillennaht, Goldkette ----
+    if(ax>0.175)return skin; // kurze Ärmel bis zur Mitte des Oberarms
+    float u=clamp(ax/0.07,0.0,1.0);float top=z>0.0?0.80+0.035*u*u:0.83;
+    if(y>top||y<0.33)return skin;
+    c=pal[1];
+    if(ax>0.165)c*=0.8; // Ärmelkante
+    if(y<0.345)c*=0.82; // Saumkante
+    if(abs(y-0.60)<0.004)c*=0.72; // Taillennaht
+    if(z>0.0){float q=ax/0.05;float yc=0.805-0.028*(1.0-q*q);if(ax<0.05&&abs(y-yc)<0.0018)c=pal[7];if(length(vec2(ax*1.2,y-0.772))<0.006)c=pal[7];} // feine Goldkette (U-Bogen) mit kleinem Anhänger
+    return c;
+  }
+  // ---- Anzug (0) oder Weste (2): Hemd mit Kragen, V-Ausschnitt, Revers, Krawatte bzw. Fliege, Knöpfe, Manschetten ----
+  float vest=step(1.5,uStyle);
+  if(ax>wrist)return skin; // Hände
+  if(y>neckY+0.02||(y>neckY&&ax<0.06))return skin; // Kopf und Hals
+  if(ax>seam){ // Arme: Jackenärmel, Manschette ab 2,5 cm vor dem Handgelenk; Weste: Hemdärmel
+    if(vest>0.5)return pal[4];
+    if(ax>wrist-0.025)return pal[4];
+    c=pal[5];if(ax>wrist-0.032)c*=0.8;return c; // Ärmelkante
+  }
+  float hem=vest>0.5?0.55:0.47; // Jacke bis zum Schritt, Weste kürzer
+  if(y<hem){c=pal[2];if(vest>0.5&&y>hem-0.016)c=pal[3]*0.9+vec3(0.03); return c;} // Hose (bei der Weste mit Gürtel)
+  c=pal[1];
+  float vTop=neckY-0.012,vBot=vest>0.5?0.58:0.60;
+  if(z>0.0){ // Vorderseite
+    float t=clamp((y-vBot)/(vTop-vBot),0.0,1.0);float vh=(fem>0.5?0.06:0.07)*t; // halbe Breite des V
+    if(ax<vh){c=pal[4]; // Hemd im V
+      if(vest>0.5){ if(y>neckY-0.034&&y<neckY-0.014&&ax<0.034){c=pal[6];if(ax<0.007)c*=0.7;} } // Fliege mit Knoten
+      else{ float tw=0.013+0.004*(1.0-t);if(ax<tw&&y<neckY-0.016)c=pal[6]; if(y>neckY-0.04&&y<neckY-0.016&&ax<0.019)c=pal[6]*0.85; } // Krawatte mit Knoten
+    }else if(ax<vh+0.03){c=pal[1]*1.08;if(ax<vh+0.006)c=pal[1]*0.55;} // Revers mit Kante
+    if(y<vBot){ if(ax<0.0025)c=pal[1]*0.65; // Schließkante
+      float by=vBot-0.03;for(int i=0;i<3;i++){float d=length(vec2(ax-0.004,y-by));if(i<2||vest>0.5){if(d<0.011)c=pal[7];if(d<0.006)c=pal[7]*0.75;}by-=0.055;} // Knöpfe (Anzug 2, Weste 3)
+      if(vest<0.5&&abs(y-0.53)<0.003&&ax>0.05&&ax<0.11)c=pal[1]*0.7; } // Taschenklappen
+  }
+  if(y>neckY-0.022&&ax<0.085)c=pal[4]; // Hemdkragen rundum
+  return c;
+}`;
+function chBodyMat(map,pal,dim,style){
   const m=new THREE.MeshLambertMaterial({map,skinning:true});
-  m.userData.pal=cols.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
-  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float zone;attribute float armw;varying float vZone;varying float vArm;').replace('#include <uv_vertex>','#include <uv_vertex>\nvZone=zone;vArm=armw;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vZone;varying float vArm;uniform vec3 pal[6];uniform float fpCut;')
-      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\n{float sh_=clamp(diffuseColor.r*1.7,.55,1.15);vec3 c=vZone<.5?diffuseColor.rgb*pal[0]:vZone<1.5?pal[1]*sh_:vZone<2.5?pal[2]*sh_:vZone<3.5?pal[3]*sh_:vZone<4.5?pal[4]*sh_:pal[5]*sh_;diffuseColor.rgb=c;}');};
+  while(pal.length<8)pal.push(pal[pal.length-1]);
+  m.userData.pal=pal.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
+  m.userData.dim={value:new THREE.Vector4(dim.wrist,dim.seam,dim.neck,dim.fem)};m.userData.style={value:style||0};
+  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;sh.uniforms.uDim=m.userData.dim;sh.uniforms.uStyle=m.userData.style;sh.uniforms.uH={value:dim.H};
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float armw;varying float vArm;varying vec3 vP;uniform float uH;').replace('#include <uv_vertex>','#include <uv_vertex>\nvArm=armw;vP=position/uH;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\n'+CH_CLOTH_GLSL)
+      .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\ndiffuseColor.rgb=chCloth(diffuseColor.rgb*pal[0]);');};
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
@@ -1877,14 +1924,17 @@ function chAttach(n,o){
     model=THREE.SkeletonUtils.clone(CHR.lib);model.traverse(x=>{if(x.isBone){bones[x.name]=x;if(CH_FINGER_RE.test(x.name))x.userData.rest=x.quaternion.clone();}});
     const hairName=o.hairStyle||(fem?CH_HAIR_F[(seed*3+1)%CH_HAIR_F.length]:CH_HAIR_M[(seed*2+1)%3]);const beard=o.beard!==undefined?!!o.beard:(!fem&&(seed%3===0));const skin=o.skin||CH_SKIN[(seed*3+1)%CH_SKIN.length];
     const hairCol=o.hair!==undefined?o.hair:CH_HAIR[(seed*2+3)%CH_HAIR.length]; // (Faktoren teilerfremd zur Listenlänge, sonst hätten alle denselben Ton – war bis 2026-10-22 so)
-    const vest=o.vest!==undefined?!!o.vest:/CROUPIER|DEALERIN|KARTENGEBER/.test(o.name||''); // Croupier: schwarze Weste, weißes Hemd mit weißen Ärmeln (Sinan 2026-10-22)
-    const shirt=vest?0xf6f4ee:0xf0ece4,shoes=0x151214,trousers=vest?0x101014:(o.pants||col),jacket=vest?0x101014:col,sleeves=vest?0xf6f4ee:col;
-    const sk=new THREE.Color(skin,skin,skin);const pal=fem?[sk,jacket,jacket,shoes,shirt,sleeves]:[sk,jacket,trousers,shoes,shirt,sleeves];
+    const vest=o.vest!==undefined?!!o.vest:/CROUPIER|DEALERIN|KARTENGEBER/.test(o.name||''); // Croupier: schwarze Weste, weißes Hemd mit weißen Ärmeln, Fliege (Sinan 2026-10-22)
+    const style=vest?2:fem?1:0; // 0 Anzug mit Hemd und Krawatte, 1 Kleid, 2 Weste
+    const dress=o.color!==undefined?o.color:CH_DRESS[(seed*5+2)%CH_DRESS.length];
+    const shirt=vest?0xf6f4ee:CH_SHIRTS[(seed*3)%CH_SHIRTS.length],shoes=0x151214,trousers=vest?0x101014:(o.pants||col),jacket=vest?0x101014:(fem?dress:col),sleeves=vest?0xf6f4ee:col;
+    const tie=vest?0x0a0a0c:CH_TIES[(seed*7+1)%CH_TIES.length],acc=fem&&!vest?0xd6a02a:0x1a1612; // Krawatte je Figur, Kette gold, Knöpfe dunkel
+    const sk=new THREE.Color(skin,skin,skin);const pal=[sk,jacket,trousers,shoes,shirt,sleeves,tie,acc];
     model.traverse(x=>{if(!x.isSkinnedMesh)return;const nm=x.name;const bodyOf=fem?'F':'M';
       const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
       x.visible=show;if(!show)return;
       const src=Array.isArray(x.material)?x.material[0]:x.material;
-      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal);
+      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal,x.userData.dim||{H:1.8,wrist:.385,seam:.135,neck:.855,fem:0},style);
       else if(nm.startsWith('Hair_')||nm.startsWith('Brows_'))x.material=chLamMat(src,hairCol); // Brauen in Haarfarbe (waren weiß, Sinan 2026-10-22)
       else x.material=chLamMat(src);
       if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}});
