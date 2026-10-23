@@ -736,7 +736,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
     <p><b>Geldautomat (EG &amp; 2. Stock):</b> Portemonnaie antippen, Karte antippen. Dann Chips aufs Konto einzahlen, abheben oder an Mitspieler im Raum senden.</p>
     <p><b>Pharao Wild:</b> Gewinne in beide Richtungen und in der Mitte. Ab 4-fachem Einsatz als Gewinn: POWER SPINS mit 4 Walzen gleichzeitig.</p>
     <p><b>⟲ oben:</b> Querformat, falls sich die App nicht mitdreht.</p>
-    <p style="color:var(--dim)">Nur Spielgeld. Unter 100 €? Der Barkeeper gibt dir 1.000 €. Am PC: WASD, Maus ziehen, klicken, Leertaste = Start.</p>
+    <p style="color:var(--dim)">Nur Spielgeld. Unter 100 €? Der Barkeeper gibt dir 300 €. Am PC: WASD, Maus ziehen, klicken, Leertaste = Start.</p>
   </div>
 </section>
 </div>
@@ -754,7 +754,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792691865";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792733734";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -1392,7 +1392,7 @@ const LINES={
   slot:["Gleich kommt das Buch...","Drei Bücher. Nur drei.","Risiko? Immer Risiko.","Psst. Ich bin im Flow.","Der hier ist heiß, ich spür's."],
   busy:["Besetzt! Such dir 'nen eigenen.","Finger weg, der ist meiner.","Der gibt gleich. Geh weiter."],
   bouncer:["Aufzug geht in den 2. Stock. Benimm dich da oben.","Oben spielen die Großen.","Keine Fotos.","Ausgang? Welcher Ausgang?"],
-  bartender:["Champagner geht aufs Haus. Zum Wohl.","Willkommen in der SJ Spielbank.","Knapp bei Kasse? Dann komm zu mir. Ich hab 1.000 € für dich."],
+  bartender:["Champagner geht aufs Haus. Zum Wohl.","Willkommen in der SJ Spielbank.","Knapp bei Kasse? Dann komm zu mir. Ich hab 300 € für dich."],
   dealer:["Faites vos jeux.","Einsätze bitte.","Rien ne va plus.","Setz oder geh weiter."],
   vip:["Hier oben wird's ernst.","Gestern hab ich den Laden fast leergeräumt.","Setz dich, wenn du dich traust.","Die Musik ist zu laut. Perfekt."],
   poker:["All-in. Spaß.","Ich hab nix. Oder doch?","Zeig mal deine Karten.","Du blinzelst. Bluff.","Der Flop gehört mir.","River, sei nett."]
@@ -7396,7 +7396,7 @@ function buildWorld(){
   B.rouletteFans=[v1,v2];
   for(let i=0;i<10;i++){const [id,c]=MROW[(i+4)%5];buildMachine(B,11.6,-2.4+i*1.25,-Math.PI/2,id,c);}
   buildHilo(B);buildATM(B,-2.4,-11.6,0);
-  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 1.000 €, wenn man unter 100 € hat)
+  // VIP-Bar an der Ostwand vorne (gegenüber vom Aufzug), mit Barkeeperin (gibt wie unten 300 €, wenn man unter 100 € hat)
   buildBar(B,{z:-6.8,len:5.6,stools:[-8.2,-5.4]});
   npc(B,{x:10.9,z:-6.8,rot:-Math.PI/2,anim:'bar',lines:LINES.bartender,name:'BARKEEPERIN',special:'bartender',color:0x1a1a1e,hair:0x8a1a2a,noCol:true});
   npc(B,{x:8.85,z:-5.4,rot:Math.PI/2,sit:true,anim:'drink',lines:LINES.vip,name:'GAST',noCol:true,color:0x5a1a6a});
@@ -7806,7 +7806,7 @@ function setFloor(i){
   floors.forEach(f=>f.npcs.forEach(n=>{if(n.bubbleEl)n.bubbleEl.hidden=true;n.bubbleUntil=0;}));
   EL.lastDisp='';
 }
-const BAR_MIN=10000,BAR_GIFT=100000; // unter 100 € gibt der Barkeeper 1.000 € (Werte in Cent), nicht wenn mind. 100 € auf dem Konto liegen
+const BAR_MIN=10000,BAR_GIFT=30000; // unter 100 € gibt der Barkeeper 300 € (Werte in Cent; Sinan 2026-10-22, vorher 1.000 €), nicht wenn mind. 100 € auf dem Konto liegen
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 const GFX='sharp'; // immer scharf, keine Auswahl mehr
 function resize(){
