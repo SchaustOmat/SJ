@@ -569,7 +569,7 @@ function resize(){
   if(typeof svLayout==='function')svLayout();
 }
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
-$('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
+$('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;if(muted&&typeof joinStop==='function')joinStop();});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
 $('#lookBtn').addEventListener('click',()=>{openPanel('pLook');if(typeof chMirrorShow==='function')chMirrorShow();});
 // Handy-Menü (≡) oben rechts: Symbole aufklappen; schließt bei Auswahl, Tippen ins Bild oder wenn ein Fenster aufgeht
@@ -665,7 +665,7 @@ fontWait.then(()=>{
   ni.addEventListener('change',()=>{MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.dirty=true;mpTag();});
   mpInit();cloudSaveInit();
   // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
-  const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
+  const audioOnce=()=>{if(!AC)initAudio();if(typeof joinSound==='function')joinSound();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);}; // erster Tipp = Ton frei: Begrüßungs-Song fürs eigene Reinkommen
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
   const enterGame=()=>{
     MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();

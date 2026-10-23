@@ -754,7 +754,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1792742011";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1792746787";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -5322,7 +5322,7 @@ function mpSync(peers){
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
     if(!a){const m=makeAvatar(name,color,pr.lk);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color,peer:p.peer,lkKey:JSON.stringify(pr.lk||null)};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
-      if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
+      if(MP.started){toast(name+' ist jetzt in der Spielbank.');if(typeof joinSound==='function')joinSound();}} // Begrüßungs-Song für alle, wenn jemand dazukommt
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     {const lkKey=JSON.stringify(pr.lk||null);if(lkKey!==a.lkKey&&typeof chRelook==='function'){a.lkKey=lkKey;const look=pr.lk?chLookOpts(pr.lk):{color,hair:0x111111};chRelook(a.m.st,look);chRelook(a.m.si,Object.assign({sit:true},look));}}
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
@@ -5438,7 +5438,7 @@ function netConnect(asHost){
       const first=!NET.ok;NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;
       if(!NET.timer)NET.timer=setInterval(netTick,150);
       netStatus((asHost?'Raum '+NET.code+' ist offen. Sag deinem Kollegen den Code.':'Im Raum '+NET.code+'. Warte auf die anderen…'));
-      if(first)toast('Raum '+NET.code+' verbunden.');
+      if(first){toast('Raum '+NET.code+' verbunden.');if(MP.started&&typeof joinSound==='function')joinSound();} // Begrüßungs-Song beim Beitreten
     });
   });
   cli.on('message',(topic,buf)=>{
@@ -7303,6 +7303,25 @@ function handsStep(dt){
 function handsRender(){if(!HD.rig.visible)return;renderer.clearDepth();renderer.render(HD.scene,camera);}
 
 
+/* ---- 42_join.js ---- */
+/* =========================================================
+   BEGRÜSSUNGS-SONG BEIM BETRETEN (Nutzer-Wunsch 2026-10-23, Tonspur aus seinem Video: assets/sfx/join.mp3, ~20 s)
+   Spielt für den Spieler selbst beim Start („HEREINSPAZIERT“) und beim Beitreten eines Raums,
+   und für alle im Raum, sobald jemand Neues auftaucht (jeder Client spielt ihn lokal, wenn ein neuer Mitspieler erscheint).
+   Läuft er gerade (mehrere kommen gleichzeitig), wird nicht neu gestartet. Ton-Schalter aus = stumm (laufender Song stoppt).
+   iOS braucht den ersten play() in einer Tipp-Geste: darum wird er im Klick auf HEREINSPAZIERT bzw. beim Passwort-OK direkt aufgerufen.
+   ========================================================= */
+const JOIN={el:null,src:'assets/sfx/join.mp3',last:0};
+function joinEl(){if(JOIN.el)return JOIN.el;const a=document.createElement('audio');a.src=(window.NK_ASSET_BASE||'')+JOIN.src;a.preload='auto';a.volume=.55;a.setAttribute('playsinline','');JOIN.el=a;return a;}
+function joinSound(){
+  if(typeof muted!=='undefined'&&muted)return;const a=joinEl(),t=Date.now()/1000;
+  if(!a.paused&&!a.ended&&t-JOIN.last<19)return; // läuft gerade: nicht neu starten
+  JOIN.last=t;try{a.currentTime=0;}catch(e){}const p=a.play();if(p&&p.catch)p.catch(()=>{});
+}
+function joinStop(){if(JOIN.el&&!JOIN.el.paused)JOIN.el.pause();}
+joinEl(); // schon beim Laden vorladen, damit er beim Start sofort da ist
+
+
 /* ---- 90_main.js ---- */
 /* =========================================================
    AUFZUG
@@ -7875,7 +7894,7 @@ function resize(){
   if(typeof svLayout==='function')svLayout();
 }
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
-$('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;});
+$('#sndBtn').addEventListener('click',()=>{muted=!muted;if(master)master.gain.value=muted?0:.5;$('#sndBtn').style.opacity=muted?.4:1;if(muted&&typeof joinStop==='function')joinStop();});
 $('#helpBtn').addEventListener('click',()=>openPanel('pHelp'));
 $('#lookBtn').addEventListener('click',()=>{openPanel('pLook');if(typeof chMirrorShow==='function')chMirrorShow();});
 // Handy-Menü (≡) oben rechts: Symbole aufklappen; schließt bei Auswahl, Tippen ins Bild oder wenn ein Fenster aufgeht
@@ -7971,7 +7990,7 @@ fontWait.then(()=>{
   ni.addEventListener('change',()=>{MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.dirty=true;mpTag();});
   mpInit();cloudSaveInit();
   // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
-  const audioOnce=()=>{if(!AC)initAudio();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);};
+  const audioOnce=()=>{if(!AC)initAudio();if(typeof joinSound==='function')joinSound();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);}; // erster Tipp = Ton frei: Begrüßungs-Song fürs eigene Reinkommen
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
   const enterGame=()=>{
     MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();

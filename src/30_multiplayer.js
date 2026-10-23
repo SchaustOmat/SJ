@@ -50,7 +50,7 @@ function mpSync(peers){
     let a=MP.avatars.get(p.peer);
     const name=cleanText(pr.n,14)||'GAST';const color=AV_COLS.includes(pr.c)?pr.c:AV_COLS[0];
     if(!a){const m=makeAvatar(name,color,pr.lk);a={m,n:m.st,tx:pr.x,tz:pr.z,ty:pr.y||0,f:pr.f|0,act:'walk',color,peer:p.peer,lkKey:JSON.stringify(pr.lk||null)};m.g.position.set(pr.x,0,pr.z);MP.avatars.set(p.peer,a);MP.seenSay[p.peer]=pr.st||null;MP.seenWin[p.peer]=pr.wt||null;
-      if(MP.started)toast(name+' ist jetzt in der Spielbank.');}
+      if(MP.started){toast(name+' ist jetzt in der Spielbank.');if(typeof joinSound==='function')joinSound();}} // Begrüßungs-Song für alle, wenn jemand dazukommt
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     {const lkKey=JSON.stringify(pr.lk||null);if(lkKey!==a.lkKey&&typeof chRelook==='function'){a.lkKey=lkKey;const look=pr.lk?chLookOpts(pr.lk):{color,hair:0x111111};chRelook(a.m.st,look);chRelook(a.m.si,Object.assign({sit:true},look));}}
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
@@ -166,7 +166,7 @@ function netConnect(asHost){
       const first=!NET.ok;NET.ok=true;MP.room=netRoomObj();MP.dirty=true;$('#chatBtn').hidden=false;
       if(!NET.timer)NET.timer=setInterval(netTick,150);
       netStatus((asHost?'Raum '+NET.code+' ist offen. Sag deinem Kollegen den Code.':'Im Raum '+NET.code+'. Warte auf die anderen…'));
-      if(first)toast('Raum '+NET.code+' verbunden.');
+      if(first){toast('Raum '+NET.code+' verbunden.');if(MP.started&&typeof joinSound==='function')joinSound();} // Begrüßungs-Song beim Beitreten
     });
   });
   cli.on('message',(topic,buf)=>{
