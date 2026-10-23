@@ -17,7 +17,7 @@ const CH_HAIR=[0x111111,0x2a1a10,0x4a2a14,0x7a4a20,0xb08a50,0x8a1a2a,0x3a3a3a];
 const CH_DRESS=[0x7a1020,0x101014,0x0e2a4a,0x1e4a2a,0x3a1a4a,0x8a6a1a,0x2a1a3a,0x5a1a2a,0x101010,0x1a3a4a,0x4a1010]; // Kleider: Bordeaux, Schwarz, Nachtblau, Smaragd, Pflaume, Gold, …
 const CH_SHIRTS=[0xf6f4ee,0xf0ece4,0xe4ecf4,0xf4efe0],CH_TIES=[0x6a1020,0x14244a,0x1a1a1e,0x8a6a1a,0x1e3a2a,0x4a1a3a]; // Hemden: Weiß, Ivory, Hellblau; Krawatten: Bordeaux, Navy, Schwarz, Gold, Grün, Aubergine
 const CH_HAIR_F=['Hair_Long','Hair_Buns','Hair_SimpleParted','Hair_BuzzedFemale'],CH_HAIR_M=['Hair_SimpleParted','Hair_Buzzed','Hair_Long','Hair_Buns'];
-const CH_SKIN=[1.32,1.14,1.0,.82,.62]; // Hautton: Faktor auf die Hauttextur (hell … dunkel)
+const CH_SKIN=[1.32,1.18,1.06,.94]; // Hautton: Faktor auf die Hauttextur, hell bis gebräunt (Justin 2026-10-23: Figuren nach seinem Freundeskreis; vorher bis .62)
 // ---- eigenes Aussehen (nk_look): g Körper (0 Mann, 1 Frau), h Frisur, hc Haarfarbe, s Anzug/Kleid, k Hautton, b Bart ----
 function chLookClean(l){const n=(v,max)=>Math.max(0,Math.min(max-1,Math.round(+v)||0));l=l&&typeof l==='object'?l:{};return {g:l.g?1:0,h:n(l.h,4),hc:n(l.hc,CH_HAIR.length),s:n(l.s,CH_SUITS.length),k:n(l.k,CH_SKIN.length),b:l.b?1:0};}
 function chLookSave(l){try{localStorage.setItem('nk_look',JSON.stringify(l));}catch(e){}}
