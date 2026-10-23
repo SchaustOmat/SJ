@@ -665,10 +665,10 @@ fontWait.then(()=>{
   ni.addEventListener('change',()=>{MP.name=cleanText(ni.value,14).trim().toUpperCase()||'GAST';store('nk_name',MP.name);MP.dirty=true;mpTag();});
   mpInit();cloudSaveInit();
   // kein Startknopf: nach dem Laden direkt ins Spiel; Ton startet beim ersten Tippen/Klick (Browser-Regel)
-  const audioOnce=()=>{if(!AC)initAudio();if(typeof joinSound==='function')joinSound();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);}; // erster Tipp = Ton frei: Begrüßungs-Song fürs eigene Reinkommen
+  const audioOnce=()=>{if(!AC)initAudio();if(typeof JOIN!=='undefined'&&JOIN.pending)joinSound();removeEventListener('pointerdown',audioOnce,true);removeEventListener('keydown',audioOnce,true);}; // erster Tipp = Ton frei: geblockten Begrüßungs-Song nachholen
   addEventListener('pointerdown',audioOnce,true);addEventListener('keydown',audioOnce,true);
   const enterGame=()=>{
-    MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();
+    MP.started=true;MP.dirty=true;mpTag();if(typeof frStart==='function')frStart();if(typeof joinSound==='function')joinSound(); // Begrüßungs-Song automatisch beim Reinkommen (falls der Browser es ohne Tipp erlaubt)
     $('#start').classList.add('out');setTimeout(()=>{$('#start').hidden=true;},950);
     $('#hudTop').hidden=false;joyBase.hidden=PC;joyHint.hidden=PC;locked=false;started=true;
     let seen=false;try{seen=localStorage.getItem('nk_help2')==='1';localStorage.setItem('nk_help2','1');}catch(e){}
