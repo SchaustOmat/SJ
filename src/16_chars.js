@@ -79,55 +79,60 @@ function chLibPrep(scene){
 // pal: 0 Hautton, 1 Jacke/Weste/Kleid, 2 Hose, 3 Schuhe, 4 Hemd, 5 Ärmel, 6 Krawatte/Fliege, 7 Schmuck/Knöpfe. style 0 Anzug, 1 Kleid, 2 Weste (Croupier).
 // Alle Maße in Anteilen der Körperhöhe (T-Pose, gemessen 2026-10-23): Handgelenk, Ärmelnaht, Halsansatz je Körper (dim)
 const CH_CLOTH_GLSL=`
-varying vec3 vP;varying float vArm;uniform vec3 pal[8];uniform float fpCut;uniform vec4 uDim;uniform float uStyle;
-float chBand(float v,float a,float b){return step(a,v)*step(v,b);}
+varying vec3 vP;varying float vArm;uniform vec3 pal[8];uniform float fpCut;uniform vec4 uDim;uniform float uStyle;uniform float uPin;
+float chHash(vec3 p){return fract(sin(dot(floor(p),vec3(12.9898,78.233,37.719)))*43758.5453);}
+bool chTri(vec2 p,vec2 a,vec2 b,vec2 c){float d1=(p.x-b.x)*(a.y-b.y)-(a.x-b.x)*(p.y-b.y),d2=(p.x-c.x)*(b.y-c.y)-(b.x-c.x)*(p.y-c.y),d3=(p.x-a.x)*(c.y-a.y)-(c.x-a.x)*(p.y-a.y);bool n=(d1<0.0)||(d2<0.0)||(d3<0.0),q=(d1>0.0)||(d2>0.0)||(d3>0.0);return !(n&&q);}
 vec3 chCloth(vec3 skin){
   float ax=abs(vP.x),y=vP.y,z=vP.z;float wrist=uDim.x,seam=uDim.y,neckY=uDim.z,fem=uDim.w;
+  float g=0.95+0.10*chHash(vP*650.0); // Stoffkorn (Webstruktur, nur aus der Nähe sichtbar)
   vec3 c=skin;
-  if(y<0.05){return pal[3];} // Schuhe
-  if(uStyle>0.5&&uStyle<1.5){ // ---- Kleid: runder Ausschnitt, kurze Ärmel, Saum am Knie, Taillennaht, Goldkette ----
-    if(ax>0.175)return skin; // kurze Ärmel bis zur Mitte des Oberarms
-    float u=clamp(ax/0.07,0.0,1.0);float top=z>0.0?0.80+0.035*u*u:0.83;
-    if(y>top||y<0.33)return skin;
-    c=pal[1];
+  if(y<0.05)return pal[3]*(0.92+0.16*chHash(vP*300.0)); // Schuhe
+  if(uStyle>0.5&&uStyle<1.5){ // ---- Kleid: Oberteil auf dem Körper, der Rock ist ein eigenes Netz (chSkirt) ----
+    if(ax>0.175)return skin; // kurze Ärmel
+    float u=clamp(ax/0.07,0.0,1.0);float top=z>0.0?0.80+0.035*u*u:0.83; // runder Ausschnitt vorn, hinten höher
+    if(y>top||y<0.50)return skin;
+    c=pal[1]*g;
     if(ax>0.165)c*=0.8; // Ärmelkante
-    if(y<0.345)c*=0.82; // Saumkante
-    if(abs(y-0.60)<0.004)c*=0.72; // Taillennaht
-    if(z>0.0){float q=ax/0.05;float yc=0.805-0.028*(1.0-q*q);if(ax<0.05&&abs(y-yc)<0.0018)c=pal[7];if(length(vec2(ax*1.2,y-0.772))<0.006)c=pal[7];} // feine Goldkette (U-Bogen) mit kleinem Anhänger
+    if(abs(y-0.60)<0.005)c=pal[7]*0.95; // schmaler Goldgürtel
+    if(z>0.0){float q=ax/0.05;float yc=0.805-0.028*(1.0-q*q);if(ax<0.05&&abs(y-yc)<0.0018)c=pal[7];if(length(vec2(ax*1.2,y-0.772))<0.006)c=pal[7];} // feine Kette mit Anhänger
     return c;
   }
-  // ---- Anzug (0) oder Weste (2): Hemd mit Kragen, V-Ausschnitt, Revers, Krawatte bzw. Fliege, Knöpfe, Manschetten ----
+  // ---- Anzug (0) / Weste (2) ----
   float vest=step(1.5,uStyle);
   if(ax>wrist)return skin; // Hände
-  if(y>neckY+0.02||(y>neckY&&ax<0.06))return skin; // Kopf und Hals
-  if(ax>seam){ // Arme: Jackenärmel, Manschette ab 2,5 cm vor dem Handgelenk; Weste: Hemdärmel
-    if(vest>0.5)return pal[4];
-    if(ax>wrist-0.025)return pal[4];
-    c=pal[5];if(ax>wrist-0.032)c*=0.8;return c; // Ärmelkante
+  if(y>neckY+0.016)return skin; // Hals über dem Kragen, Kopf
+  if(y>neckY-0.012&&ax<0.055)return pal[4]*g; // Hemdkragen: schmales Band um den Hals (nicht über die Schultern)
+  float pinB=(uPin>0.5&&vest<0.5)?0.14:0.0; // Nadelstreifen
+  if(ax>seam){ // Ärmel
+    if(vest>0.5)return pal[4]*g; // Weste: weiße Hemdärmel
+    if(ax>wrist-0.025)return pal[4]*g; // Manschette
+    c=pal[5]*g*(1.0+pinB*step(fract(y*55.0),0.06));if(ax>wrist-0.031)c*=0.75;return c; // Jackenärmel mit Kante, Streifen längs
   }
-  float hem=vest>0.5?0.55:0.47; // Jacke bis zum Schritt, Weste kürzer
-  if(y<hem){c=pal[2];if(vest>0.5&&y>hem-0.016)c=pal[3]*0.9+vec3(0.03); return c;} // Hose (bei der Weste mit Gürtel)
-  c=pal[1];
-  float vTop=neckY-0.012,vBot=vest>0.5?0.58:0.60;
+  float hem=vest>0.5?0.525:0.47;
+  if(y<hem){c=pal[2]*g*(1.0+pinB*step(fract(ax*55.0),0.06));if(vest>0.5&&y>hem-0.015)c=vec3(0.12,0.09,0.06);if(z>0.0&&abs(ax-0.05)<0.0018&&y<0.44)c*=0.82;return c;} // Hose (Bügelfalte), bei der Weste Gürtel
+  c=pal[1]*g*(1.0+pinB*step(fract(ax*55.0),0.06));
+  float vTop=neckY-0.012,vBot=vest>0.5?0.60:0.62;
   if(z>0.0){ // Vorderseite
-    float t=clamp((y-vBot)/(vTop-vBot),0.0,1.0);float vh=(fem>0.5?0.06:0.07)*t; // halbe Breite des V
-    if(ax<vh){c=pal[4]; // Hemd im V
-      if(vest>0.5){ if(y>neckY-0.034&&y<neckY-0.014&&ax<0.034){c=pal[6];if(ax<0.007)c*=0.7;} } // Fliege mit Knoten
-      else{ float tw=0.013+0.004*(1.0-t);if(ax<tw&&y<neckY-0.016)c=pal[6]; if(y>neckY-0.04&&y<neckY-0.016&&ax<0.019)c=pal[6]*0.85; } // Krawatte mit Knoten
-    }else if(ax<vh+0.03){c=pal[1]*1.08;if(ax<vh+0.006)c=pal[1]*0.55;} // Revers mit Kante
-    if(y<vBot){ if(ax<0.0025)c=pal[1]*0.65; // Schließkante
-      float by=vBot-0.03;for(int i=0;i<3;i++){float d=length(vec2(ax-0.004,y-by));if(i<2||vest>0.5){if(d<0.011)c=pal[7];if(d<0.006)c=pal[7]*0.75;}by-=0.055;} // Knöpfe (Anzug 2, Weste 3)
-      if(vest<0.5&&abs(y-0.53)<0.003&&ax>0.05&&ax<0.11)c=pal[1]*0.7; } // Taschenklappen
+    float t=clamp((y-vBot)/(vTop-vBot),0.0,1.0);float vh=(vest>0.5?0.03:0.045)*t; // V-Ausschnitt: oben so breit wie der Hals, unten am obersten Knopf geschlossen
+    if(ax<vh){c=pal[4]*g; // Hemd im Ausschnitt
+      if(vest<0.5){float bw=mix(0.012,0.021,clamp((0.80-y)/0.14,0.0,1.0));if(y<=0.80&&ax<bw)c=pal[6]*g;} // Krawattenblatt
+    }else{float lw=0.04*(0.45+0.55*t);if(ax<vh+lw){c=pal[1]*1.12*g+0.04;if(ax<vh+0.003||ax>vh+lw-0.0025)c=pal[1]*0.5;}} // Revers (etwas heller) mit dunklen Kanten
+    if(y<vBot){if(ax<0.003)c=pal[1]*0.5; // Schließkante
+      float by=vBot-0.008;for(int i=0;i<3;i++){if(i<2||vest>0.5){float d=length(vec2((ax-0.006)*1.3,y-by));if(d<0.009)c=pal[7];if(d<0.0045)c=pal[7]*0.65;}by-=vest>0.5?0.032:0.058;} // Knöpfe (Anzug 2, Weste 3)
+      if(vest<0.5&&abs(y-0.52)<0.0025&&ax>0.045&&ax<0.105)c=pal[1]*0.55;} // Taschenklappen
+    if(vest<0.5&&vP.x>0.0&&abs(y-0.70)<0.0022&&ax>0.05&&ax<0.085)c=pal[1]*0.55; // Brusttasche links
+    if(chTri(vec2(ax,y),vec2(0.012,0.846),vec2(0.056,0.846),vec2(0.030,0.795)))c=pal[4]*g; // Kragenspitzen liegen über dem Revers
+    if(vest<0.5&&y>0.800&&y<0.842&&ax<0.017)c=pal[6]*0.8; // Krawattenknoten zwischen den Kragenspitzen
+    if(vest>0.5&&ax<0.032&&abs(y-0.822)<mix(0.006,0.013,clamp((ax-0.006)/0.026,0.0,1.0))){c=pal[6];if(ax<0.006)c*=0.6;} // Fliege
   }
-  if(y>neckY-0.022&&ax<0.085)c=pal[4]; // Hemdkragen rundum
   return c;
 }`;
-function chBodyMat(map,pal,dim,style,glow){
-  const m=new THREE.MeshLambertMaterial({map,skinning:true});m.userData.glow={value:glow||0};
+function chBodyMat(map,pal,dim,style,glow,pin){
+  const m=new THREE.MeshPhongMaterial({map,skinning:true,shininess:16,specular:new THREE.Color(0x1c1c1c)});m.userData.glow={value:glow||0};m.userData.pin={value:pin?1:0}; // Phong: leichter Stoff-/Hautglanz statt flachem Lambert
   while(pal.length<8)pal.push(pal[pal.length-1]);
   m.userData.pal=pal.map(c=>new THREE.Color(c));m.userData.cut={value:0}; // cut 1 = nur Arme zeichnen (eigener Körper am Automaten)
   m.userData.dim={value:new THREE.Vector4(dim.wrist,dim.seam,dim.neck,dim.fem)};m.userData.style={value:style||0};
-  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;sh.uniforms.uDim=m.userData.dim;sh.uniforms.uStyle=m.userData.style;sh.uniforms.uH={value:dim.H};sh.uniforms.uGlow=m.userData.glow;
+  m.onBeforeCompile=sh=>{sh.uniforms.pal=({value:m.userData.pal});sh.uniforms.fpCut=m.userData.cut;sh.uniforms.uDim=m.userData.dim;sh.uniforms.uStyle=m.userData.style;sh.uniforms.uH={value:dim.H};sh.uniforms.uGlow=m.userData.glow;sh.uniforms.uPin=m.userData.pin;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float armw;varying float vArm;varying vec3 vP;uniform float uH;').replace('#include <uv_vertex>','#include <uv_vertex>\nvArm=armw;vP=position/uH;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\n'+CH_CLOTH_GLSL+'\nuniform float uGlow;')
       .replace('#include <map_fragment>','#include <map_fragment>\nif(fpCut>.5&&vArm<.5)discard;\ndiffuseColor.rgb=chCloth(diffuseColor.rgb*pal[0]);')
@@ -135,13 +140,27 @@ function chBodyMat(map,pal,dim,style,glow){
   return m;
 }
 function chLamMat(src,tint){const key=src.uuid+'|'+(tint||'');if(CHR.mats[key])return CHR.mats[key];const m=new THREE.MeshLambertMaterial({map:src.map||null,color:tint!==undefined?tint:0xffffff,skinning:true,transparent:!!src.transparent,alphaTest:src.alphaTest||0});return CHR.mats[key]=m;}
+// Rock für Kleider: eigenes Netz am selben Skelett (oben Becken, unten Oberschenkel), damit er wie Stoff hängt, beim Gehen mitschwingt
+// und beim Sitzen auf dem Schoß liegt. Maße in Anteilen der Körperhöhe (Hüfte ≈ .49, Knie ≈ .29); hinten bleibt mehr Becken-Gewicht, damit er hängt
+function chSkirt(body,color){
+  const bones=body.skeleton.bones,bi=nm=>bones.findIndex(b=>b.name===nm),iP=bi('pelvis'),iL=bi('thigh_l'),iR=bi('thigh_r');if(iP<0||iL<0||iR<0)return null;
+  const H=(body.userData.dim&&body.userData.dim.H)||1.77,SEG=28,ROWS=7,pos=[],nor=[],si=[],sw=[],idx=[];
+  const y0=.575,y1=.305,rx0=.108,rz0=.082,rx1=.15,rz1=.13,zc=-.013;
+  for(let r=0;r<=ROWS;r++){const t=r/ROWS,y=(y0+(y1-y0)*t)*H,rx=(rx0+(rx1-rx0)*t)*H,rz=(rz0+(rz1-rz0)*t)*H;
+    for(let k=0;k<=SEG;k++){const a=k/SEG*Math.PI*2,cx=Math.cos(a),sz=Math.sin(a);pos.push(cx*rx,y,zc*H+sz*rz);nor.push(cx/rx,0,sz/rz);
+      const wp=1-t*(sz>0?.7:.45),side=THREE.MathUtils.smoothstep(cx,-.5,.5),wt=1-wp;si.push(iP,iL,iR,0);sw.push(wp,wt*side,wt*(1-side),0);}}
+  for(let r=0;r<ROWS;r++)for(let k=0;k<SEG;k++){const a=r*(SEG+1)+k,b=a+SEG+1;idx.push(a,b,a+1,a+1,b,b+1);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));g.normalizeNormals();
+  g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));g.setIndex(idx);
+  const m=new THREE.SkinnedMesh(g,new THREE.MeshPhongMaterial({color,skinning:true,side:THREE.DoubleSide,shininess:22,specular:new THREE.Color(0x262626)}));m.frustumCulled=false;m.castShadow=false;m.receiveShadow=false;m.name='Skirt';
+  m.position.copy(body.position);m.quaternion.copy(body.quaternion);m.scale.copy(body.scale);m.bind(body.skeleton,body.bindMatrix);body.parent.add(m);return m;}
 // alte Figur durch Skelett-Modell ersetzen
 function chAttach(n,o){
   if(CHR.fail||n.rig)return;if(!CHR.ready){CHR.pending.push([n,o]);return;}
   CHR.seedN++;const seed=CHR.seedN;
   const fem=o.female!==undefined?!!o.female:(/IN$/.test(o.name||'')||o.hair===0xb02a5a||o.hair===0x8a1a2a||(o.name==='GAST'&&seed%2===1));
   const col=o.color!==undefined?o.color:CH_SUITS[seed%CH_SUITS.length];
-  let model;const bones={};
+  let model,skirt=null;const bones={};
   if(CHR.lib){
     model=THREE.SkeletonUtils.clone(CHR.lib);model.traverse(x=>{if(x.isBone){bones[x.name]=x;if(CH_FINGER_RE.test(x.name))x.userData.rest=x.quaternion.clone();}});
     const hairName=o.hairStyle||(fem?CH_HAIR_F[(seed*3+1)%CH_HAIR_F.length]:CH_HAIR_M[(seed*2+1)%3]);const beard=o.beard!==undefined?!!o.beard:(!fem&&(seed%3===0));const skin=o.skin||CH_SKIN[(seed*3+1)%CH_SKIN.length];
@@ -156,10 +175,11 @@ function chAttach(n,o){
       const show=nm==='Body_'+bodyOf||nm==='Eyes_'+bodyOf||nm==='Eyes_'+bodyOf+'.001'||nm==='Brows_'+bodyOf||nm===hairName||(beard&&nm==='Hair_Beard');
       x.visible=show;if(!show)return;
       const src=Array.isArray(x.material)?x.material[0]:x.material;
-      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal,x.userData.dim||{H:1.8,wrist:.385,seam:.135,neck:.855,fem:0},style,o.glow||0);
+      if(nm.startsWith('Body_'))x.material=chBodyMat(src.map,pal,x.userData.dim||{H:1.8,wrist:.385,seam:.135,neck:.855,fem:0},style,o.glow||0,style===0&&seed%3===1);
       else if(nm.startsWith('Hair_')||nm.startsWith('Brows_'))x.material=chLamMat(src,hairCol); // Brauen in Haarfarbe (waren weiß, Sinan 2026-10-22)
       else x.material=chLamMat(src);
       if(n.act){x.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(x);}});
+    if(style===1){const body=model.getObjectByName('Body_F');if(body){skirt=chSkirt(body,pal[1]);if(skirt&&n.act){skirt.userData.act=n.act;if(n.F&&n.F.hits)n.F.hits.push(skirt);}}}
   }else{ // Rückfall: Mannequin aus anim.glb
     model=THREE.SkeletonUtils.clone(CHR.male);model.traverse(x=>{if(x.isBone)bones[x.name]=x;
       if(x.isSkinnedMesh){const ms=Array.isArray(x.material)?x.material:[x.material];const nm=ms.map(mt=>new THREE.MeshLambertMaterial({color:/joint/i.test(mt.name)?0x121216:col,skinning:true}));x.material=Array.isArray(x.material)?nm:nm[0];
@@ -168,7 +188,7 @@ function chAttach(n,o){
   while(n.root.children.length)n.root.remove(n.root.children[0]);
   n.root.add(model);
   const mixer=new THREE.AnimationMixer(model);
-  n.rig={model,bones,mixer,cur:'',curAct:null,sit:!!o.sit,speed:.92+Math.random()*.16,fem,seatH:o.seatH||.58,tScale:1};
+  n.rig={model,bones,mixer,cur:'',curAct:null,sit:!!o.sit,speed:.92+Math.random()*.16,fem,seatH:o.seatH||.58,tScale:1,skirt};
   n.head=bones.Head||n.head;n.neck=bones.neck_01;n.armL=bones.hand_l||n.armL;n.armR=bones.hand_r||n.armR;n.torso=bones.spine_03||n.torso;n.items=null;
   if(n.rig.sit){model.position.y=chSitOffset(n)+(o.sitLift||0);}
   CHR.all.push(n);
@@ -222,7 +242,7 @@ const CH_IKBONES=['spine_01','spine_02','neck_01','upperarm_r','lowerarm_r','han
 // Gedreht wird um die lokale X-Achse des Fingerknochens (so beugen auch die Animationen, an der Faust gemessen), das Daumen-Grundglied
 // um seine gemessene Achse. Feste Winkel statt Mischung mit der Animation: so sehen die Finger in jedem Clip gleich sauber aus.
 const CH_FPOSE={
-  flat:[[6,8,12],[8,10,6],[10,12,8],[12,14,10],[14,16,12]],        // Hand liegt flach auf dem Pult
+  flat:[[18,14,8,14],[10,16,12],[12,18,14],[15,22,16],[18,26,18]],  // Hand liegt entspannt auf der Taste: Finger leicht gebogen, Daumen angelegt (4. Wert = Daumen zur Hand, Grad)
   press:[[14,20,30],[12,20,12],[12,20,12],[14,22,14],[16,24,16]],  // Taste flach mit vier Fingern drücken (Nutzer 2026-10-22), Daumen locker
   cig:[[10,14,22],[16,16,10],[20,18,12],[70,82,58],[76,86,62]],    // Kippe zwischen Zeige- und Mittelfinger, Ring/Klein locker eingerollt
   glass:[[14,22,34],[46,58,30],[50,62,34],[50,62,34],[52,64,38]],  // Finger ums Glas
@@ -274,8 +294,8 @@ CHR.press=null;
 function chPress(m,key){if(!CHR.fp||!CHR.fp.rig||!m||!m.btns)return;const near=(focus&&focus.m===m)||Math.hypot(m.group.position.x-P.x,m.group.position.z-P.z)<1.7;if(!near)return;
   const k=key==='KARTE'?'RISIKO':key,bk=m.btns[k]?k:'START';CHR.press={m,key:bk,side:chBtnSide(k),t:0};CHR.restKey=bk;} // die Hand bleibt danach auf dieser Taste liegen (Nutzer 2026-10-22: bei LEITER nicht zurück zu START)
 // Ruhelage auf einer Taste: Hand liegt locker auf der zuletzt gedrückten Taste (Fingerspitzen knapp über der Taste)
-function chBtnRest(m,key,fx,fz,k){const b=chBtnPos(m,m.btns&&m.btns[key]?key:'START',new THREE.Vector3());if(!b)return null;b.x-=fx*.17;b.z-=fz*.17;b.y+=.085-.022*(k||0); // Ruhelage: Hand flach geneigt (~20°), Fingerspitzen auf der Taste; k = Druck (Hand geht nur 2 cm runter, Nutzer 2026-10-23: kein Hochspringen)
-  const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:new THREE.Vector3(fx*.94,-.34,fz*.94).normalize(),pal,fp:CH_FPOSE.flat,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
+function chBtnRest(m,key,fx,fz,k){const b=chBtnPos(m,m.btns&&m.btns[key]?key:'START',new THREE.Vector3());if(!b)return null;b.x-=fx*.165;b.z-=fz*.165;b.y+=.112-.02*(k||0); // Ruhelage: Hand flach geneigt (~20°), Fingerspitzen auf der Taste; k = Druck (Hand geht nur 2 cm runter, Nutzer 2026-10-23: kein Hochspringen)
+  const pal=CH_DECK_N.clone().negate().applyQuaternion(m.group.getWorldQuaternion(new THREE.Quaternion()));return {p:b,fd:new THREE.Vector3(fx*.95,-.3,fz*.95).normalize(),pal,fp:CH_FPOSE.flat,pole:new THREE.Vector3(-fx,-.35,-fz),free:true};} // Ellbogen hinten (Pult liegt auf Schulterhöhe: so bleibt der Unterarm flach und die Hand kann abwärts zeigen)
 function chBtnSide(k){return 'r';} // am Automaten bedient nur die rechte Hand alle Tasten (Nutzer 2026-10-22); bei den linken Tasten dreht der Oberkörper mit
 function chBtnPos(m,key,out){const b=m&&m.btns&&(m.btns[key]||m.btns.START);if(!b||!b.mesh)return null;return b.mesh.getWorldPosition(out);}
 // Handgelenk-Ziel beim Drücken: hinter und über der Taste, der gestreckte Zeigefinger (ca. 23 cm ab Handgelenk) zeigt schräg nach vorn-unten auf die Taste (k=1: gedrückt)
@@ -373,7 +393,7 @@ function chArmsStep(n,dt,ctx){
       K.cp.lerp(tgt.p,k);K.cq.slerp(tgt.q,k);K.cur.copy(fpvP(cm,K.cp.toArray()));
       K.fd=fpvV(cm,new THREE.Vector3(1,0,0).applyQuaternion(K.cq).toArray());K.pal=fpvV(cm,new THREE.Vector3(0,1,0).applyQuaternion(K.cq).toArray());K.pole=tgt.pole?fpvV(cm,tgt.pole.toArray()):null;K.free=true;
       K.w=Math.min(1,K.w+dt*4);K.fp=tgt.fp||null;K.coll=tgt.coll||null;}
-    else if(tgt){K.camMode=false;K.free=!!tgt.free;K.coll=tgt.coll||null;const rp=n.root.getWorldPosition(new THREE.Vector3()),off=tgt.p.clone().sub(rp);if(!K.has||!K.off){K.off=off;K.has=true;}else K.off.lerp(off,Math.min(1,dt*(ctx.fast?18:7)));K.cur.copy(rp).add(K.off);K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach, relativ zum Körper (beim Laufen bleibt die Hand im Bild, Nutzer 2026-10-22)
+    else if(tgt){K.camMode=false;K.free=!!tgt.free;K.coll=tgt.coll||null;const rp=n.root.getWorldPosition(new THREE.Vector3()),off=tgt.p.clone().sub(rp);if(!K.has||!K.off){K.off=off;K.has=true;K.lift=0;}else{const dd=K.off.distanceTo(off);if(tgt.free)K.lift=Math.max(K.lift||0,Math.min(1,dd/.14));K.off.lerp(off,Math.min(1,dt*(ctx.fast?18:7)));}K.lift=(K.lift||0)*Math.max(0,1-dt*5);K.cur.copy(rp).add(K.off);if(K.lift>.001)K.cur.y+=K.lift*.05;K.w=Math.min(1,K.w+dt*4);K.fd=tgt.fd||null;K.pal=tgt.pal||null;K.fp=tgt.fp||null;K.pole=tgt.pole||null;} // 7/s: der Arm zieht weich nach, relativ zum Körper (beim Laufen bleibt die Hand im Bild); beim Wechsel zu einer anderen Taste hebt sich die Hand kurz an (K.lift, bis 5 cm) und setzt dann auf
     else{K.w=Math.max(0,K.w-dt*4);if(K.w<=0){K.has=false;K.camMode=false;K.off=null;}}
     if(K.w>0&&K.has){const o=sd==='r'?.45:-.45;const pole=K.pole||new THREE.Vector3(ctx.rx*o,-1,ctx.rz*o);chArmIK(n,sd,K.cur,K.w,pole); // Ellbogen eher unten als seitlich
       if(K.fd)chWrist(B,sd,K.fd,K.pal,K.w,K.free);
@@ -395,14 +415,18 @@ function chCollHit(C,b){const ch=b.children.find(c=>c.isBone);if(!ch)return fals
   b.getWorldPosition(chCP2);ch.getWorldPosition(chCP);
   const t=(p)=>{C.obj.worldToLocal(p);return Math.abs(p.x)<C.hx+r&&Math.abs(p.y)<C.hy+r&&Math.abs(p.z)<C.hz+r;};
   const mid=chCP2.clone().add(chCP).multiplyScalar(.5);return t(chCP)||t(mid);}
+const chQS=new THREE.Quaternion();
 function chFingers(B,sd,K,dt){
   if(!K.fp&&!K.fc)return;const tgt=K.fp||CH_FPOSE.flat;if(!K.fc)K.fc=tgt.map(f=>f.slice());
   const C=K.coll&&K.coll.obj&&K.coll.obj.visible?K.coll:null;if(C)C.obj.updateMatrixWorld(true);
   for(let i=0;i<5;i++)for(let j=0;j<3;j++){const b=B[CH_FING[i]+'_0'+(j+1)+'_'+sd];if(!b||!b.userData.rest)continue;
-    K.fc[i][j]+=(tgt[i][j]-K.fc[i][j])*Math.min(1,dt*10);
+    K.fc[i][j]+=(tgt[i][j]-K.fc[i][j])*Math.min(1,dt*8);
+    if(j===0){const spT=tgt[i][3]||0;K.fc[i][3]=(K.fc[i][3]||0)+(spT-(K.fc[i][3]||0))*Math.min(1,dt*8);}
     if(i===0&&j===0){chFAx.copy(CH_THUMB_AX);if(sd==='l'){chFAx.y=-chFAx.y;chFAx.z=-chFAx.z;}}else chFAx.set(1,0,0);
-    const ax=chFAx.clone();chQA.copy(b.quaternion);
-    const setA=a=>{ikQ.setFromAxisAngle(ax,a*Math.PI/180);ikQ2.copy(b.userData.rest).multiply(ikQ);b.quaternion.copy(chQA).slerp(ikQ2,K.w);};
+    const ax=chFAx.clone();chQA.copy(b.quaternion);const sp=j===0?(K.fc[i][3]||0)*Math.PI/180*(sd==='l'?-1:1):0;
+    const setA=a=>{ikQ.setFromAxisAngle(ax,a*Math.PI/180);ikQ2.copy(b.userData.rest).multiply(ikQ);
+      if(sp){if(i===0){chQS.setFromAxisAngle(new THREE.Vector3(0,0,1),sp*.6);ikQ2.multiply(chQS);chQS.setFromAxisAngle(new THREE.Vector3(0,1,0),-sp*.6);ikQ2.multiply(chQS);}else{chQS.setFromAxisAngle(new THREE.Vector3(0,0,1),sp);ikQ2.multiply(chQS);}} // Daumen zur Hand (Z/Y, gemessen 2026-10-23), Finger spreizen um Z
+      b.quaternion.copy(chQA).slerp(ikQ2,K.w);};
     setA(K.fc[i][j]);
     if(C){b.updateMatrixWorld(true);if(chCollHit(C,b)){let lo=-25,hi=K.fc[i][j];setA(lo);b.updateMatrixWorld(true);
         if(!chCollHit(C,b)){for(let it=0;it<7;it++){const m=(lo+hi)/2;setA(m);b.updateMatrixWorld(true);if(chCollHit(C,b))hi=m;else lo=m;}setA(lo);}
@@ -425,7 +449,7 @@ function chFPStep(dt){
   if(sitting)n.anim=s.a;else if(s.a==='elev')n.anim='idle';else n.anim=n.v>4.6?'sprint':n.v>2.3?'run':n.v>.25?'walk':'idle';
   R.tScale=n.anim==='walk'?clamp(n.v/1.5,.6,1.7):n.anim==='run'?clamp(n.v/3.2,.75,1.5):n.anim==='sprint'?clamp(n.v/6,.8,1.3):1;
   n.root.visible=!locked&&EL.phase!=='moving'&&!(openId)&&(!focus||focus.type==='slot'); // nur frei laufend oder am Automaten; an Crash-Terminal/Tischen stünde der Körper vor der Kamera (Nutzer 2026-10-22)
-  const cut=sitting&&s.a==='slot'?1:0;if(R.cutVal!==cut){R.cutVal=cut;R.model.traverse(x=>{if(x.isSkinnedMesh&&x.material&&x.material.userData.cut)x.material.userData.cut.value=cut;});} // am Automaten nur Arme + Hände (Shader-Schnitt)
+  const cut=sitting&&s.a==='slot'?1:0;if(R.cutVal!==cut){R.cutVal=cut;R.model.traverse(x=>{if(x.isSkinnedMesh&&x.material&&x.material.userData.cut)x.material.userData.cut.value=cut;});if(R.skirt)R.skirt.visible=!cut;} // am Automaten nur Arme + Hände (Shader-Schnitt)
   chAnimate(n,dt);n.root.updateMatrixWorld(true);
   chFPArms(n,dt,s,sitting);
 }
