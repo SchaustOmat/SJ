@@ -566,6 +566,7 @@ function timerDone(m){
       m.gamble.busy=false;
       {const cap=m.gamble.kind==='ladder'?99:5;
       if(m.win<=0){m.gamble=null;m.state='idle';slotIdleMsg(m);if(m.auto)m.timer=.6;}
+      else if(m.gamble.kind==='ladder'&&m.gamble.safe){m.state='gamble';collect(m);} // RISIKO+-Verlust: 100 € sicher ausgezahlt
       else if(m.gamble.n>=cap||(m.gamble.kind==='ladder'&&m.gamble.idx>=ladOf(m).length-1)){m.state='gamble';m.msg='MAXIMUM ERREICHT';collect(m,true);}
       else{m.state='gamble';m.msg=m.gamble.kind==='ladder'?'LEITER DRÜCKEN ODER NEHMEN':'ROT ODER SCHWARZ?';}}
       m.dirty=true;m.topDirty=true;updateButtons(m);
@@ -688,6 +689,7 @@ function startGamble(m,kind){
   m.present=null;if(!(m.auto&&m.autoRisk&&kind==='ladder'))m.auto=false;
   if(kind==='ladder'){
     let idx=-1;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=m.win)idx=i;
+    if(idx===F_I)idx=F_I-1; // 100 € ist nur die Sicherheitsstufe in RISIKO+, keine Spielstufe: mit 100–139,99 € auf 84 € einsteigen
     // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
     const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
@@ -715,7 +717,8 @@ const AUS_I=5; // erste Stufe über dem Feld AUSSPIELUNG (4,00 €)
 const ausIdx=m=>AUS_I;
 function ladOf(m){const f=m?ladFactor(m):1;return LADC[f]||(LADC[f]=LAD_REAL.map(v=>v*f));}
 // Bis einschließlich 4 € (Ausspielung) gilt klassisch „hoch oder 0“: so geht jeder Druck ~50 % hoch (Wunsch: nicht ständig runter).
-// Ab 8 € fällt man bei Verlust 2 Stufen, in RISIKO+ (ab 140 €) nur auf mindestens 100 €. Von 100 € hoch auf 140 € oder runter auf 52 €. Fair mit 2 % Vorteil.
+// Ab 8 € fällt man bei Verlust 2 Stufen. In RISIKO+ (ab 140 €) fällt man bei Verlust auf 100 € und die Leiter ist damit ZU ENDE: die 100 € werden ausgezahlt
+// (Justin 2026-10-24: „in RISIKO+ nie unter 100, dann hört die Leiter auf, nur bis 300“). 100 € ist keine Spielstufe: ein Gewinn von 100–139,99 € steigt auf 84 € ein (Rest gutgeschrieben). Fair mit 2 % Vorteil.
 // Verlust (nach den Videos des Nutzers): bis 4 € auf 0, von 8 € auf 4 €, sonst 2 Stufen runter; RISIKO+ auf 100 €
 const ladDown=i=>i>=TOP_I?F_I:i===F_I?TOP_I-3:i===AUS_I+1?AUS_I:i>AUS_I?i-2:-1;
 const ladNext=i=>i===TOP_I-2?TOP_I:i+1; // 84 € → 140 € (100 € liegt nur in der RISIKO+-Spalte)
@@ -750,6 +753,7 @@ function ladderResult(m){
   if(t>from&&t>=AUS_I&&from<AUS_I){m.win=L[t];m.disp=L[AUS_I-1];m.msg='AUSSPIELUNG!';ausShow(m);return;}
   if(t>from){m.win=L[t];m.disp=m.win;m.msg='LEITER '+fmt(m.win);if(!m.remote)setTimeout(()=>SFX.ladFan(),100);gm.noChord=now+.5;
     ladGo(m);return;}
+  if(t===F_I&&from>=TOP_I){m.win=L[t];m.disp=m.win;m.msg='RISIKO+ · '+fmt(m.win)+' SICHER';gm.safe=true;gm.busy=true;if(!m.remote)SFX.lose();m.state='gambleNext';m.timer=1.3;m.stateT=0;m.dirty=true;m.topDirty=true;updateButtons(m);return;} // Leiter zu Ende, 100 € werden ausgezahlt
   if(t>=0){m.win=L[t];m.disp=m.win;m.msg='RUNTER AUF '+fmt(m.win);ladGo(m);return;}
   gm.idx=-1;m.msg='VERLOREN';m.win=0;m.disp=0;SFX.ladZero();m.state='gambleNext';m.timer=1.0;m.stateT=0;m.dirty=true;updateButtons(m);
 }
