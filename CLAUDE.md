@@ -9,7 +9,7 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 - Es gibt zusätzlich eine Claude-Artifact-Version (Build mit `--artifact`), die nutzt window.claude (room/db/user) statt MQTT.
 
 ## Bauen
-- OFFLINE-Schalter (Justin 2026-10-30: „Seite ganz zu, dass keiner spielen kann, bis ich sage es kann online“): liegt die Datei `OFFLINE` im Projekt, baut build.py statt des Spiels nur eine Wartungsseite „Gerade geschlossen“ (offene Spiele laden über die Versionsprüfung von selbst darauf um). Wieder online: `OFFLINE` löschen, bauen, pushen – die Wartungsseite lädt dann von selbst das Spiel. Nur auf ausdrückliches Wort von Justin wieder öffnen.
+- OFFLINE-Schalter (Justin 2026-10-30: „Seite ganz zu, dass keiner spielen kann, bis ich sage es kann online“): liegt die Datei `OFFLINE` im Projekt, baut build.py statt des Spiels nur eine Wartungsseite „Gerade geschlossen“ (offene Spiele laden über die Versionsprüfung von selbst darauf um). Wieder online: `OFFLINE` löschen, bauen, pushen – die Wartungsseite lädt dann von selbst das Spiel. Nur auf ausdrückliches Wort von Justin wieder öffnen. Seit 2026-10-30 ist zusätzlich GitHub Pages ganz abgeschaltet (Justin: „Seite gar nicht geht“, Link gibt 404). Wieder an: `gh api -X POST repos/SchaustOmat/SJ/pages -f "source[branch]=main" -f "source[path]=/"`, danach OFFLINE löschen und wie oben bauen/pushen.
 - `python build.py` → fügt `src/*.js` (sortiert) + `src/shell.html` zu `index.html` zusammen und schreibt `version.txt`.
 - `python build.py --artifact PFAD` → Claude-Version.
 - Nie `index.html` direkt bearbeiten, immer `src/`.
