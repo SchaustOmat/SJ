@@ -37,15 +37,29 @@ def main():
     page = shell.replace(THREE, THREE + '\n' + MQTT + '\n<script>window.NK_STANDALONE=true;window.NK_VERSION="' + ver + '";</script>')
     page = page.replace('<title>', '<style>html,body{margin:0;height:100%;font-family:system-ui,sans-serif}'
                         ':root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>\n<title>', 1)
+    # Schalter: liegt die Datei OFFLINE im Projekt, wird statt des Spiels nur eine Wartungsseite veröffentlicht (keiner kann spielen).
+    # Offene Spiele laden über die Versionsprüfung von selbst auf diese Seite um (spätestens beim Aufstehen), Spielstände bleiben im Gerät.
+    # Die Wartungsseite prüft alle 30 s version.txt und lädt das Spiel neu, sobald OFFLINE gelöscht und neu gebaut ist.
+    offline = os.path.exists(os.path.join(ROOT, 'OFFLINE'))
+    if offline:
+        html = (head + '<title>SJ Spielbank</title>\n<style>html,body{margin:0;height:100%;background:#0a0608;color:#e8c46a;'
+                'font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;text-align:center}'
+                'h1{font-size:28px;letter-spacing:.12em;margin:0 0 12px}p{color:#b8a888;font-size:16px;margin:0;padding:0 20px}</style>\n'
+                '</head>\n<body><div><h1>SJ SPIELBANK</h1><p>Gerade geschlossen. Bis bald.</p></div>\n'
+                '<script>var V="' + ver + '";setInterval(function(){fetch("version.txt?t="+Date.now(),{cache:"no-store"})'
+                '.then(function(r){return r.ok?r.text():""}).then(function(v){v=(v||"").trim();if(/^[0-9]+$/.test(v)&&+v>+V)'
+                'location.replace(location.pathname+"?v="+v);}).catch(function(){});},30000);</script>\n</body>\n</html>\n')
+    else:
+        html = head + page + '<script>\n' + js + '</script>\n</body>\n</html>\n'
     with open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8') as f:
-        f.write(head + page + '<script>\n' + js + '</script>\n</body>\n</html>\n')
+        f.write(html)
     with open(os.path.join(ROOT, 'version.txt'), 'w') as f:
         f.write(ver)
     if '--artifact' in sys.argv:
         out = sys.argv[sys.argv.index('--artifact') + 1]
         with open(out, 'w', encoding='utf-8') as f:
             f.write(shell + '<script>\n' + js + '</script>\n')
-    print('gebaut, Version', ver)
+    print('gebaut, Version', ver, '(OFFLINE: nur Wartungsseite)' if offline else '')
 
 if __name__ == '__main__':
     main()
