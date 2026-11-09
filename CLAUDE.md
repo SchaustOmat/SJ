@@ -36,7 +36,7 @@ Antworten an den Nutzer immer auf Deutsch, kurz und ohne Fachchinesisch.
 
 ## Stand 2026-10-21 (große Überarbeitung) und offene Punkte
 - Umgesetzt: edle HD-Halle, Geräteschrift, Leiter nach Nutzer-Videos, Alles Spitze neu, Freunde, Highscore-Tafel, Crash-Terminal (EG), Voice-Chat mit Discord-Klang und RNNoise, mehrere Automaten gleichzeitig, Zeiger-Modus am PC (Tab/rechte Maustaste), Handy-Tastenleiste, Passwort SJS, Handy-HUD mit ≡-Menü, Barkeeper 100 € unter 100 €.
-- Offen/Wünsche des Nutzers (siehe auch Memory): Inventarsystem; Portemonnaie-System (Geld rausnehmen, werfen/ablegen); realistisch weiches Umschauen; Freispiel-Intros und Gewinn-Animationen je Spiel aufwerten; Zentaurus-Säulen „LINIEN 20“ schöner (Marmor/Gold) oder weg; Spielnamen/Merkur-Sonne ggf. durch eigene ersetzen (Markenrecht).
+- Offen/Wünsche des Nutzers (siehe auch Memory): Inventarsystem; Portemonnaie-System (Geld rausnehmen, werfen/ablegen); realistisch weiches Umschauen; Freispiel-Intros und Gewinn-Animationen je Spiel aufwerten; (erledigt 2026-11-09: Zentaurus-Säulen als Marmor mit Goldkapitell/-fuß und Medaillon „20“, ztColumn in 27_mk_symbols.js); Spielnamen/Merkur-Sonne ggf. durch eigene ersetzen (Markenrecht).
 - Rauchen/Trinken (2026-10-21, Wunsch „richtig geil“): Ablauf wie vom Nutzer beschrieben (Schachtel in 3D, Maus öffnet Deckel, Kippe hebt sich beim Drüberfahren, Klick = in den Mund, Feuerzeug, brennt von selbst, Ziehen/Hand/Mund/Abaschen). Zukunft: Portemonnaie mit Scheinen (werfen, ablegen, geben, Bargeld/Konto, am Automaten Scheine einzahlen), mehr Interaktion mit Gegenständen (Schachtel drehen/zu/einpacken).
 - Der Nutzer testet selbst am Handy und am PC und meldet sich mit Screenshots/Videos; immer danach nachbauen, nie Merkur-Dateien übernehmen.
 

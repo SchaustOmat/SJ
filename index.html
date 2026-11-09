@@ -757,7 +757,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1793537506";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1794222723";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -5014,10 +5014,33 @@ function ztMarble(){return mkCanvas('zt_marble',64,192,g=>{g.fillStyle=mkLin(g,0
 function ztRed(){return mkCanvas('zt_red',96,96,g=>{g.fillStyle='#c01010';g.fillRect(0,0,96,96);g.fillStyle='#ff4a3a';
   for(let i=0;i<24;i++){const a=i/24*TAU;g.beginPath();g.moveTo(48,48);g.lineTo(48+Math.cos(a)*70,48+Math.sin(a)*70);g.lineTo(48+Math.cos(a+.08)*70,48+Math.sin(a+.08)*70);g.fill();}
   g.fillStyle=mkRad(g,48,48,10,48,[[0,'rgba(255,255,255,.7)'],[1,'rgba(255,255,255,0)']]);g.fillRect(0,0,96,96);});}
-function ztColumn(){return mkCanvas('zt_col',20,160,g=>{g.fillStyle=mkLin(g,0,0,20,0,[[0,'#8a909a'],[.4,'#f0f2f6'],[1,'#7a808a']]);g.fillRect(0,0,20,160);
-  g.fillStyle='rgba(80,86,96,.35)';[4,9,14].forEach(x=>g.fillRect(x,8,1,144));g.fillStyle='#e8ecf0';g.fillRect(0,0,20,6);g.fillRect(0,154,20,6);
-  g.fillStyle='#0a3a3a';g.fillRect(4,12,12,136);g.font='bold 9px '+MK_BLOCK;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#5af0e0';
-  'LINIEN'.split('').forEach((c,i)=>g.fillText(c,10,20+i*10));g.font='bold 10px '+MK_BLOCK;g.fillText('20',10,82);'LINIEN'.split('').forEach((c,i)=>g.fillText(c,10,96+i*10));});}
+// Säule: Marmorschaft mit Kanneluren und Adern, goldenes Kapitell mit Voluten, goldener Fuß, eingelegtes Gold „LINIEN 20 LINIEN“
+function ztColumn(){return mkCanvas('zt_col',40,320,g=>{let s=29;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;};
+  const T=36,B=284;// Schaft von T bis B
+  g.fillStyle=mkLin(g,4,0,36,0,[[0,'#8c9098'],[.22,'#e6e8ec'],[.42,'#fbfbfc'],[.7,'#dadde2'],[1,'#7c8088']]);g.fillRect(4,T,32,B-T);
+  mkNoise(g,4,T,32,B-T,260,['rgba(110,114,124,.16)','rgba(255,255,255,.5)'],23);
+  g.lineWidth=.9;for(let k=0;k<7;k++){let x=4+r()*32,y=T+r()*(B-T);g.strokeStyle='rgba(120,126,140,'+(.25+r()*.25).toFixed(2)+')';g.beginPath();g.moveTo(x,y);
+    for(let j=0;j<7;j++){x=Math.max(5,Math.min(35,x+(r()-.5)*10));y+=4+r()*9;g.lineTo(x,y);}g.stroke();}
+  g.strokeStyle='rgba(210,170,70,.35)';g.lineWidth=.6;g.beginPath();let x=10,y=T+20;g.moveTo(x,y);for(let j=0;j<20;j++){x=Math.max(6,Math.min(34,x+(r()-.5)*8));y+=6+r()*6;g.lineTo(x,y);}g.stroke();
+  [9,15,21,27,33].forEach(fx=>{g.fillStyle=mkLin(g,fx-2,0,fx+2,0,[[0,'rgba(70,74,84,.28)'],[.5,'rgba(70,74,84,.05)'],[1,'rgba(255,255,255,.35)']]);g.fillRect(fx-2,T+6,4,B-T-12);});
+  // Kapitell: Abakus, Wulst mit Voluten, Halsring
+  g.fillStyle=mkGold(g,0,10);g.fillRect(0,0,40,9);g.fillStyle='rgba(60,36,0,.6)';g.fillRect(0,8,40,1);
+  g.fillStyle=mkGold(g,9,24);g.beginPath();g.moveTo(3,9);g.lineTo(37,9);g.quadraticCurveTo(34,24,20,24);g.quadraticCurveTo(6,24,3,9);g.fill();
+  [[6,15],[34,15]].forEach(([vx,vy])=>{g.fillStyle=mkGold(g,vy-6,vy+6);g.beginPath();g.arc(vx,vy,5.5,0,TAU);g.fill();g.strokeStyle='#5a3600';g.lineWidth=1;g.beginPath();
+    for(let a=0;a<4*Math.PI;a+=.2){const rr=5-a*.33,px2=vx+Math.cos(a)*rr,py2=vy+Math.sin(a)*rr;a?g.lineTo(px2,py2):g.moveTo(px2,py2);}g.stroke();g.fillStyle='#fff6c0';g.fillRect(vx-1,vy-1,2,2);});
+  g.fillStyle='#fff3b0';for(let ex=11;ex<30;ex+=6){g.beginPath();g.ellipse(ex+1.5,15,2,3.5,0,0,TAU);g.fill();}
+  g.fillStyle=mkGold(g,26,T);g.fillRect(3,27,34,4);g.fillRect(5,31,30,T-31);g.fillStyle='rgba(60,36,0,.5)';g.fillRect(3,30,34,1);
+  // Fuß: zwei Wülste und Platte
+  g.fillStyle=mkGold(g,B,B+8);g.fillRect(3,B,34,7);g.fillStyle=mkGold(g,B+7,B+15);g.fillRect(1,B+7,38,8);g.fillStyle='rgba(60,36,0,.55)';g.fillRect(1,B+7,38,1);g.fillRect(3,B+3,34,1);
+  g.fillStyle=mkGold(g,B+15,320);g.fillRect(0,B+15,40,320-B-15);g.fillStyle='rgba(255,250,210,.55)';g.fillRect(0,B+15,40,1);
+  // Medaillon mit 20 in der Mitte
+  const cy=(T+B)/2;g.fillStyle=mkGold(g,cy-17,cy+17);g.beginPath();g.ellipse(20,cy,15,17,0,0,TAU);g.fill();
+  g.fillStyle=mkRad(g,18,cy-4,2,16,[[0,'#1c6a5e'],[1,'#062a26']]);g.beginPath();g.ellipse(20,cy,12,14,0,0,TAU);g.fill();
+  g.font='bold 16px '+MK_BLOCK;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#2a1800';g.fillText('20',20.8,cy+1.8);g.fillStyle=mkGold(g,cy-8,cy+8);g.fillText('20',20,cy+1);
+  // eingelegte Goldbuchstaben (vertieft: dunkle Kante oben links, helle unten rechts)
+  g.font='bold 13px '+MK_BLOCK;const L='LINIEN'.split(''),st=15;
+  [[T+16,1],[cy+28,1]].forEach(([y0])=>L.forEach((c,i)=>{const ly=y0+i*st;g.fillStyle='rgba(60,60,70,.55)';g.fillText(c,19.4,ly-.6);g.fillStyle='rgba(255,255,255,.8)';g.fillText(c,20.7,ly+.7);
+    g.fillStyle=mkGold(g,ly-6,ly+6);g.fillText(c,20,ly);}));});}
 
 // Tizona: Burg vor Nachthimmel (Basisspiel) bzw. vor glühendem Abendrot (Freispiele)
 function tzCastle(g,fs){g.fillStyle=fs?mkLin(g,0,0,0,240,[[0,'#2a0a04'],[.45,'#c8501a'],[1,'#3a1404']]):mkLin(g,0,0,0,240,[[0,'#020818'],[.5,'#0e2448'],[1,'#040a18']]);g.fillRect(0,0,320,240);
