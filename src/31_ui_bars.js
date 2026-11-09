@@ -6,26 +6,37 @@ SV.mctx=SV.main.getContext('2d');SV.tctx=SV.top.getContext('2d');SV.mctx.imageSm
 SVKEYS.forEach(k=>{const b=$('#sv-'+k);SV.btn[k]=b;
   b.addEventListener('pointerdown',e=>{e.preventDefault();if(SV.m)pressButton(SV.m,k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});});
 $('#svStand').addEventListener('click',()=>{SFX.click();leaveFocus();});
-$('#svCard').addEventListener('click',()=>{const m=SV.m;if(m&&isMine(m))cardOut(m);});
+$('#svCard').addEventListener('click',()=>{const m=SV.m;if(!m)return;if(isMine(m))cardOut(m);else if(m.cashOn)svGate(m,true);});
 // Beim Hinsetzen: Portemonnaie raus, Karte antippen -> Karte fährt rein -> ENTSPERRT
 function svGateOn(m){const el=$('#svGate');return !!el&&!el.hidden&&SV.m===m;}
-function svGate(m){
-  const el=$('#svGate');if(!el)return;if(!m||isMine(m)){el.hidden=true;return;}
+function svGate(m,feed){
+  const el=$('#svGate');if(!el)return;if(!m||(slotLive(m)&&!feed)){el.hidden=true;return;}
   el.hidden=false;el.className='gwrap';el.dataset.st='enter';
-  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">KARTE STECKEN</div>'+walletHtml('gWallet')+'<p class="gate-h" id="gHint">Portemonnaie antippen</p></div>';
+  el.innerHTML='<div class="gate-slot"><i></i></div><div class="gate-box"><div class="gate-t">'+(feed?'SCHEIN REIN':'KARTE ODER SCHEIN')+'</div>'+walletHtml('gWallet')+'<div class="gate-bills" id="gBills"></div><p class="gate-h" id="gHint">Portemonnaie antippen</p>'+(feed?'<button type="button" class="gate-x" id="gDone">FERTIG</button>':'')+'</div>';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(el.dataset.st==='enter')el.dataset.st='';}));
-  const w=el.querySelector('#gWallet'),hint=el.querySelector('#gHint');
+  const w=el.querySelector('#gWallet'),hint=el.querySelector('#gHint'),bl=el.querySelector('#gBills');
+  const slotXY=()=>{let tx=innerWidth/2,ty=innerHeight*.12;try{const v=m.cardSlot.getWorldPosition(new THREE.Vector3()).project(camera);tx=(v.x*.5+.5)*innerWidth;ty=(-v.y*.5+.5)*innerHeight;}catch(_){}return [tx,ty];};
+  const fillBills=()=>{if(typeof walletGateHtml==='function')bl.innerHTML=walletGateHtml();};fillBills();
+  const done=el.querySelector('#gDone');if(done)done.addEventListener('click',e=>{e.stopPropagation();SFX.click();el.hidden=true;el.className='';});
+  bl.addEventListener('click',e=>{e.stopPropagation();const b=e.target.closest('[data-v]');if(!b||el.dataset.st!=='open'||b.dataset.fly)return;const v=+b.dataset.v;
+    if(!(v>0)||chips<v){toast('So viel Bargeld hast du nicht.');fillBills();return;}
+    const [tx,ty]=slotXY(),r=b.getBoundingClientRect();b.dataset.fly='1';
+    const f=b.cloneNode(true);f.className='gb-fly';f.style.left=r.left+'px';f.style.top=r.top+'px';f.style.width=r.width+'px';f.style.height=r.height+'px';document.body.appendChild(f);
+    const sl=el.querySelector('.gate-slot');if(sl){sl.style.left=tx+'px';sl.style.top=ty+'px';}
+    requestAnimationFrame(()=>{f.style.transform='translate('+(tx-r.left-r.width/2)+'px,'+(ty-r.top-r.height/2)+'px) scale(.35,.2)';f.style.opacity='.2';});
+    SFX.card();delete b.dataset.fly;
+    setTimeout(()=>{f.remove();if(SV.m!==m)return;if(typeof slotFeed==='function'&&slotFeed(m,v)){noise(.1,.12,1400);fillBills();
+      if(!feed&&el.dataset.st==='open'){el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);}}},520);});
   w.addEventListener('click',e=>{e.stopPropagation();
-    if(el.dataset.st===''){el.dataset.st='open';SFX.click();noise(.12,.08,900);hint.textContent='Karte antippen';return;}
+    if(el.dataset.st===''){el.dataset.st='open';SFX.click();noise(.12,.08,900);hint.textContent=feed?'Schein antippen':'Karte oder Schein antippen';return;}
     if(el.dataset.st==='open'&&e.target.closest('.gw-card')){
       // Ziel: der Kartenschlitz am Automaten (auf den Bildschirm projiziert)
-      const card=w.querySelector('.gw-card'),cr=card.getBoundingClientRect();let tx=innerWidth/2,ty=innerHeight*.12;
-      try{const v=m.cardSlot.getWorldPosition(new THREE.Vector3()).project(camera);tx=(v.x*.5+.5)*innerWidth;ty=(-v.y*.5+.5)*innerHeight;}catch(_){}
+      const card=w.querySelector('.gw-card'),cr=card.getBoundingClientRect();const [tx,ty]=slotXY();
       card.style.setProperty('--fx',(tx-(cr.left+cr.width/2))+'px');card.style.setProperty('--fy',(ty-(cr.top+cr.height/2))+'px');
       const sl=el.querySelector('.gate-slot');if(sl){sl.style.left=tx+'px';sl.style.top=ty+'px';}
       el.dataset.st='ins';SFX.card();hint.textContent='';
       setTimeout(()=>{if(SV.m!==m)return;el.classList.add('slot');SFX.click();},700);
-      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);noise(.12,.15,1800);el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);
+      setTimeout(()=>{if(SV.m!==m)return;cardIn(m,true);noise(.12,.15,1800);el.className='ok';el.dataset.st='';el.innerHTML='';unlockShow(m);svCardSync();
         setTimeout(()=>{if(SV.m===m)el.classList.add('out');},250);setTimeout(()=>{if(SV.m===m){el.hidden=true;el.className='';}},600);},950);}});
 }
 function svOpen(m){SV.m=m;SV.el.hidden=false;SV.last={};svLayout();svButtons(m);svGate(m);m.dirty=true;m.topDirty=true;$('#hudTop').hidden=true;}
@@ -46,7 +57,7 @@ function svButtons(m){
 }
 function svDraw(m){
   if(m!==SV.m)return;
-  const cr=isMine(m)?fmt(chips-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
+  const cr=slotLive(m)?fmt(slotBal(m)-(m.fly?m.fly.pending:0)):'KARTE STECKEN',bt=m.fs?('FREISPIEL '+Math.min(m.fs.n+(m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):(fmt(totalBet(m))+'  ('+m.lines+'×'+betLine(m)+')'),wn=fmt(m.disp);
   if(SV.last.cr!==cr){$('#svCredit').textContent=cr;SV.last.cr=cr;}
   if(SV.last.bt!==bt){$('#svBet').textContent=bt;SV.last.bt=bt;}
   if(SV.last.wn!==wn){$('#svWin').textContent=wn;SV.last.wn=wn;$('#svWinBox').classList.toggle('on',m.disp>0);}

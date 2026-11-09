@@ -5,11 +5,11 @@
    - Claude-Version: zusätzlich Sicherung im Konto (falls der Speicher der App geleert wird)
    ========================================================= */
 function totalWealth(){
-  let t=chips;
+  let t=chips;if(typeof walletDropSum==='function')t+=walletDropSum();
   if(typeof PK!=='undefined'&&PK.sitting)t+=PK.human.stack;
   if(typeof MT!=='undefined'&&MT.deducted&&mtMySeat()>=0)t+=TABLES[MT.table].view.seats[mtMySeat()].st;
   if(typeof HL!=='undefined'&&HL.pending>0)t+=HL.pending;
-  if(typeof focus!=='undefined'&&focus&&focus.type==='slot'){const m=focus.m;if(m.win>0)t+=m.win;if(m.power)t+=m.power.left*m.power.cost;}
+  if(typeof focus!=='undefined'&&focus&&focus.type==='slot'){const m=focus.m;if(m.win>0)t+=m.win;if(m.cashOn)t+=m.cash||0;if(m.power)t+=m.power.left*m.power.cost;}
   return Math.max(0,Math.round(t));
 }
 let saveT=null,cloudDoc=null;

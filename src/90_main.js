@@ -319,7 +319,7 @@ function leaveFocus(){
   if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter, Freispiele laufen von selbst, Power Spins nimmt er an.':'Der Automat wartet auf dich. Freispiele laufen von selbst.');}
   else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
-    if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;updateButtons(m);
+    if(m.cashOn&&m.power&&!m.power.spinning){m.win+=m.power.left*m.power.cost;m.power=null;}if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;if(m.cashOn)slotCashOut(m);updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
   else if(f.type==='hilo'){if(['deal','pick','reveal'].includes(HL.state)){toast('Erst eine Karte wählen.');return;}hlLeave();P.x=HL.cx;P.z=HL.cz+1.95;P.yaw=0;}
@@ -449,6 +449,7 @@ function interact(act){
   walk=null;marker.visible=false;
   switch(act.type){
     case 'roulette':openRoulette(act);break;
+    case 'bill':if(typeof billPick==='function')billPick(act);break;
     case 'machine':if(act.m.remote){toast(act.m.remote.name+' spielt hier gerade.');SFX.click();}
       else if(machineHeld(act.m)){toast(machineHeld(act.m)+' hat hier eine Karte stecken.');SFX.click();}else if(act.m.npc){say(act.m.npc,LINES.busy[Math.random()*LINES.busy.length|0],2.5);SFX.click();}else enterFocus('slot',act.m);break;
     case 'poker':enterFocus('poker');break;

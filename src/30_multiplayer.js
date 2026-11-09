@@ -54,7 +54,7 @@ function mpSync(peers){
     drawAvLabel(a.m,name,color,typeof pr.k==='number'?Math.max(0,Math.round(pr.k)):-1,pr.vc===1?1:0);a.name=name;
     {const lkKey=JSON.stringify(pr.lk||null);if(lkKey!==a.lkKey&&typeof chRelook==='function'){a.lkKey=lkKey;const look=pr.lk?chLookOpts(pr.lk):{color,hair:0x111111};chRelook(a.m.st,look);chRelook(a.m.si,Object.assign({sit:true},look));}}
     a.tx=clamp(+pr.x||0,-12,12);a.tz=clamp(+pr.z||0,-14.5,12);a.ty=+pr.y||0;a.f=pr.f===1?1:0;a.act=typeof pr.a==='string'?pr.a:'walk';
-    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;a.rl=Array.isArray(pr.rl)?pr.rl.map(Number).filter(Number.isFinite).slice(0,40):[];if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);if(typeof itemsPeer==='function')itemsPeer(a,pr);
+    a.rs=Number.isFinite(+pr.rs)?+pr.rs:-1;a.rl=Array.isArray(pr.rl)?pr.rl.map(Number).filter(Number.isFinite).slice(0,40):[];if(pr.rd&&typeof radioRemote==='function')radioRemote(pr.rd);mpApplyActivity(a,pr);bankPeer(a,pr);if(typeof walletPeer==='function')walletPeer(a,pr);if(typeof itemsPeer==='function')itemsPeer(a,pr);
     a.ms=Number.isInteger(pr.ms)&&pr.ms>=0&&pr.ms<6?pr.ms:-1;a.mt=typeof pr.mt==='string'&&TABLES[pr.mt]?pr.mt:'';
     const sitting=a.act==='slot'||a.act==='poker'||a.act==='hilo'||a.act==='mtable';avPose(a,sitting);
     a.n.anim=a.act==='slot'?'slot':sitting?'cards':'idle';

@@ -473,7 +473,7 @@ function chFPArms(n,dt,s,sitting){
       if(st==='glassSip')ctx.l=chGripFix(chHandPose('glassSip',F),HD.glass,B,'l');
       else if(slotM){const g=slotM.group;ctx.l={p:g.localToWorld(new THREE.Vector3(-.36,1.1,.64)),fd:F.v(.86,0,-.5),pal:F.v(0,1,0),fp:CH_FPOSE.glass};} // Glas aufrecht in der Hand links vorn am Pult (Handfläche zur Mitte)
       else ctx.l=chHandPose('glass',F);}
-    if(HD.packSt!=='off'){const pr=chPackPose(n,'r',ctx.cam),pl=chPackPose(n,'l',ctx.cam);if(pr)ctx.r=pr;if(pl)ctx.l=pl;}} // Schachtel in der Hand (links, beim Trinken rechts), fest im Bild
+    if(HD.packSt!=='off'){const pr=chPackPose(n,'r',ctx.cam),pl=chPackPose(n,'l',ctx.cam);if(pr)ctx.r=pr;if(pl)ctx.l=pl;}if(typeof walletPoses==='function')walletPoses(n,ctx);} // Schachtel in der Hand (links, beim Trinken rechts), fest im Bild
   if(CHR.press){ctx.press=CHR.press;if(CHR.press.t>.5)CHR.press=null;}
   if(ctx.r||ctx.l||ctx.press||ctx.lean||(n.ik&&(n.ik.r.w>0||n.ik.l.w>0||n.ik.lean>.001)))chArmsStep(n,dt,ctx);
 }

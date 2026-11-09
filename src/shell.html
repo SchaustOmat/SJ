@@ -487,6 +487,17 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 .gwrap[data-st="open"] .gate-slot,.gwrap[data-st="ins"] .gate-slot{opacity:1}
 #svGate.slot .gate-slot{border-color:#3adf5a;box-shadow:0 0 0 2px #000,0 0 18px #3adf5a}
 .gate-t{font-family:var(--f-title);font-size:19.6px;color:var(--gold);letter-spacing:.08em;text-shadow:0 0 0 #000,2px 2px 0 #000}
+/* Portemonnaie-Scheine (43_wallet): am Automaten einführen, am Geldautomaten anzeigen */
+.gate-bills{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(360px,calc(100vw - 32px));min-height:0;opacity:0;pointer-events:none;transition:opacity .3s .2s}
+.gwrap[data-st="open"] .gate-bills{opacity:1;pointer-events:auto}
+.gb,.gb-fly{position:relative;width:76px;height:38px;border:0;padding:0;border-radius:3px;background:center/100% 100% no-repeat;box-shadow:0 2px 0 #000,0 0 0 1px rgba(0,0,0,.6);cursor:pointer}
+.gb b{position:absolute;right:-6px;top:-8px;min-width:18px;padding:1px 4px;border-radius:9px;background:#1a0a00;border:1px solid var(--gold);color:var(--gold);font:11px var(--f-title)}
+.gb.coin{width:auto;min-width:76px;padding:0 8px;border-radius:19px;background:radial-gradient(#ffe8a0,#b08010);color:#1a0a00;font:12px var(--f-title)}
+.gb-fly{position:fixed;z-index:60;pointer-events:none;transition:transform .5s cubic-bezier(.4,0,.7,1),opacity .5s}
+.gate-x{margin-top:4px;padding:6px 18px;border-radius:16px;border:1px solid var(--gold);background:rgba(10,6,16,.8);color:var(--gold);font:14px var(--f-title);letter-spacing:.08em}
+.atm-bills{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}.atm-bills .gb{width:56px;height:28px;cursor:default}.atm-bills .gb.coin{min-width:56px;font-size:10px}
+.gb.go{animation:gbin .6s ease-in forwards}.gb.come{animation:gbout .6s ease-out}
+@keyframes gbin{to{transform:translateY(60px) scale(.5);opacity:0}}@keyframes gbout{from{transform:translateY(-60px) scale(.5);opacity:0}}
 .gate-h{font-family:var(--f-body);font-size:22px;color:var(--ink);margin:4px 0 0;min-height:1.2em}
 @keyframes gateok{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
 #svGate.ok{background:rgba(10,40,16,.75)}

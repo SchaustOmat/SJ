@@ -109,7 +109,7 @@ function atmRender(){
     const pend=BANK.pend.length?'<div class="as-pend">'+BANK.pend.map((p,i)=>'<div>UNTERWEGS AN '+esc(p.n)+': <b>'+fmt(p.a)+'</b> <button class="as-link" data-undo="'+i+'">ZURÜCKHOLEN</button></div>').join('')+'</div>':'';
     scr.innerHTML=head+'<div class="as-row"><span>INHABER</span><b>'+esc((MP.name||'GAST').toUpperCase())+'</b></div>'+
       '<div class="as-row big"><span>KONTOSTAND</span><b>'+fmt(BANK.bal)+'</b></div>'+
-      '<div class="as-row"><span>BARGELD</span><b>'+fmt(chips)+'</b></div>'+pend+msg+
+      '<div class="as-row"><span>BARGELD</span><b>'+fmt(chips)+'</b></div>'+(typeof atmBillsHtml==='function'?atmBillsHtml():'')+pend+msg+
       '<div class="as-grid"><button class="as-btn" data-go="dep">EINZAHLEN</button><button class="as-btn" data-go="wd">ABHEBEN</button>'+
       '<button class="as-btn" data-go="send">SENDEN</button><button class="as-btn" data-go="hist">KONTOAUSZUG</button></div>';
     return;
@@ -139,9 +139,9 @@ function atmBook(){
   const a=Math.floor(+ATM.amt||0),s=ATM.step;
   if(!(a>0)){atmSay('BITTE BETRAG EINGEBEN','err');atmRender();return;}
   if(s==='dep'){if(a>chips){atmSay('SO VIEL BARGELD HAST DU NICHT','err');atmRender();return;}
-    setChips(chips-a,true);BANK.bal+=a;bankLog('EINZAHLUNG',a);SFX.chip();atmSay('EINGEZAHLT: '+fmt(a),'ok');}
+    setChips(chips-a,true);BANK.bal+=a;bankLog('EINZAHLUNG',a);if(typeof walletAtmFx==='function')walletAtmFx('go',a);SFX.chip();atmSay('EINGEZAHLT: '+fmt(a),'ok');}
   else if(s==='wd'){if(a>BANK.bal){atmSay('KONTO NICHT GEDECKT','err');atmRender();return;}
-    BANK.bal-=a;setChips(chips+a,true);bankLog('AUSZAHLUNG',-a);SFX.chip();atmSay('AUSGEZAHLT: '+fmt(a)+' · GELD ENTNEHMEN','ok');}
+    BANK.bal-=a;setChips(chips+a,true);bankLog('AUSZAHLUNG',-a);if(typeof walletAtmFx==='function')walletAtmFx('come',a);SFX.chip();atmSay('AUSGEZAHLT: '+fmt(a)+' · GELD ENTNEHMEN','ok');}
   else if(s==='sendAmt'){const to=ATM.to;if(!to||!to.kn){ATM.step='send';atmRender();return;}
     if(a>BANK.bal){atmSay('KONTO NICHT GEDECKT','err');atmRender();return;}
     BANK.bal-=a;BANK.pend.push({i:Date.now().toString(36)+Math.random().toString(36).slice(2,7),to:to.kn,n:cleanText(to.name,14),a,t:Date.now()});

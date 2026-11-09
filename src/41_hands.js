@@ -150,7 +150,7 @@ const HSFX={
   throw(){noise(.1,.05,1200);},sip(){tone(180,.12,'sine',.06,0,120);noise(.25,.04,700,.08);tone(140,.1,'sine',.05,.3,90);},empty(){tone(900,.06,'square',.03);}
 };
 // ---- Zeiger: im normalen PC-Modus (Maus gefangen) wandert bei offener Schachtel ein Cursor statt der Kamera ----
-function handsCursorActive(){return HD.packSt!=='off'&&PC&&mouseLocked()&&!aimActive();}
+function handsCursorActive(){return (HD.packSt!=='off'||(typeof WL!=='undefined'&&WL.st!=='off'))&&PC&&mouseLocked()&&!aimActive();}
 function handsMouse(mx,my){HD.cx=clamp(HD.cx+mx,0,LW());HD.cy=clamp(HD.cy+my,0,LH());}
 function handsPointer(){if(handsCursorActive())return [HD.cx,HD.cy];if(PC&&!mouseLocked())return [CUR.x,CUR.y];return aimPos();}
 function hdPick(x,y){if(!HD.pack.visible)return null;hdV.set(x/LW()*2-1,-(y/LH())*2+1);hdRay.setFromCamera(hdV,camera);hdRay.far=2;
@@ -187,6 +187,7 @@ function packStep(dt){
 }
 // Klick/Tipp auf die Schachtel oder eine Zigarette
 function handsTap(x,y){
+  if(typeof walletTap==='function'&&walletTap(x,y))return true;
   if(HD.packSt==='open'&&!HD.fly){const pt=handsCursorActive()?[HD.cx,HD.cy]:(PC&&!mouseLocked()?[CUR.x,CUR.y]:[x,y]);const u=hdPick(pt[0],pt[1]);
     if(u&&!HD.lidWant&&HD.lidOpen<.5){HD.lidWant=true;return true;} // erster Tipp auf die Schachtel: Deckel auf
     if(u&&u.part==='cig'&&u.idx<INV.cigs&&HD.lidOpen>.6){cigTake(u.idx);return true;}
@@ -274,14 +275,14 @@ function hdCigToHand(obj,fr){if(!fr)return;if(fr.pal){const dir=fr.pal.clone().m
 // Die Lage der Schachtel zur Hand ist fest (aus der Zielpose der Hand und der Zielpose der Schachtel im Bild berechnet: aufrecht, Vorderseite zu dir),
 // Position: Mittelpunkt in Handkoordinaten (entlang Finger / aus der Handfläche / quer)
 const HD_PACKREL={};
-function hdPackRel(side){if(HD_PACKREL[side])return HD_PACKREL[side];const D=CH_FPV.pack,mir=side==='r'?-1:1;
+function hdPackRel(side,kind){kind=kind||'pack';const ck=kind+side;if(HD_PACKREL[ck])return HD_PACKREL[ck];const D=CH_FPV[kind],mir=side==='r'?-1:1;
   const c=a=>new THREE.Vector3(a[0],a[1],-a[2]); // Bildkoordinaten (z vorn) -> Kamera (z zum Betrachter)
   const fd=c([D.fd[0]*mir,D.fd[1],D.fd[2]]).normalize(),pal=c([D.pal[0]*mir,D.pal[1],D.pal[2]]);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();
   const H=chFrameQ(fd,pal,new THREE.Quaternion());
   const up=c(D.packUp).normalize(),front=c(D.packFront);front.sub(up.clone().multiplyScalar(front.dot(up))).normalize();const x=new THREE.Vector3().crossVectors(up,front).normalize();
   hdM4.makeBasis(x,up,front);const Pq=new THREE.Quaternion().setFromRotationMatrix(hdM4);const Hi=H.clone().invert();
-  return HD_PACKREL[side]={q:Hi.clone().multiply(Pq),off:c([D.packAt[0]*mir,D.packAt[1],D.packAt[2]]).applyQuaternion(Hi)};} // off: Schachtelmitte ab Handgelenk, im Bild festgelegt
-function hdPackToHand(obj,fr,side){if(!fr||!fr.pal)return;const sc=obj.scale.x||1;const R=hdPackRel(side),Hb=chFrameQ(fr.fd,fr.pal,new THREE.Quaternion());
+  return HD_PACKREL[ck]={q:Hi.clone().multiply(Pq),off:c([D.packAt[0]*mir,D.packAt[1],D.packAt[2]]).applyQuaternion(Hi)};} // off: Schachtelmitte ab Handgelenk, im Bild festgelegt
+function hdPackToHand(obj,fr,side,kind){if(!fr||!fr.pal)return;const sc=obj.scale.x||1;const R=hdPackRel(side,kind),Hb=chFrameQ(fr.fd,fr.pal,new THREE.Quaternion());
   obj.position.copy(R.off).multiplyScalar(.75+.25*sc).applyQuaternion(Hb);
   obj.quaternion.copy(Hb).multiply(R.q);}
 const hdM4=new THREE.Matrix4();
@@ -343,23 +344,25 @@ function drinkStep(dt){
 HD.gq=[];HD.gqFrom=null;HD.lq=[];
 // ---- Tasten und Handy-Leiste ----
 function handsAction(k){
+  if(typeof walletAction==='function'&&walletAction(k))return;
+  if(k==='pack'&&typeof walletClose==='function')walletClose();
   if(k==='pack'){if(HD.packSt==='off'){if(INV.cigs<=0&&!HD.cig){toast('Schachtel leer. Zigaretten gibt es an der Bar.');return;}packShow();}else packHide();}
   else if(k==='fire')cigLight();else if(k==='drag')cigDrag();else if(k==='hand')cigToggleHand();else if(k==='ash')cigAsh();else if(k==='throw')cigThrow();else if(k==='sip')drinkSip();
 }
 function handsKey(e){
   if(e.repeat)return false;const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return false;
-  const map={KeyR:'pack',KeyF:'fire',KeyQ:'drag',KeyH:'hand',KeyX:'ash',KeyV:'throw',KeyT:'sip'};const k=map[e.code];if(!k)return false;
+  const map={KeyR:'pack',KeyF:'fire',KeyQ:'drag',KeyH:'hand',KeyX:'ash',KeyV:'throw',KeyT:'sip',KeyG:'wallet',KeyB:'bdrop',KeyC:'bgive'};let k=map[e.code];if(typeof WL!=='undefined'&&WL.held){if(k==='throw')k='bthrow';if(k==='wallet')k='bback';}if((k==='bdrop'||k==='bgive')&&!(typeof WL!=='undefined'&&WL.held))k=null;if(!k)return false;
   handsAction(k);return true;
 }
 function handsAvail(){const C=HD.cig,o=[];
   if(HD.packSt!=='off')o.push(['pack','SCHACHTEL WEG','R']);else if(!C||C.where==='mouth')o.push(['pack',C?'SCHACHTEL':'ZIGARETTEN ('+INV.cigs+')','R']);
   if(C){if(!C.lit&&C.where==='mouth')o.push(['fire','FEUER','F']);if(C.lit)o.push(['drag','ZIEHEN','Q']);if(!atSlot()||C.where==='hand')o.push(['hand',C.where==='mouth'?'IN DIE HAND':'IN DEN MUND','H']);if(C.lit)o.push(['ash','ABASCHEN','X']);o.push(['throw','WEG','V']);}
-  if(HD.drink)o.push(['sip','TRINKEN','T']);return o;}
+  if(HD.drink)o.push(['sip','TRINKEN','T']);if(typeof walletAvail==='function')walletAvail(o);return o;}
 function hdUi(){
   const bar=$('#itBar'),hint=$('#itHint');const vis=started&&(!focus||atSlot())&&!locked&&!openId;const av=vis?handsAvail():[];
   const key=av.map(a=>a.join('|')).join(';')+'|'+(PC?'pc':'ph')+(atSlot()?'|s':'');if(HD.last.ui===key)return;HD.last.ui=key;if(bar)bar.classList.toggle('fc',atSlot());if(hint)hint.classList.toggle('fc',atSlot());
   if(bar){if(!vis||PC||!av.length){bar.hidden=true;}else{bar.hidden=false;bar.innerHTML=av.map(a=>'<button type="button" class="itb" data-k="'+a[0]+'">'+a[1]+'</button>').join('');}}
-  if(hint){const show=vis&&PC&&(HD.cig||HD.drink||HD.packSt!=='off');hint.hidden=!show;if(show)hint.textContent=av.map(a=>a[2]+' '+a[1]).join('  ·  ');}
+  if(hint){const show=vis&&PC&&(HD.cig||HD.drink||HD.packSt!=='off'||(typeof WL!=='undefined'&&WL.st!=='off'));hint.hidden=!show;if(show)hint.textContent=av.map(a=>a[2]+' '+a[1]).join('  ·  ');}
 }
 {const bar=$('#itBar');if(bar)bar.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b)return;e.preventDefault();e.stopPropagation();SFX.click();handsAction(b.dataset.k);b.classList.add('down');setTimeout(()=>b.classList.remove('down'),120);});
  const bl=$('#barList');if(bl)bl.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.drink)barBuy(b.dataset.drink);});}
@@ -410,7 +413,7 @@ function handsStep(dt){
   if(atSlot()&&HD.cig&&HD.cig.where==='hand'&&!HD.seq.length&&!HD.lighterOn){HD.cig.where='mouth';HD.handR.visible=false;HD.rig.add(HD.mc);HD.mc.visible=true;const mp=hdPose('mouth');HD.mc.position.fromArray(PX(mp.p));HD.mc.rotation.fromArray(mp.r);mpItems();hdUi();} // hinsetzen: Kippe in den Mund
   HD.rig.position.copy(camera.position);HD.rig.quaternion.copy(camera.quaternion);HD.rig.visible=show;HD.rig.updateMatrixWorld(true);
   if(HD.buzz>0){HD.buzz=Math.max(0,HD.buzz-dt*.006);camera.rotation.z+=Math.sin(now*.9)*.014*HD.buzz;camera.rotation.x+=Math.sin(now*.6)*.007*HD.buzz;}
-  packStep(dt);cigStep(dt);lighterStep(dt);drinkStep(dt);
+  packStep(dt);cigStep(dt);lighterStep(dt);drinkStep(dt);if(typeof walletStep==='function')walletStep(dt);
   if(HD.packSt!=='off'&&((focus&&!atSlot())||locked||openId))packHide();
   hdUi();
 }

@@ -404,7 +404,7 @@ function winFx(m,ev){
 function startSpin(m,demo){
   m.info=false;m.demo=!!demo;
   m.rsp=!demo&&m.G.walkWild&&SlotEngine.wwPending(m.ww); // Schwert steht noch: Spin ist gratis und zählt nicht als Freispiel
-  if(!demo&&!m.fs&&!m.rsp){const tb=totalBet(m);if(chips<tb){m.msg='GUTHABEN ZU NIEDRIG';m.auto=false;m.dirty=true;SFX.lose();updateButtons(m);return;}setChips(chips-tb);}
+  if(!demo&&!m.fs&&!m.rsp){const tb=totalBet(m);if(slotBal(m)<tb){m.msg='GUTHABEN ZU NIEDRIG';m.auto=false;m.dirty=true;SFX.lose();updateButtons(m);return;}slotAdd(m,-tb);}
   m.useFs=m.fs?(m.fs.bought?'buy':true):false;m.spinT=now;m.spinId=(m.spinId||0)+1;m.spinFast=m.auto?.75:1; // für Zuschauer: gleicher Takt
   m.stops=SlotEngine.randStops(m.G,Math.random,m.useFs);
   m.grid=SlotEngine.grid(m.G,m.stops,m.useFs);
@@ -487,7 +487,7 @@ function onResult(m){
 function describeWin(m,it){if(!it)return '';if(it.scatter)return it.count+'× '+SYMNAME[m.G.scatter]+' = '+fmt(it.amount);return 'LINIE '+(it.line+1)+': '+it.count+'× '+SYMNAME[it.sym]+' = '+fmt(it.amount);}
 function collect(m){
   if(m.win>0&&!m.remote&&!m.demo&&typeof hsReport==='function')hsReport(m.G.title,m.win,totalBet(m)); // Highscore-Tafel
-  if(m.win>0){setChips(chips+m.win,true);startFly(m,m.win);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
+  if(m.win>0){slotAdd(m,m.win,true);startFly(m,m.win);if(!m.auto){SFX.chip();fxBurst(m,265,RY+CH*3+20,Math.min(30,6+m.win/totalBet(m)|0),{coin:true,sz:4,spd:90,up:130,life:1.1});}}
   m.win=0;m.disp=0;m.gamble=null;m.power=null;m.state='idle';m.present=null;slotIdleMsg(m);m.dirty=true;m.topDirty=true;updateButtons(m);slotPendSave();
 }
 function slotStep(m,dt){
@@ -691,7 +691,7 @@ function startGamble(m,kind){
     let idx=-1;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=m.win)idx=i;
     if(idx===F_I)idx=F_I-1; // 100 € ist nur die Sicherheitsstufe in RISIKO+, keine Spielstufe: mit 100–139,99 € auf 84 € einsteigen
     // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
-    const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){setChips(chips+rest);}
+    const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){slotAdd(m,rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
     if(idx>=ladOf(m).length-1){collect(m);return;}
     m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
@@ -761,7 +761,7 @@ function ladderResult(m){
 function ladderSplit(m){
   const gm=m.gamble;if(!gm||gm.busy||gm.idx<1)return;
   const half=m.win/2;let j=0;for(let i=0;i<ladOf(m).length;i++)if(ladOf(m)[i]<=half)j=i;
-  const pay=m.win-ladOf(m)[j];setChips(chips+pay,true);gm.idx=j;m.win=ladOf(m)[j];m.disp=m.win;
+  const pay=m.win-ladOf(m)[j];slotAdd(m,pay,true);gm.idx=j;m.win=ladOf(m)[j];m.disp=m.win;
   m.msg='GETEILT · '+fmt(pay)+' GUTGESCHRIEBEN';SFX.chip();fxBurst(m,100,RY+78,20,{coin:true,sz:4,spd:120,up:90,life:1.2});m.dirty=true;updateButtons(m);
 }
 function gambleRB(m,red){
@@ -965,8 +965,8 @@ function drawBar(m,g){
   const y=RY+CH*3+5;
   g.fillStyle='rgba(0,0,0,.75)';g.fillRect(0,y,320,240-y);
   const F=m.remote?null:m.fly,wv=m.disp>0?m.disp:(F?F.unl:0),pop=F?Math.max(0,1-(now-F.lastHit)/.22):0;
-  const own=isMine(m); // dein Guthaben steht auf jedem Automaten, in dem deine Karte steckt
-  const fields=[[m.remote?cleanText(m.remote.name,10):own?'GUTHABEN':'KARTE',m.remote?fmt(m.remote.credit):own?fmt(chips-(F?F.pending:0)):'STECKEN'],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
+  const own=slotLive(m); // dein Guthaben steht auf jedem Automaten, in dem deine Karte steckt
+  const fields=[[m.remote?cleanText(m.remote.name,10):own?'GUTHABEN':'KARTE',m.remote?fmt(m.remote.credit):own?fmt(slotBal(m)-(F?F.pending:0)):'STECKEN'],[m.fs?'FREISPIEL':'EINSATZ',m.fs?(Math.min(m.fs.n+ (m.state==='spin'?1:0),m.fs.total)+'/'+m.fs.total):fmt(totalBet(m))],[m.power?'POWER':'GEWINN',fmt(wv)]];
   fields.forEach(([l,v],i)=>{const x=4+i*105,hot=(i===2&&wv>0)||(i===0&&F);if(i===0&&pop>0){g.fillStyle='rgba(255,210,58,'+(.12+pop*.3).toFixed(2)+')';}else{const fg=g.createLinearGradient(0,y+3,0,y+33);fg.addColorStop(0,'#16120c');fg.addColorStop(1,'#060504');g.fillStyle=fg;}g.fillRect(x,y+3,101,30);
     g.lineWidth=1;g.strokeStyle=hot?'#ffd23a':'#5a4626';g.strokeRect(x+.5,y+3.5,100,29);
     g.fillStyle='#b8a888';px(g,7);g.textAlign='left';g.textBaseline='top';g.fillText(l,x+4,y+5);
@@ -1020,8 +1020,8 @@ function tzBuyTap(m,uv){if(!tzBuyable(m)||!uv)return false;const x=uv.x*320,y=(1
   if(x<B.x-3||x>B.x+B.w+3||y<B.y-3||y>B.y+B.h+3)return false;
   const price=100*totalBet(m);
   if(!m.buyArm||now-m.buyArm>3){m.buyArm=now;m.msg='NOCHMAL TIPPEN: 10 FREISPIELE FÜR '+fmt(price);SFX.click();m.dirty=true;return true;}
-  m.buyArm=0;if(chips<price){m.msg='GUTHABEN ZU NIEDRIG';SFX.lose();m.dirty=true;return true;}
-  if(m.win>0)collect(m);setChips(chips-price);m.auto=false;m.present=null;
+  m.buyArm=0;if(slotBal(m)<price){m.msg='GUTHABEN ZU NIEDRIG';SFX.lose();m.dirty=true;return true;}
+  if(m.win>0)collect(m);slotAdd(m,-price);m.auto=false;m.present=null;
   m.fs={left:10,total:10,n:0,sh:0,special:null,bought:true};m.ww=[];m.wwc=null;
   mpWin('kauft '+m.fs.total+' Freispiele an TIZONA!');
   m.state='fsIntro';m.timer=3;m.stateT=0;m.msg='10 FREISPIELE GEKAUFT!';SFX.fsIntro();SFX.boom();fxFlash(m,1);fxShake(m,.8,true);
@@ -1035,7 +1035,7 @@ function drawHeader(m,g){
   if(tzBuyable(m)){const B=TZ_BUY,armed=m.buyArm&&now-m.buyArm<3,bl=Math.floor(now*3)%2;
     const bg=g.createLinearGradient(0,B.y,0,B.y+B.h);bg.addColorStop(0,armed&&bl?'#fff4a0':'#ffd23a');bg.addColorStop(1,'#a06a00');g.fillStyle='#000';g.fillRect(B.x-1,B.y-1,B.w+2,B.h+2);g.fillStyle=bg;g.fillRect(B.x,B.y,B.w,B.h);
     g.fillStyle='#2a1400';g.textAlign='center';g.textBaseline='middle';fitC2(g,armed?'SICHER?':'FS KAUFEN '+fmt(100*totalBet(m)).replace(' €','€'),B.x+B.w/2,B.y+B.h/2+1,B.w-6,5);if(armed)m.dirty=true;}
-  if(isMine(m)){const t=m.auto?'KARTE · AUTO':'KARTE';px(g,6);const w=g.measureText(t).width+20;g.fillStyle='rgba(0,0,0,.7)';lRR(g,160-w/2,4,w,15,7.5);g.fill();
+  if(slotLive(m)){const t=(isMine(m)?'KARTE':'BARGELD')+(m.auto?' · AUTO':'');px(g,6);const w=g.measureText(t).width+20;g.fillStyle='rgba(0,0,0,.7)';lRR(g,160-w/2,4,w,15,7.5);g.fill();
     g.lineWidth=1;g.strokeStyle='#d6a02a';lRR(g,160-w/2+.5,4.5,w-1,14,7);g.stroke();g.fillStyle='#3adf5a';g.beginPath();g.arc(160-w/2+7,11.5,2.2,0,TAU);g.fill();
     g.fillStyle='#ffd870';g.textAlign='center';g.fillText(t,163,12);}
 }
@@ -1179,8 +1179,14 @@ function drawTop(m){
 // RESV = zuletzt besetzter Automat (für Zuschauer), RESVS = alle deine Automaten.
 let RESV=null;const RESVS=new Set();
 function isMine(m){return RESVS.has(m);}
+// Bargeld-Modus (43_wallet): Scheine eingeführt statt Karte. Der Automat spielt dann vom eigenen Guthaben m.cash; beim Aufstehen geht der Rest ins Portemonnaie.
+function slotLive(m){return isMine(m)||!!m.cashOn;}
+function slotCashMode(m){return !!m.cashOn&&!isMine(m);}
+function slotBal(m){return slotCashMode(m)?m.cash:chips;}
+function slotAdd(m,d,fl){if(slotCashMode(m)){m.cash=Math.max(0,(m.cash||0)+d);m.dirty=true;slotPendSave();}else setChips(chips+d,fl);}
+function slotCashOut(m,quiet){if(!m.cashOn)return;const c=m.cash||0;m.cash=0;m.cashOn=false;slotPendSave();if(c>0){setChips(chips+c,true);if(!quiet)toast(fmt(c)+' zurück ins Portemonnaie.');}m.dirty=true;}
 function cardIn(m,quiet){
-  RESVS.add(m);RESV=m;m.dirty=true;svCardSync();resvSave();
+  if(m.cashOn)slotCashOut(m,true);RESVS.add(m);RESV=m;m.dirty=true;svCardSync();resvSave();
   if(!quiet)toast(RESVS.size>1?'Karte steckt. Du hast jetzt '+RESVS.size+' Automaten besetzt.':'Karte steckt. Der Automat bleibt für dich frei, auch wenn du aufstehst.');MP.dirty=true;}
 function cardOut(m){if(!isMine(m))return;if(m.win>0||m.power||m.gamble){toast('Erst den Gewinn nehmen, dann die Karte ziehen.');return;}
   if(m.sp&&m.sp.pot>0){toast('Erst den Cashpot annehmen, dann die Karte ziehen.');return;}
@@ -1202,11 +1208,11 @@ function cardsOutAll(){let kept=0;
     m.state='idle';RESVS.delete(m);m.dirty=true;m.topDirty=true;updateButtons(m);if(SV.m===m)svGate(m);});
   RESV=RESVS.size?[...RESVS][RESVS.size-1]:null;resvSave();slotPendSave();svCardSync();MP.dirty=true;
   if(kept)toast('Karten gezogen. Wo noch Freispiele laufen, bleibt die Karte bis zum Ende stecken.');}
-function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;b.hidden=!isMine(SV.m);b.textContent='KARTE ZIEHEN';b.classList.add('on');}
+function svCardSync(){const b=$('#svCard');if(!b||!SV.m)return;const cm=slotCashMode(SV.m);b.hidden=!slotLive(SV.m);b.textContent=cm?'SCHEIN REIN':'KARTE ZIEHEN';b.classList.add('on');}
 // Offene Gewinne aller eigenen Automaten (plus dem, an dem du sitzt) zusammen merken: nach einem Neuladen werden sie gutgeschrieben.
 let slotPendLast=-1;
 function slotPendSave(){const fm=typeof focus!=='undefined'&&focus&&focus.type==='slot'?focus.m:null;let s=0;
-  allMachines().forEach(m=>{if(m===fm||isMine(m))s+=m.win+(m.power?m.power.left*m.power.cost:0)+(m.sp?m.sp.pot:0);});
+  allMachines().forEach(m=>{if(m===fm&&m.cashOn)s+=m.cash||0;if(m===fm||isMine(m))s+=m.win+(m.power?m.power.left*m.power.cost:0)+(m.sp?m.sp.pot:0);});
   if(s!==slotPendLast){slotPendLast=s;store('nk_slotpend',s>0?s:null);}}
 // Schild über dem Automaten: grün = deiner, rot = von jemand anderem besetzt (sieht man durch die ganze Halle)
 let glowT=null;
