@@ -17,7 +17,7 @@ async function mpInit(){
   room.onConnection(()=>mpTag());
   MP.dirty=true;
 }
-function mpClear(){MP.avatars.forEach(a=>{releaseMirror(a);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();});MP.avatars.clear();}
+function mpClear(){MP.avatars.forEach(a=>{releaseMirror(a);if(typeof chDispose==='function')chDispose(a.n);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();});MP.avatars.clear();}
 function mpTag(){const t=$('#onlineTag');const n=MP.online;t.hidden=!MP.started;
   let ph=false;try{ph=!PC;}catch(e){} // Handy: kurz (PC gibt es erst später im Skript)
   if(!MP.room){t.textContent=window.NK_STANDALONE?(ph?'RAUM':'MULTI: TIPPEN'):(ph?'OFFLINE':'MULTI: AUS');t.classList.remove('live');return;}
@@ -62,7 +62,7 @@ function mpSync(peers){
       if(txt){say(a.n,txt,5);if(a.f!==floorIdx)toast(name+' ('+(a.f?'2. Stock':'EG')+'): '+txt);SFX.click();}}
     if(pr.wt&&pr.wt!==MP.seenWin[p.peer]){MP.seenWin[p.peer]=pr.wt;const w=cleanText(pr.w,60);if(w){toast(name+' '+w);SFX.chip();}}
   });
-  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
+  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];if(typeof chDispose==='function')chDispose(a.n);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
   MP.online=others;mpTag();
 }
 function mpLocalState(){
@@ -93,18 +93,21 @@ function seatAvatars(){
 }
 function mpStep(dt){
   seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
-  if(MP.room&&MP.started){
+  if(MP.room&&MP.started&&now-MP.lastSent>.1){ // Vergleich nur, wenn überhaupt gesendet werden darf (vorher jedes Bild)
     const s=mpLocalState();const m=MP.me;
     const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||JSON.stringify(s.gl)!==JSON.stringify(m.gl)||JSON.stringify(s.it)!==JSON.stringify(m.it)||JSON.stringify(s.lk)!==JSON.stringify(m.lk)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
-    if((ch||MP.dirty)&&now-MP.lastSent>.1){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
+    if(ch||MP.dirty){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
       MP.room.presence(Object.assign({},m)).catch(()=>{});}
   }
   MP.avatars.forEach(a=>{
     const r=a.m.g;r.visible=a.f===floorIdx;
     const dx=a.tx-r.position.x,dz=a.tz-r.position.z,d=Math.hypot(dx,dz);
-    if(d>4)r.position.set(a.tx,0,a.tz);else{r.position.x+=dx*Math.min(1,dt*9);r.position.z+=dz*Math.min(1,dt*9);}
+    // Mitspieler gleiten mit gleichmäßigem Tempo zum zuletzt gemeldeten Punkt (vorher: bei jeder Meldung ein Ruck, dann Abbremsen = Ruckeln)
+    if(a.ltx!==a.tx||a.ltz!==a.tz){const tn=performance.now(),iv=clamp((tn-(a.lt||0))/1000,.12,.45);a.lt=tn;a.ltx=a.tx;a.ltz=a.tz;a.mv=d/iv;}
+    let stepD=0;
+    if(d>4)r.position.set(a.tx,0,a.tz);else if(d>1e-4){stepD=Math.min(d,Math.max(a.mv||0,d*3)*dt);r.position.x+=dx/d*stepD;r.position.z+=dz/d*stepD;}
     r.rotation.y=angLerp(r.rotation.y,a.ty,dt*10);
-    if(a.act==='walk'||a.act==='mwatch'){const sp=d>4?0:Math.hypot(dx,dz)*Math.min(1,dt*9)/Math.max(dt,1e-3);a.sp=(a.sp||0)+(sp-(a.sp||0))*Math.min(1,dt*8);a.n.anim=a.sp>4.6?'sprint':a.sp>2.3?'run':a.sp>.25?'walk':'idle';if(a.n.rig)a.n.rig.tScale=a.n.anim==='walk'?clamp(a.sp/1.5,.6,1.7):a.n.anim==='run'?clamp(a.sp/3.2,.75,1.5):1;}
+    if(a.act==='walk'||a.act==='mwatch'){const sp=stepD/Math.max(dt,1e-3);a.sp=(a.sp||0)+(sp-(a.sp||0))*Math.min(1,dt*8);a.n.anim=a.sp>4.6?'sprint':a.sp>2.3?'run':a.sp>.25?'walk':'idle';if(a.n.rig)a.n.rig.tScale=a.n.anim==='walk'?clamp(a.sp/1.5,.6,1.7):a.n.anim==='run'?clamp(a.sp/3.2,.75,1.5):1;}
     a.n.root.position.y=0;animNPC(a.n,dt);
   });
 }

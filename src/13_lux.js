@@ -36,7 +36,7 @@ function chandelier(F,x,z,s,drop){s=s||1;drop=drop||0;const g=new THREE.Group();
   mesh(new THREE.CylinderGeometry(.02,.02,.5+drop,8),goldM,0,(drop-.5)/2,0,g);
   [[.55,-.62,8],[.34,-.86,6]].forEach(([r,y,n])=>{const ring=mesh(new THREE.TorusGeometry(r*s,.025,4,16),goldM,0,y,0,g);ring.rotation.x=Math.PI/2;
     for(let i=0;i<n;i++){const a=i/n*TAU,cx=Math.cos(a)*r*s,cz=Math.sin(a)*r*s;
-      mesh(new THREE.CylinderGeometry(.018,.018,.12,4),new THREE.MeshBasicMaterial({color:0xfff6e0}),cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
+      mesh(new THREE.CylinderGeometry(.018,.018,.12,4),candleM,cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
       mesh(new THREE.OctahedronGeometry(.035),cry,cx,y-.12,cz,g);mesh(new THREE.OctahedronGeometry(.022),cry,cx,y-.2,cz,g);}});
   for(let i=0;i<10;i++){const a=i/10*TAU;mesh(new THREE.OctahedronGeometry(.03),cry,Math.cos(a)*.18*s,-1.02-(i%2)*.06,Math.sin(a)*.18*s,g);}
   mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
@@ -55,6 +55,7 @@ function rboxGeo(w,h,d,r){return PGEO('rb'+w+'_'+h+'_'+d+'_'+r,()=>{r=Math.min(r
 function rbox(w,h,d,r,mat,x,y,z,p){return mesh(rboxGeo(w,h,d,r),mat,x,y,z,p);}
 // Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe): weiche Polster, Chromfuß.
 // Niedrige Lehne, damit er den Bildschirm beim Hinlaufen nicht verdeckt.
+const candleM=new THREE.MeshBasicMaterial({color:0xfff6e0}); // eine Kerzenfarbe für alle Kerzen (vorher je Kerze ein eigenes Material = je ein Zeichenaufruf)
 function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
   const blk=new THREE.MeshPhongMaterial({color:0x17161a,shininess:25,specular:0x2a2a30}),chr=new THREE.MeshPhongMaterial({color:0xb8bcc6,shininess:120,specular:0xffffff});
   const acc=new THREE.MeshPhongMaterial({color:accent,shininess:30,specular:0x333333,emissive:new THREE.Color(accent).multiplyScalar(.12)});

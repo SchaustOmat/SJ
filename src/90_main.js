@@ -318,7 +318,7 @@ function leaveFocus(){
   const f=focus;
   if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter, Freispiele laufen von selbst, Power Spins nimmt er an.':'Der Automat wartet auf dich. Freispiele laufen von selbst.');}
-  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
+  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady','myst'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.cashOn&&m.power&&!m.power.spinning){m.win+=m.power.left*m.power.cost;m.power=null;}if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;if(m.cashOn)slotCashOut(m);updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
@@ -379,10 +379,17 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
+// Zielsuche: nur sichtbare Flächen in Reichweite des Strahls prüfen (vorher wurden alle Automaten der Halle Dreieck für Dreieck gerechnet, ~5 ms je Suche)
+const _hitSph=new THREE.Sphere(),_hitNear=[];
+function rayHits(){const o=ray.ray.origin,far=ray.far;_hitNear.length=0;
+  for(const L of [F.hits,globalHits])for(const x of L){if(!x.visible)continue;const g=x.isMesh&&x.geometry;
+    if(g){if(!g.boundingSphere)g.computeBoundingSphere();_hitSph.copy(g.boundingSphere).applyMatrix4(x.matrixWorld);if(_hitSph.center.distanceTo(o)>far+_hitSph.radius)continue;}
+    _hitNear.push(x);}
+  return ray.intersectObjects(_hitNear,false);}
 function tapAt(x,y,noWalk,fat){
   if(typeof handsTap==='function'&&(!focus||focus.type==='slot')&&handsTap(x,y))return true; // Schachtel offen: Klick/Tipp geht an die Kippen
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
-  let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
+  let hits=rayHits();if(!hits.length)return false;
   {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}
   if(focus){
     for(const h of hits){const a=h.object.userData.act;if(!a)continue;
@@ -403,7 +410,7 @@ function tapAt(x,y,noWalk,fat){
   return false;
 }
 function nearBtnHit(x,y){for(const r of [14,26])for(let i=0;i<8;i++){const a=i/8*TAU;v2.set((x+Math.cos(a)*r)/LW()*2-1,-((y+Math.sin(a)*r)/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=8;
-  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];if(h&&h.object.userData.act&&h.object.userData.act.type==='mbtn'&&isMine(h.object.userData.act.m))return h;}return null;}
+  const h=rayHits()[0];if(h&&h.object.userData.act&&h.object.userData.act.type==='mbtn'&&isMine(h.object.userData.act.m))return h;}return null;}
 function actOrWalk(act,dist){const d=Math.hypot(act.pos.x-P.x,act.pos.z-P.z);if(dist<4.2&&d<act.reach+1.6)interact(act);else startWalk(act.pos.x,act.pos.z,act);}
 // Taste am Automaten im Stehen (nur Automaten mit deiner Karte); freie/fremde Automaten: wie den Automaten selbst antippen
 function pressStanding(act,dist){const m=act.m;
@@ -432,7 +439,7 @@ function updatePrompt(){
   let best=null;AIM.hot=false;
   const ap=aimPos();v2.set(ap[0]/LW()*2-1,-(ap[1]/LH())*2+1);
   ray.setFromCamera(v2,camera);ray.far=4.2;
-  const hl=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);
+  const hl=rayHits();
   const h=hl.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hl[0].distance+.03)||hl[0];
   if(h&&h.object.userData.act){const a=h.object.userData.act;
     if(a.type==='mbtn'){const m=a.m;
@@ -555,18 +562,31 @@ function setFloor(i){
 const BAR_MIN=10000,BAR_GIFT=10000; // unter 100 € gibt der Barkeeper 100 € (Werte in Cent; Justin 2026-10-23, davor 300 € und 1.000 €), nicht wenn mind. 100 € auf dem Konto liegen
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 const GFX='sharp'; // immer scharf, keine Auswahl mehr
+// Flüssig vor scharf: läuft das Bild dauerhaft unter ~42 Bildern/s, wird die Auflösung schrittweise gesenkt (bis 60 %),
+// und erst wieder angehoben, wenn es lange glatt läuft. Bringt das Senken nichts (z. B. Stromsparmodus mit 30 Bildern/s), wird es zurückgenommen.
+let DYN=1,snapW=640,snapH=480;const DR={acc:0,n:0,good:0,hold:0,noDrop:0,before:0,tried:false};
+function dynRes(raw){
+  if(document.hidden||raw>.25||!started||window.NK_HS_LOCAL)return;
+  DR.acc+=raw;DR.n++;if(DR.acc<1.2)return;
+  const avg=DR.acc/DR.n;DR.acc=0;DR.n=0;
+  if(DR.tried){DR.tried=false;if(avg>DR.before*.92){DYN=Math.min(1,+(DYN+.1).toFixed(2));DR.noDrop=now+120;resize();return;}}
+  if(avg>.024&&DYN>.6&&now>DR.noDrop){DR.before=avg;DR.tried=true;DYN=Math.max(.6,+(DYN-.1).toFixed(2));DR.good=0;DR.hold=now+60;resize();}
+  else if(avg<.0185&&DYN<1&&now>DR.hold){if(++DR.good>=6){DR.good=0;DYN=Math.min(1,+(DYN+.1).toFixed(2));DR.hold=now+60;resize();}}
+  else DR.good=0;
+}
 function resize(){
   const w=LW(),h=LH();let iw,ih;
   if(GFX==='sharp'){
     // scharf: volle Auflösung (bis 2x auf Retina), bei sehr großen Bildschirmen etwas begrenzt
     let pr=Math.min(window.devicePixelRatio||1,2);while(pr>1&&w*h*pr*pr>3.2e6)pr-=.25;
-    iw=Math.round(w*pr);ih=Math.round(h*pr);
+    iw=Math.round(w*pr);ih=Math.round(h*pr);snapW=iw;snapH=ih;
+    if(DYN<1){iw=Math.max(240,Math.round(iw*DYN));ih=Math.max(240,Math.round(ih*DYN));}
   } else {
     let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable'||focus.type==='crash')?1:Math.max(1,s-1);
     iw=Math.ceil(w/s);ih=Math.ceil(h/s);
   }
   renderer.setSize(iw,ih,false);document.body.classList.toggle('gfx-sharp',GFX==='sharp');
-  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();if(GFX==='sharp')snapRes.value.set(Math.max(320,iw/2),Math.max(240,ih/2));else snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
+  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();if(GFX==='sharp')snapRes.value.set(Math.max(320,snapW/2),Math.max(240,snapH/2));else snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
   if(typeof svLayout==='function')svLayout();
 }
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
@@ -591,7 +611,7 @@ const clock=new THREE.Clock(),tmpV=new THREE.Vector3();let frameDt=.016;
 let chatterT=4,flickT=0;
 function frame(){
   requestAnimationFrame(frame);
-  const dt=Math.min(.05,clock.getDelta());frameDt=dt;now+=dt;pcUi();
+  const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt);frameDt=dt;now+=dt;pcUi();dynRes(rawDt);
   if(F){
     updTweens(dt);elevStep(dt);
     let mx=0,mz=0;
@@ -632,7 +652,7 @@ function frame(){
     camera.updateProjectionMatrix();aimScreen();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
-    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);hsStep(dt);
+    F.npcs.forEach(n=>animNPC(n,dt,true));worldFxStep(F,dt);hsStep(dt);
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);

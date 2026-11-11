@@ -94,7 +94,8 @@ function wlThrow(){const v=WL.held;const h=WL.heldObj;HD.rig.updateMatrixWorld(t
   const d=wlNew(v,{x:p.x,y:p.y,z:p.z});if(!d)return wlHeldEnd();const fw=wlFwd();d.vel=fw.multiplyScalar(5.5).add(new THREE.Vector3(0,2,0));d.spin=(Math.random()-.5)*14;d.age=0;
   d.mesh=wlMesh(v,p.x,p.y,p.z,d.f,d.r,null);WL.fly.push(d);wlHeldEnd();if(typeof HSFX!=='undefined'&&HSFX.flick)HSFX.flick();}
 function wlLand(d){d.l=1;d.vel=null;const i=WL.fly.indexOf(d);if(i>=0)WL.fly.splice(i,1);wlUnmesh(d.mesh);d.mesh=null;if(WL.drops.includes(d)){wlDropMesh(d);dropsSave();wlPres();}}
-function wlFlyStep(dt){const rc=new THREE.Raycaster();WL.fly.slice().forEach(d=>{
+const wlRc=new THREE.Raycaster();
+function wlFlyStep(dt){if(!WL.fly.length)return;const rc=wlRc;WL.fly.slice().forEach(d=>{
   if(d.give){d.age+=dt;const a=d.to&&MP.avatars?MP.avatars.get(d.to):null;const k=Math.min(1,d.age/.6);if(a){const q=a.m.g.position;d.mesh.position.set(d.sx+(q.x-d.sx)*k,d.sy+(1.1-d.sy)*k+Math.sin(k*Math.PI)*.4,d.sz+(q.z-d.sz)*k);}d.mesh.rotation.y+=dt*8;
     if(k>=1||!a){WL.fly.splice(WL.fly.indexOf(d),1);wlUnmesh(d.mesh);d.mesh=null;}return;}
   d.age+=dt;const v=d.vel;v.y-=6.5*dt;v.multiplyScalar(Math.exp(-1.1*dt));v.x+=Math.sin(d.age*9+d.r)*dt*.8;

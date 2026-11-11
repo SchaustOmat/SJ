@@ -212,7 +212,7 @@ function mtStep(){
   for(const id in TABLES)mtStepTable(TABLES[id]);
   // eigener Platz: Buy-in abziehen, Stack merken
   const T=TABLES[MT.table],my=mtMySeat(T);
-  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}store('nk_mtstack',s.st);}
+  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}}
   const V=T&&T.view;
   const tk=V&&my>=0&&V.toAct===my&&isBetting(V)?V.hand+'/'+V.board.length+'/'+V.curBet:'';
   if(tk&&tk!==MT.turnKey){MT.turnKey=tk;SFX.ding();MT.raiseTo=0;if(focus&&focus.type==='mtable')mtBarSync();}

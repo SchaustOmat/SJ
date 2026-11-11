@@ -9,6 +9,7 @@ function rmHide(){if(RM.el&&!RM.el.hidden)RM.el.hidden=true;}
 function rmUpdate(){
   const el=RM.el||(RM.el=$('#rmBar'));if(!el)return;
   if(PC||!started||locked||focus||!F){rmHide();return;}
+  if(now<(RM.next||0))return;RM.next=now+.1; // 10-mal pro Sekunde reicht (vorher jedes Bild)
   const list=[...RESVS].filter(m=>m.F===F&&m.act).map(m=>({m,d:Math.hypot(m.act.pos.x-P.x,m.act.pos.z-P.z)})).filter(o=>o.d<3.4).sort((a,b)=>a.d-b.d).slice(0,3);
   if(!list.length){rmHide();return;}
   el.hidden=false;

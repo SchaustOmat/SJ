@@ -417,4 +417,4 @@ function handsStep(dt){
   if(HD.packSt!=='off'&&((focus&&!atSlot())||locked||openId))packHide();
   hdUi();
 }
-function handsRender(){if(!HD.rig.visible)return;renderer.clearDepth();renderer.render(HD.scene,camera);}
+function handsRender(){if(!HD.rig.visible)return;{let any=false;const c=HD.rig.children;for(let i=0;i<c.length;i++)if(c[i].visible){any=true;break;}if(!any)return;}renderer.clearDepth();renderer.render(HD.scene,camera);}

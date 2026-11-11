@@ -768,7 +768,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1794223927";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1794391101";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -989,6 +989,18 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Geld wird intern in Cent gezählt (10 = 0,10 €)
 const fmt=n=>(Math.round(n)/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const app=$('#app');
+
+/* ---------- nur ein Tab ---------- */
+// Läuft das Spiel schon in einem anderen Tab, würde dieser hier beim Start Geld „zurückholen“, das dort noch im Spiel ist (= doppeltes Geld).
+// Darum wartet ein zweiter Tab, bis der erste zu ist. Lebenszeichen alle 2 s in nk_alive („Tab-Kennung:Zeit“).
+const TAB_ID=Math.random().toString(36).slice(2);
+{const otherAlive=()=>{try{const v=(localStorage.getItem('nk_alive')||'').split(':');return !!v[0]&&v[0]!==TAB_ID&&Date.now()-(+v[1])<6000;}catch(e){return false;}};
+  if(otherAlive()){
+    document.body.innerHTML='<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0907;color:#e8c878;font:600 20px/1.5 Georgia,serif;text-align:center;padding:24px"><div><div style="font-size:30px;letter-spacing:.12em;margin-bottom:14px">SJ SPIELBANK</div>Das Spiel läuft schon in einem anderen Tab.<br>Schließ den anderen Tab – hier geht es dann von selbst weiter.</div></div>';
+    setTimeout(()=>location.reload(),3000);throw new Error('Spiel läuft schon in einem anderen Tab');}
+  const beat=()=>{if(otherAlive()){location.reload();return;}try{localStorage.setItem('nk_alive',TAB_ID+':'+Date.now());}catch(e){}}; // ein neuerer Tab hat übernommen (dieser war lange im Hintergrund): neu laden = warten
+  beat();setInterval(beat,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat();});
+  addEventListener('pagehide',()=>{try{if((localStorage.getItem('nk_alive')||'').split(':')[0]===TAB_ID)localStorage.removeItem('nk_alive');}catch(e){}});}
 
 /* ---------- chips ---------- */
 let chips=20000;
@@ -1480,8 +1492,8 @@ function npc(F,o){
   if(typeof chAttach==='function')chAttach(n,o); // Skelett-Figur (Quaternius) ersetzt die Klötzchen, sobald geladen
   return n;
 }
-function animNPC(n,dt){
-  if(n.rig){chAnimate(n,dt);return;}
+function animNPC(n,dt,cull){
+  if(n.rig){if(cull){dt=chCull(n,dt);if(dt<0)return;}chAnimate(n,dt);return;}
   n.t+=dt;const t=n.t,p=n.ph;
   n.armL.rotation.z=0;n.armR.rotation.z=0;
   switch(n.anim){
@@ -1641,7 +1653,7 @@ function chandelier(F,x,z,s,drop){s=s||1;drop=drop||0;const g=new THREE.Group();
   mesh(new THREE.CylinderGeometry(.02,.02,.5+drop,8),goldM,0,(drop-.5)/2,0,g);
   [[.55,-.62,8],[.34,-.86,6]].forEach(([r,y,n])=>{const ring=mesh(new THREE.TorusGeometry(r*s,.025,4,16),goldM,0,y,0,g);ring.rotation.x=Math.PI/2;
     for(let i=0;i<n;i++){const a=i/n*TAU,cx=Math.cos(a)*r*s,cz=Math.sin(a)*r*s;
-      mesh(new THREE.CylinderGeometry(.018,.018,.12,4),new THREE.MeshBasicMaterial({color:0xfff6e0}),cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
+      mesh(new THREE.CylinderGeometry(.018,.018,.12,4),candleM,cx,y+.07,cz,g);mesh(new THREE.OctahedronGeometry(.03),flame,cx,y+.16,cz,g);
       mesh(new THREE.OctahedronGeometry(.035),cry,cx,y-.12,cz,g);mesh(new THREE.OctahedronGeometry(.022),cry,cx,y-.2,cz,g);}});
   for(let i=0;i<10;i++){const a=i/10*TAU;mesh(new THREE.OctahedronGeometry(.03),cry,Math.cos(a)*.18*s,-1.02-(i%2)*.06,Math.sin(a)*.18*s,g);}
   mesh(new THREE.SphereGeometry(.09,8,6),cry,0,-1.06,0,g);
@@ -1660,6 +1672,7 @@ function rboxGeo(w,h,d,r){return PGEO('rb'+w+'_'+h+'_'+d+'_'+r,()=>{r=Math.min(r
 function rbox(w,h,d,r,mat,x,y,z,p){return mesh(rboxGeo(w,h,d,r),mat,x,y,z,p);}
 // Gaming-Stuhl im Rennsitz-Stil vor jedem Automaten (Farbe = Automatenfarbe): weiche Polster, Chromfuß.
 // Niedrige Lehne, damit er den Bildschirm beim Hinlaufen nicht verdeckt.
+const candleM=new THREE.MeshBasicMaterial({color:0xfff6e0}); // eine Kerzenfarbe für alle Kerzen (vorher je Kerze ein eigenes Material = je ein Zeichenaufruf)
 function gamingChair(parent,accent){const c=new THREE.Group();parent.add(c);
   const blk=new THREE.MeshPhongMaterial({color:0x17161a,shininess:25,specular:0x2a2a30}),chr=new THREE.MeshPhongMaterial({color:0xb8bcc6,shininess:120,specular:0xffffff});
   const acc=new THREE.MeshPhongMaterial({color:accent,shininess:30,specular:0x333333,emissive:new THREE.Color(accent).multiplyScalar(.12)});
@@ -1822,11 +1835,17 @@ function chLookSet(key,delta){const l=chLook();const max={g:2,h:4,hc:CH_HAIR.len
   const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55,glow:.45},o));if(CHR.mirror)chRelook(CHR.mirror,o);
   if(typeof MP!=='undefined'&&MP.room){MP.dirty=true;MP.lastSent=0;}chLookUi();}
 // Figur mit neuem Aussehen neu aufbauen (Sitzen/Kopf-ausblenden bleibt)
-function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
+// Alte Figur freigeben (Knochen-Texturen, eigenes Körper-Material, Rock), sonst sammelt sich das bei jedem Aussehen-Wechsel und jedem Kommen/Gehen an
+function chDispose(n){const R=n&&n.rig;if(!R)return;try{R.mixer.stopAllAction();
+  R.model.traverse(x=>{if(!x.isSkinnedMesh)return;if(x.skeleton&&x.skeleton.dispose)x.skeleton.dispose();
+    if(x.name.startsWith('Body_')||x.name==='Skirt'){const ms=Array.isArray(x.material)?x.material:[x.material];ms.forEach(mt=>mt&&mt.dispose&&mt.dispose());}
+    if(x.name==='Skirt'&&x.geometry)x.geometry.dispose();
+    if(n.F&&n.F.hits){const i=n.F.hits.indexOf(x);if(i>=0)n.F.hits.splice(i,1);}});}catch(e){}}
+function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;chDispose(n);n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
 // Spiegel: eine Kopie der eigenen Figur 2 m vor dem Spieler, zum Spieler gedreht (solange das Figur-Fenster offen ist)
 function chMirrorShow(){if(!CHR.ready||CHR.fail)return;chMirrorHide();const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'',F:null,bubbleUntil:0,bubbleEl:null};
   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);n.root.position.set(P.x+fx*2.1,0,P.z+fz*2.1);n.root.rotation.y=P.yaw;scene.add(n.root);chAttach(n,chLookOpts(chLook()));CHR.mirror=n;document.body.classList.add('lookopen');chLookUi();}
-function chMirrorHide(){if(CHR.mirror){scene.remove(CHR.mirror.root);CHR.mirror=null;}document.body.classList.remove('lookopen');}
+function chMirrorHide(){if(CHR.mirror){chDispose(CHR.mirror);scene.remove(CHR.mirror.root);CHR.mirror=null;}document.body.classList.remove('lookopen');}
 function chLookUi(){const el=document.getElementById('pLook');if(!el||el.hidden)return;const l=chLook();
   const set=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t;};
   set('lkG',l.g?'Frau':'Mann');set('lkH',['Lang','Dutt','Scheitel','Kurz'][l.g?l.h:[2,3,0,1][l.h]]||String(l.h+1));set('lkB',l.b?'Ja':'Nein');
@@ -1984,7 +2003,6 @@ function chAttach(n,o){
   n.rig={model,bones,mixer,cur:'',curAct:null,sit:!!o.sit,speed:.92+Math.random()*.16,fem,seatH:o.seatH||.58,tScale:1,skirt};
   n.head=bones.Head||n.head;n.neck=bones.neck_01;n.armL=bones.hand_l||n.armL;n.armR=bones.hand_r||n.armR;n.torso=bones.spine_03||n.torso;n.items=null;
   if(n.rig.sit){model.position.y=chSitOffset(n)+(o.sitLift||0);}
-  CHR.all.push(n);
 }
 // Sitz-Clip: wie hoch sitzt das Becken? Figur so anheben, dass es auf der Hockerhöhe liegt
 function chSitOffset(n){
@@ -2012,6 +2030,14 @@ function chPlay(n,name,fade){
   if(R.curAct){act.crossFadeFrom(R.curAct,fade===undefined?.3:fade,false);}else{act.time=Math.random()*clip.duration;}
   act.play();R.curAct=act;R.cur=name;
 }
+// Hallen-Figuren außerhalb des Bildes werden weder bewegt noch gezeichnet; weiter weg als 9 m laufen sie mit 15 Schritten/s (spart Rechenzeit am Handy).
+// Gibt die Zeitspanne zurück, um die die Figur weiterlaufen soll, oder -1 = diesmal auslassen.
+function chCull(n,dt){const R=n.rig;n.root.getWorldPosition(chV);chV.y+=.9;const d=chV.distanceTo(camera.position);chV.project(camera);
+  const on=d<2.5||(chV.z<1&&Math.abs(chV.x)<1.35&&Math.abs(chV.y)<1.7);
+  if(R.model.visible!==on)R.model.visible=on;
+  if(!on){n.t+=dt;return -1;}
+  if(d>9){R.acc=(R.acc||0)+dt;if(R.acc<.066)return -1;dt=R.acc;R.acc=0;}
+  return dt;}
 function chAnimate(n,dt){
   n.t+=dt;const R=n.rig;const want=chClipFor(n);chPlay(n,want);
   R.mixer.update(dt*R.speed*(R.tScale||1));
@@ -2821,7 +2847,9 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  // Laufende Bilder jedes Bild neu; Risiko/Angebot/Menü blinken nur langsam, da reichen 30 Zeichnungen/s (spart am Handy das Neuzeichnen + Hochladen des großen Bildschirms)
+  if(m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  else if((m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer')&&now>=(m.fdT||0)){m.fdT=now+.03;m.dirty=true;}
   if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
@@ -2997,7 +3025,7 @@ function startGamble(m,kind){
     // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
     const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){slotAdd(m,rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
-    if(idx>=ladOf(m).length-1){collect(m);return;}
+    if(idx>=ladOf(m).length-1){collect(m);if(m.auto)m.timer=.6;return;} // AUTO läuft danach weiter (blieb sonst stehen)
     m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
     if(rest>0&&idx>=0&&idx+1<ladOf(m).length){const gm=m.gamble;gm.ent={t0:now,a:idx,b:idx===AUS_I-1?AUS_I:ladNext(idx)};gm.busy=true;m.disp=idx>=0?ladOf(m)[idx]+rest:m.win;m.state='gambleNext';m.timer=1.05;}
     else{m.gamble.noChord=now+.3;if(idx>=0&&!m.remote)SFX.ladFan();}}
@@ -3416,7 +3444,7 @@ function drawGamble(m,g){
     hs.forEach((c,i)=>drawNiceCard(g,c,160-hs.length*15+i*30+3,RY+27,24,34,true));
     const blinkRed=Math.floor(now*3)%2===0,cy=RY+(hs.length?66:44),ch=hs.length?84:100,cw=ch*.71;
     if(m.state==='gambleNext'&&gm.card!==null)drawNiceCard(g,gm.card,160-cw/2,cy,cw,ch,true,'#ffffff');
-    else{drawNiceCard(g,0,160-cw/2,cy,cw,ch,false,blinkRed?'#ff3a3a':'#e8e8f0');if(!m.remote&&Math.floor(now*3)!==Math.floor((now-.02)*3))SFX.gambleTick(blinkRed);}
+    else{drawNiceCard(g,0,160-cw/2,cy,cw,ch,false,blinkRed?'#ff3a3a':'#e8e8f0');{const ti=Math.floor(now*3);if(ti!==m.gtk){m.gtk=ti;if(!m.remote)SFX.gambleTick(blinkRed);}}}
     // Rot / Schwarz als Schilder links und rechts
     const pill=(x,t,bgc,fg,on)=>{px(g,8,800);const w=g.measureText(t).width+18;g.save();if(on){g.shadowColor=bgc;g.shadowBlur=10;}g.fillStyle=bgc;lRR(g,x-w/2,cy+ch/2-10,w,20,10);g.fill();g.restore();
       g.lineWidth=1;g.strokeStyle='rgba(232,184,64,.7)';lRR(g,x-w/2+.5,cy+ch/2-9.5,w-1,19,9.5);g.stroke();g.fillStyle=fg;g.fillText(t,x,cy+ch/2+1);};
@@ -3550,7 +3578,7 @@ function updMachines(dt,F,focusM){
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
     }
     // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
-    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
+    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?.033:.12);m.dirty=true;}
     if(m.G.special&&m.topAnim&&d<9){const f=Math.floor(now*6);if(f!==m.topFr){m.topFr=f;m.topDirty=true;}} // Alles Spitze: volle Leitern blinken im Aufsatz
     {const near=d<6.5||m===focusM;if(near!==m.near){m.near=near;for(const k in m.btns)m.btns[k].mesh.visible=near;}} // Tasten nur in der Nähe (spart Zeichenaufrufe)
     if(m.topDirty)drawTop(m);
@@ -4414,7 +4442,7 @@ function crStep(dt){
   // Gastgeber bestimmen (Raum) – wechselt er mitten im Lauf, zahlt jeder seinen Einsatz zum aktuellen Wert aus
   const host=room?crHostPick():'';
   if(host!==CR.host){if(CR.state==='run'&&CR.pend>0)crCash(CR.m);CR.host=host;CR.ctKey='';
-    if(room&&host===MP.myPeer)crNewRound(CR.r+1);else if(!room||!host){CR.state='bet';CR.bt=Infinity;CR.t=0;CR.m=1;crUpdate();}}
+    if(room&&host===MP.myPeer)crNewRound(CR.r+1);else if(!room||!host){CR.state='bet';CR.bt=Infinity;CR.t=0;CR.m=1;if(!room){if(CR.queued>0){CR.pend=CR.queued;CR.queued=0;}if(CR.pend>0){CR.C=crPoint();CR.bt=.9;}}crUpdate();}}
   if(!room||host===MP.myPeer)crHostStep(dt);else if(host)crClientStep(dt);
   // eigener Einsatz: Auto-Auszahlung
   if(CR.state==='run'&&CR.pend>0&&!CR.my.c){const a=crAuto();if(a&&CR.m>=a&&(!crIsHost()||a<=CR.C))crCash(a);}
@@ -4433,12 +4461,17 @@ function crHostStep(dt){
 }
 function crClientStep(dt){
   const pr=typeof mtPeerPresence==='function'?mtPeerPresence(CR.host):null,ct=pr&&pr.ct;if(!ct||typeof ct.r!=='number')return;
-  if(ct.r!==CR.r){if(CR.state==='run'&&CR.pend>0)crCash(CR.m);crNewRound(ct.r);}
+  if(ct.r!==CR.r){if(CR.state==='run'&&CR.pend>0){
+      // Crash verpasst (Seite war im Hintergrund): mit dem echten Crash-Punkt der verpassten Runde abrechnen statt mit dem stehengebliebenen Wert
+      const C=ct.r===CR.r+1&&Array.isArray(ct.h)&&ct.h.length?+ct.h[ct.h.length-1]:0;
+      if(C>=1){const a=crAuto();if(a&&a<=C)crCash(a);else{CR.C=C;crCrashNow();}}else crCash(CR.m);}
+    crNewRound(ct.r);}
   if(Array.isArray(ct.h))CR.hist=ct.h.map(Number).filter(x=>x>=1).slice(-12);
   if(ct.st==='run'&&CR.state!=='run'){if(CR.state==='bet'){CR.t=+ct.t||0;crLaunch();CR.t=+ct.t||0;CR.m=crM(CR.t);}}
   else if(ct.st==='crash'&&CR.state!=='crash'){CR.C=Math.max(1,+ct.C||CR.m);crCrashNow();}
   else if(ct.st==='bet'&&CR.state!=='bet'){CR.state='bet';CR.t=0;CR.m=1;crUpdate();}
-  if(CR.state==='run'){CR.t+=dt;const ht=+ct.t||0;const d=ht-CR.t;if(Math.abs(d)>.35)CR.t=ht;else CR.t+=d*Math.min(1,dt*3);CR.m=crM(CR.t);}
+  if(CR.state==='run'){CR.t+=dt;if(ct.t!==CR.hT){CR.hT=ct.t;CR.hAt=performance.now();}const ht=(+ct.t||0)+Math.min(.5,(performance.now()-CR.hAt)/1000);const d=ht-CR.t; // Gastgeber-Uhr weiterdenken, sonst zieht der alte Wert den Zähler zurück (Ruckeln)
+    if(Math.abs(d)>.35)CR.t=ht;else CR.t+=d*Math.min(1,dt*3);CR.m=crM(CR.t);}
   if(CR.state==='bet'||CR.state==='crash')CR.bt=+ct.bt||0;
 }
 // ---- Bildschirm ----
@@ -5362,7 +5395,7 @@ async function mpInit(){
   room.onConnection(()=>mpTag());
   MP.dirty=true;
 }
-function mpClear(){MP.avatars.forEach(a=>{releaseMirror(a);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();});MP.avatars.clear();}
+function mpClear(){MP.avatars.forEach(a=>{releaseMirror(a);if(typeof chDispose==='function')chDispose(a.n);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();});MP.avatars.clear();}
 function mpTag(){const t=$('#onlineTag');const n=MP.online;t.hidden=!MP.started;
   let ph=false;try{ph=!PC;}catch(e){} // Handy: kurz (PC gibt es erst später im Skript)
   if(!MP.room){t.textContent=window.NK_STANDALONE?(ph?'RAUM':'MULTI: TIPPEN'):(ph?'OFFLINE':'MULTI: AUS');t.classList.remove('live');return;}
@@ -5407,7 +5440,7 @@ function mpSync(peers){
       if(txt){say(a.n,txt,5);if(a.f!==floorIdx)toast(name+' ('+(a.f?'2. Stock':'EG')+'): '+txt);SFX.click();}}
     if(pr.wt&&pr.wt!==MP.seenWin[p.peer]){MP.seenWin[p.peer]=pr.wt;const w=cleanText(pr.w,60);if(w){toast(name+' '+w);SFX.chip();}}
   });
-  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
+  MP.avatars.forEach((a,k)=>{if(!seen.has(k)){releaseMirror(a);delete MP.seenSay[k];delete MP.seenWin[k];if(typeof chDispose==='function')chDispose(a.n);avG.remove(a.m.g);if(a.n.bubbleEl)a.n.bubbleEl.remove();MP.avatars.delete(k);toast((a.name||'Jemand')+' hat die Spielbank verlassen.');}});
   MP.online=others;mpTag();
 }
 function mpLocalState(){
@@ -5438,18 +5471,21 @@ function seatAvatars(){
 }
 function mpStep(dt){
   seatAvatars();mtStep();stepMirrors(dt);updWatchCard(dt);if(STANDALONE)vcStep(dt);
-  if(MP.room&&MP.started){
+  if(MP.room&&MP.started&&now-MP.lastSent>.1){ // Vergleich nur, wenn überhaupt gesendet werden darf (vorher jedes Bild)
     const s=mpLocalState();const m=MP.me;
     const ch=s.f!==m.f||s.a!==m.a||s.n!==m.n||s.k!==m.k||s.ms!==m.ms||s.mt!==m.mt||s.rs!==m.rs||JSON.stringify(s.gx)!==JSON.stringify(m.gx)||JSON.stringify(s.gl)!==JSON.stringify(m.gl)||JSON.stringify(s.it)!==JSON.stringify(m.it)||JSON.stringify(s.lk)!==JSON.stringify(m.lk)||Math.abs(s.x-(m.x||0))>.02||Math.abs(s.z-(m.z||0))>.02||Math.abs(s.y-(m.y||0))>.03;
-    if((ch||MP.dirty)&&now-MP.lastSent>.1){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
+    if(ch||MP.dirty){Object.assign(m,s);MP.lastSent=now;MP.dirty=false;
       MP.room.presence(Object.assign({},m)).catch(()=>{});}
   }
   MP.avatars.forEach(a=>{
     const r=a.m.g;r.visible=a.f===floorIdx;
     const dx=a.tx-r.position.x,dz=a.tz-r.position.z,d=Math.hypot(dx,dz);
-    if(d>4)r.position.set(a.tx,0,a.tz);else{r.position.x+=dx*Math.min(1,dt*9);r.position.z+=dz*Math.min(1,dt*9);}
+    // Mitspieler gleiten mit gleichmäßigem Tempo zum zuletzt gemeldeten Punkt (vorher: bei jeder Meldung ein Ruck, dann Abbremsen = Ruckeln)
+    if(a.ltx!==a.tx||a.ltz!==a.tz){const tn=performance.now(),iv=clamp((tn-(a.lt||0))/1000,.12,.45);a.lt=tn;a.ltx=a.tx;a.ltz=a.tz;a.mv=d/iv;}
+    let stepD=0;
+    if(d>4)r.position.set(a.tx,0,a.tz);else if(d>1e-4){stepD=Math.min(d,Math.max(a.mv||0,d*3)*dt);r.position.x+=dx/d*stepD;r.position.z+=dz/d*stepD;}
     r.rotation.y=angLerp(r.rotation.y,a.ty,dt*10);
-    if(a.act==='walk'||a.act==='mwatch'){const sp=d>4?0:Math.hypot(dx,dz)*Math.min(1,dt*9)/Math.max(dt,1e-3);a.sp=(a.sp||0)+(sp-(a.sp||0))*Math.min(1,dt*8);a.n.anim=a.sp>4.6?'sprint':a.sp>2.3?'run':a.sp>.25?'walk':'idle';if(a.n.rig)a.n.rig.tScale=a.n.anim==='walk'?clamp(a.sp/1.5,.6,1.7):a.n.anim==='run'?clamp(a.sp/3.2,.75,1.5):1;}
+    if(a.act==='walk'||a.act==='mwatch'){const sp=stepD/Math.max(dt,1e-3);a.sp=(a.sp||0)+(sp-(a.sp||0))*Math.min(1,dt*8);a.n.anim=a.sp>4.6?'sprint':a.sp>2.3?'run':a.sp>.25?'walk':'idle';if(a.n.rig)a.n.rig.tScale=a.n.anim==='walk'?clamp(a.sp/1.5,.6,1.7):a.n.anim==='run'?clamp(a.sp/3.2,.75,1.5):1;}
     a.n.root.position.y=0;animNPC(a.n,dt);
   });
 }
@@ -5908,7 +5944,7 @@ function mtStep(){
   for(const id in TABLES)mtStepTable(TABLES[id]);
   // eigener Platz: Buy-in abziehen, Stack merken
   const T=TABLES[MT.table],my=mtMySeat(T);
-  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}store('nk_mtstack',s.st);}
+  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}}
   const V=T&&T.view;
   const tk=V&&my>=0&&V.toAct===my&&isBetting(V)?V.hand+'/'+V.board.length+'/'+V.curBet:'';
   if(tk&&tk!==MT.turnKey){MT.turnKey=tk;SFX.ding();MT.raiseTo=0;if(focus&&focus.type==='mtable')mtBarSync();}
@@ -6788,6 +6824,7 @@ function rmHide(){if(RM.el&&!RM.el.hidden)RM.el.hidden=true;}
 function rmUpdate(){
   const el=RM.el||(RM.el=$('#rmBar'));if(!el)return;
   if(PC||!started||locked||focus||!F){rmHide();return;}
+  if(now<(RM.next||0))return;RM.next=now+.1; // 10-mal pro Sekunde reicht (vorher jedes Bild)
   const list=[...RESVS].filter(m=>m.F===F&&m.act).map(m=>({m,d:Math.hypot(m.act.pos.x-P.x,m.act.pos.z-P.z)})).filter(o=>o.d<3.4).sort((a,b)=>a.d-b.d).slice(0,3);
   if(!list.length){rmHide();return;}
   el.hidden=false;
@@ -7387,7 +7424,7 @@ function handsStep(dt){
   if(HD.packSt!=='off'&&((focus&&!atSlot())||locked||openId))packHide();
   hdUi();
 }
-function handsRender(){if(!HD.rig.visible)return;renderer.clearDepth();renderer.render(HD.scene,camera);}
+function handsRender(){if(!HD.rig.visible)return;{let any=false;const c=HD.rig.children;for(let i=0;i<c.length;i++)if(c[i].visible){any=true;break;}if(!any)return;}renderer.clearDepth();renderer.render(HD.scene,camera);}
 
 
 /* ---- 42_join.js ---- */
@@ -7512,7 +7549,8 @@ function wlThrow(){const v=WL.held;const h=WL.heldObj;HD.rig.updateMatrixWorld(t
   const d=wlNew(v,{x:p.x,y:p.y,z:p.z});if(!d)return wlHeldEnd();const fw=wlFwd();d.vel=fw.multiplyScalar(5.5).add(new THREE.Vector3(0,2,0));d.spin=(Math.random()-.5)*14;d.age=0;
   d.mesh=wlMesh(v,p.x,p.y,p.z,d.f,d.r,null);WL.fly.push(d);wlHeldEnd();if(typeof HSFX!=='undefined'&&HSFX.flick)HSFX.flick();}
 function wlLand(d){d.l=1;d.vel=null;const i=WL.fly.indexOf(d);if(i>=0)WL.fly.splice(i,1);wlUnmesh(d.mesh);d.mesh=null;if(WL.drops.includes(d)){wlDropMesh(d);dropsSave();wlPres();}}
-function wlFlyStep(dt){const rc=new THREE.Raycaster();WL.fly.slice().forEach(d=>{
+const wlRc=new THREE.Raycaster();
+function wlFlyStep(dt){if(!WL.fly.length)return;const rc=wlRc;WL.fly.slice().forEach(d=>{
   if(d.give){d.age+=dt;const a=d.to&&MP.avatars?MP.avatars.get(d.to):null;const k=Math.min(1,d.age/.6);if(a){const q=a.m.g.position;d.mesh.position.set(d.sx+(q.x-d.sx)*k,d.sy+(1.1-d.sy)*k+Math.sin(k*Math.PI)*.4,d.sz+(q.z-d.sz)*k);}d.mesh.rotation.y+=dt*8;
     if(k>=1||!a){WL.fly.splice(WL.fly.indexOf(d),1);wlUnmesh(d.mesh);d.mesh=null;}return;}
   d.age+=dt;const v=d.vel;v.y-=6.5*dt;v.multiplyScalar(Math.exp(-1.1*dt));v.x+=Math.sin(d.age*9+d.r)*dt*.8;
@@ -7909,7 +7947,7 @@ function leaveFocus(){
   const f=focus;
   if(f.type==='slot'&&isMine(f.m)){const m=f.m;const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;
     toast(m.auto?'Er spielt weiter, Freispiele laufen von selbst, Power Spins nimmt er an.':'Der Automat wartet auf dich. Freispiele laufen von selbst.');}
-  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
+  else if(f.type==='slot'){const m=f.m;if(['spin','count','fsIntro','fsWait','fsShow','expand','expandShow','fsRetrig','fsEnd','gambleNext','power','splash','ssSpin','fsReady','myst'].includes(m.state)){toast('Erst das Spiel beenden.');return;}
     if(m.cashOn&&m.power&&!m.power.spinning){m.win+=m.power.left*m.power.cost;m.power=null;}if(m.sp&&m.sp.pot>0){m.win+=m.sp.pot;m.sp.pot=0;}if(m.win>0)collect(m);m.auto=false;m.state='idle';m.gamble=null;if(m.cashOn)slotCashOut(m);updateButtons(m);
     const p=m.group.localToWorld(new THREE.Vector3(0,0,1.55));P.x=p.x;P.z=p.z;P.yaw=m.group.rotation.y;}
   else if(f.type==='poker'){pokerLeave();P.x=PK.cx;P.z=PK.cz+3.25;P.yaw=0;}
@@ -7970,10 +8008,17 @@ addEventListener('keyup',e=>{keys[e.code]=false;});
 
 const ray=new THREE.Raycaster(),v2=new THREE.Vector2();
 function hitList(){return F.hits.concat(globalHits);}
+// Zielsuche: nur sichtbare Flächen in Reichweite des Strahls prüfen (vorher wurden alle Automaten der Halle Dreieck für Dreieck gerechnet, ~5 ms je Suche)
+const _hitSph=new THREE.Sphere(),_hitNear=[];
+function rayHits(){const o=ray.ray.origin,far=ray.far;_hitNear.length=0;
+  for(const L of [F.hits,globalHits])for(const x of L){if(!x.visible)continue;const g=x.isMesh&&x.geometry;
+    if(g){if(!g.boundingSphere)g.computeBoundingSphere();_hitSph.copy(g.boundingSphere).applyMatrix4(x.matrixWorld);if(_hitSph.center.distanceTo(o)>far+_hitSph.radius)continue;}
+    _hitNear.push(x);}
+  return ray.intersectObjects(_hitNear,false);}
 function tapAt(x,y,noWalk,fat){
   if(typeof handsTap==='function'&&(!focus||focus.type==='slot')&&handsTap(x,y))return true; // Schachtel offen: Klick/Tipp geht an die Kippen
   v2.set(x/LW()*2-1,-(y/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=30;
-  let hits=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);if(!hits.length)return false;
+  let hits=rayHits();if(!hits.length)return false;
   {const hb=hits.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hits[0].distance+.03);if(hb&&hb!==hits[0])hits=[hb].concat(hits.filter(x=>x!==hb));}
   if(focus){
     for(const h of hits){const a=h.object.userData.act;if(!a)continue;
@@ -7994,7 +8039,7 @@ function tapAt(x,y,noWalk,fat){
   return false;
 }
 function nearBtnHit(x,y){for(const r of [14,26])for(let i=0;i<8;i++){const a=i/8*TAU;v2.set((x+Math.cos(a)*r)/LW()*2-1,-((y+Math.sin(a)*r)/LH())*2+1);ray.setFromCamera(v2,camera);ray.far=8;
-  const h=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible)[0];if(h&&h.object.userData.act&&h.object.userData.act.type==='mbtn'&&isMine(h.object.userData.act.m))return h;}return null;}
+  const h=rayHits()[0];if(h&&h.object.userData.act&&h.object.userData.act.type==='mbtn'&&isMine(h.object.userData.act.m))return h;}return null;}
 function actOrWalk(act,dist){const d=Math.hypot(act.pos.x-P.x,act.pos.z-P.z);if(dist<4.2&&d<act.reach+1.6)interact(act);else startWalk(act.pos.x,act.pos.z,act);}
 // Taste am Automaten im Stehen (nur Automaten mit deiner Karte); freie/fremde Automaten: wie den Automaten selbst antippen
 function pressStanding(act,dist){const m=act.m;
@@ -8023,7 +8068,7 @@ function updatePrompt(){
   let best=null;AIM.hot=false;
   const ap=aimPos();v2.set(ap[0]/LW()*2-1,-(ap[1]/LH())*2+1);
   ray.setFromCamera(v2,camera);ray.far=4.2;
-  const hl=ray.intersectObjects(hitList(),false).filter(h=>h.object.visible);
+  const hl=rayHits();
   const h=hl.find(x=>x.object.userData.act&&x.object.userData.act.type==='mbtn'&&x.distance<hl[0].distance+.03)||hl[0];
   if(h&&h.object.userData.act){const a=h.object.userData.act;
     if(a.type==='mbtn'){const m=a.m;
@@ -8146,18 +8191,31 @@ function setFloor(i){
 const BAR_MIN=10000,BAR_GIFT=10000; // unter 100 € gibt der Barkeeper 100 € (Werte in Cent; Justin 2026-10-23, davor 300 € und 1.000 €), nicht wenn mind. 100 € auf dem Konto liegen
 let SENS=1;try{SENS=clamp(+(localStorage.getItem('nk_sens')||1)||1,.2,3);}catch(e){}
 const GFX='sharp'; // immer scharf, keine Auswahl mehr
+// Flüssig vor scharf: läuft das Bild dauerhaft unter ~42 Bildern/s, wird die Auflösung schrittweise gesenkt (bis 60 %),
+// und erst wieder angehoben, wenn es lange glatt läuft. Bringt das Senken nichts (z. B. Stromsparmodus mit 30 Bildern/s), wird es zurückgenommen.
+let DYN=1,snapW=640,snapH=480;const DR={acc:0,n:0,good:0,hold:0,noDrop:0,before:0,tried:false};
+function dynRes(raw){
+  if(document.hidden||raw>.25||!started||window.NK_HS_LOCAL)return;
+  DR.acc+=raw;DR.n++;if(DR.acc<1.2)return;
+  const avg=DR.acc/DR.n;DR.acc=0;DR.n=0;
+  if(DR.tried){DR.tried=false;if(avg>DR.before*.92){DYN=Math.min(1,+(DYN+.1).toFixed(2));DR.noDrop=now+120;resize();return;}}
+  if(avg>.024&&DYN>.6&&now>DR.noDrop){DR.before=avg;DR.tried=true;DYN=Math.max(.6,+(DYN-.1).toFixed(2));DR.good=0;DR.hold=now+60;resize();}
+  else if(avg<.0185&&DYN<1&&now>DR.hold){if(++DR.good>=6){DR.good=0;DYN=Math.min(1,+(DYN+.1).toFixed(2));DR.hold=now+60;resize();}}
+  else DR.good=0;
+}
 function resize(){
   const w=LW(),h=LH();let iw,ih;
   if(GFX==='sharp'){
     // scharf: volle Auflösung (bis 2x auf Retina), bei sehr großen Bildschirmen etwas begrenzt
     let pr=Math.min(window.devicePixelRatio||1,2);while(pr>1&&w*h*pr*pr>3.2e6)pr-=.25;
-    iw=Math.round(w*pr);ih=Math.round(h*pr);
+    iw=Math.round(w*pr);ih=Math.round(h*pr);snapW=iw;snapH=ih;
+    if(DYN<1){iw=Math.max(240,Math.round(iw*DYN));ih=Math.max(240,Math.round(ih*DYN));}
   } else {
     let s=clamp(Math.round(Math.min(w,h)/190),2,4);if(focus)s=(focus.type==='poker'||focus.type==='hilo'||focus.type==='mtable'||focus.type==='crash')?1:Math.max(1,s-1);
     iw=Math.ceil(w/s);ih=Math.ceil(h/s);
   }
   renderer.setSize(iw,ih,false);document.body.classList.toggle('gfx-sharp',GFX==='sharp');
-  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();if(GFX==='sharp')snapRes.value.set(Math.max(320,iw/2),Math.max(240,ih/2));else snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
+  camera.aspect=w/h;if(!focus)camera.fov=w<h?82:64;camera.updateProjectionMatrix();if(GFX==='sharp')snapRes.value.set(Math.max(320,snapW/2),Math.max(240,snapH/2));else snapRes.value.set(iw/(focus?1:2),ih/(focus?1:2));
   if(typeof svLayout==='function')svLayout();
 }
 addEventListener('resize',()=>{if(rot)applyRot();else resize();});
@@ -8182,7 +8240,7 @@ const clock=new THREE.Clock(),tmpV=new THREE.Vector3();let frameDt=.016;
 let chatterT=4,flickT=0;
 function frame(){
   requestAnimationFrame(frame);
-  const dt=Math.min(.05,clock.getDelta());frameDt=dt;now+=dt;pcUi();
+  const rawDt=clock.getDelta(),dt=Math.min(.05,rawDt);frameDt=dt;now+=dt;pcUi();dynRes(rawDt);
   if(F){
     updTweens(dt);elevStep(dt);
     let mx=0,mz=0;
@@ -8223,7 +8281,7 @@ function frame(){
     camera.updateProjectionMatrix();aimScreen();
     if(marker.visible)marker.rotation.z+=dt*2;
     F.roulettes.forEach(r=>r.wheel.rotation.y+=dt*(r.spin?7:.6));
-    F.npcs.forEach(n=>animNPC(n,dt));worldFxStep(F,dt);hsStep(dt);
+    F.npcs.forEach(n=>animNPC(n,dt,true));worldFxStep(F,dt);hsStep(dt);
     flickT-=dt;F.lights.forEach(L=>{if(L.flicker&&flickT<=0)L.l.intensity=Math.random()<.18?L.base*.15:L.base;});if(flickT<=0)flickT=.08+Math.random()*.25;
     const beat=floorIdx===1?Math.max(0,1-((now%.5)/.5)*4):0;F.speakers.forEach(s=>s.scale.set(1+beat*.25,1,1+beat*.25));
     updMachines(dt,F,focus&&focus.type==='slot'?focus.m:null);

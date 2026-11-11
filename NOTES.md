@@ -3,6 +3,11 @@
 Erst `CLAUDE.md` lesen (alle Regeln, Bauen, Testen, Dateiliste). Hier steht nur der aktuelle Stand.
 
 ## Zuletzt erledigt
+- **Große Durchsicht 2026-11-11** (Sicherungspunkt davor: Git-Tag `stand-2026-11-11`; zurück: `git revert` der Commits danach oder `git checkout stand-2026-11-11 -- src` + bauen + pushen).
+  - Flüssiger: Zielsuche nur noch in Reichweite (rayHits in 90_main, 5 ms → 0,1 ms), automatische Auflösung (dynRes/DYN in 90_main, senkt bis 60 % bei < ~42 Bildern/s, im Test aus über NK_HS_LOCAL), Hallen-Figuren außerhalb des Bildes ruhen (chCull), Risiko/Menü-Bildschirm max. 30 Zeichnungen/s, Handy-Tastenleiste 10×/s, Präsenz-Vergleich nur alle 0,1 s, Kerzen ein Material, leere Hände-Szene wird nicht gezeichnet.
+  - Mitspieler gleiten gleichmäßig (30_multiplayer, a.mv), Crash-Zähler bei Mitspielern ruckelt nicht mehr (Gastgeber-Uhr weitergedacht).
+  - Geld/Fehler: Aufstehen während Pharao-Mystery gesperrt (Gewinn ging verloren), zweiter Tab wartet (nk_alive in 10_core, sonst doppeltes Geld), Crash im Hintergrund verpasst = echter Crash-Punkt, Crash hing nach Raumverlust, AUTO blieb nach Risiko-Automatik an der Leiterspitze stehen, Karten-Risiko-Tick doppelt, Figuren-Speicher wird freigegeben (chDispose).
+  - Von den Prüfern gefunden, NOCH NICHT gemacht: Spielertisch setzt Stapel nach Verbindungsabriss auf den Einkauf zurück (32_player_table 170–174, ts.b zwischen den Händen nachführen); Bank „ZURÜCKHOLEN“ kann verdoppeln (36_bank 165); Cloud-Save der Artifact-Version (35_save: CR.pend/queued fehlt in totalWealth, Scheine doppelt gezählt); 11 Punktlichter je Etage (Akzentlichter durch Leuchten ersetzen, ändert die Optik); ein Skelett je Figur statt je Teilnetz (16_chars 167); Power-Spin-Walzen rasten hart ein (20_slots ~617); Karten-Risiko schluckt Tastendrücke in gambleNext; Allokationen in der Ich-Perspektive (16_chars/41_hands); Schilder ohne Mipmaps (canvasTex).
 - **Portemonnaie mit Scheinen** (Commit 8a5df7d, live): neue Datei `src/43_wallet.js`, Beschreibung in CLAUDE.md (Eintrag 43_wallet.js).
   - G / Handy-Knopf GELD = Portemonnaie in der Hand, Schein antippen, dann V Werfen / B Ablegen / C Geben / G Zurück.
   - Liegende Scheine laufen über die Präsenz (dr/pk/dg/wk), nur einer bekommt sie, nicht vergebene kommen nach 10 Min / Raumwechsel / Neuladen zurück.

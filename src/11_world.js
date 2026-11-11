@@ -197,8 +197,8 @@ function npc(F,o){
   if(typeof chAttach==='function')chAttach(n,o); // Skelett-Figur (Quaternius) ersetzt die Klötzchen, sobald geladen
   return n;
 }
-function animNPC(n,dt){
-  if(n.rig){chAnimate(n,dt);return;}
+function animNPC(n,dt,cull){
+  if(n.rig){if(cull){dt=chCull(n,dt);if(dt<0)return;}chAnimate(n,dt);return;}
   n.t+=dt;const t=n.t,p=n.ph;
   n.armL.rotation.z=0;n.armR.rotation.z=0;
   switch(n.anim){

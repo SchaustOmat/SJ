@@ -29,11 +29,17 @@ function chLookSet(key,delta){const l=chLook();const max={g:2,h:4,hc:CH_HAIR.len
   const o=chLookOpts(l);if(CHR.fp)chRelook(CHR.fp,Object.assign({seatH:.55,glow:.45},o));if(CHR.mirror)chRelook(CHR.mirror,o);
   if(typeof MP!=='undefined'&&MP.room){MP.dirty=true;MP.lastSent=0;}chLookUi();}
 // Figur mit neuem Aussehen neu aufbauen (Sitzen/Kopf-ausblenden bleibt)
-function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
+// Alte Figur freigeben (Knochen-Texturen, eigenes Körper-Material, Rock), sonst sammelt sich das bei jedem Aussehen-Wechsel und jedem Kommen/Gehen an
+function chDispose(n){const R=n&&n.rig;if(!R)return;try{R.mixer.stopAllAction();
+  R.model.traverse(x=>{if(!x.isSkinnedMesh)return;if(x.skeleton&&x.skeleton.dispose)x.skeleton.dispose();
+    if(x.name.startsWith('Body_')||x.name==='Skirt'){const ms=Array.isArray(x.material)?x.material:[x.material];ms.forEach(mt=>mt&&mt.dispose&&mt.dispose());}
+    if(x.name==='Skirt'&&x.geometry)x.geometry.dispose();
+    if(n.F&&n.F.hits){const i=n.F.hits.indexOf(x);if(i>=0)n.F.hits.splice(i,1);}});}catch(e){}}
+function chRelook(n,o){if(!n)return;const sit=n.rig?n.rig.sit:!!o.sit,hide=n.rig?n.rig.hideHead:false;chDispose(n);n.rig=null;n.items=null;chAttach(n,Object.assign({},o,{sit}));if(n.rig)n.rig.hideHead=hide;}
 // Spiegel: eine Kopie der eigenen Figur 2 m vor dem Spieler, zum Spieler gedreht (solange das Figur-Fenster offen ist)
 function chMirrorShow(){if(!CHR.ready||CHR.fail)return;chMirrorHide();const n={root:new THREE.Group(),anim:'idle',t:0,ph:0,lines:[],name:'',F:null,bubbleUntil:0,bubbleEl:null};
   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);n.root.position.set(P.x+fx*2.1,0,P.z+fz*2.1);n.root.rotation.y=P.yaw;scene.add(n.root);chAttach(n,chLookOpts(chLook()));CHR.mirror=n;document.body.classList.add('lookopen');chLookUi();}
-function chMirrorHide(){if(CHR.mirror){scene.remove(CHR.mirror.root);CHR.mirror=null;}document.body.classList.remove('lookopen');}
+function chMirrorHide(){if(CHR.mirror){chDispose(CHR.mirror);scene.remove(CHR.mirror.root);CHR.mirror=null;}document.body.classList.remove('lookopen');}
 function chLookUi(){const el=document.getElementById('pLook');if(!el||el.hidden)return;const l=chLook();
   const set=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t;};
   set('lkG',l.g?'Frau':'Mann');set('lkH',['Lang','Dutt','Scheitel','Kurz'][l.g?l.h:[2,3,0,1][l.h]]||String(l.h+1));set('lkB',l.b?'Ja':'Nein');
@@ -191,7 +197,6 @@ function chAttach(n,o){
   n.rig={model,bones,mixer,cur:'',curAct:null,sit:!!o.sit,speed:.92+Math.random()*.16,fem,seatH:o.seatH||.58,tScale:1,skirt};
   n.head=bones.Head||n.head;n.neck=bones.neck_01;n.armL=bones.hand_l||n.armL;n.armR=bones.hand_r||n.armR;n.torso=bones.spine_03||n.torso;n.items=null;
   if(n.rig.sit){model.position.y=chSitOffset(n)+(o.sitLift||0);}
-  CHR.all.push(n);
 }
 // Sitz-Clip: wie hoch sitzt das Becken? Figur so anheben, dass es auf der Hockerhöhe liegt
 function chSitOffset(n){
@@ -219,6 +224,14 @@ function chPlay(n,name,fade){
   if(R.curAct){act.crossFadeFrom(R.curAct,fade===undefined?.3:fade,false);}else{act.time=Math.random()*clip.duration;}
   act.play();R.curAct=act;R.cur=name;
 }
+// Hallen-Figuren außerhalb des Bildes werden weder bewegt noch gezeichnet; weiter weg als 9 m laufen sie mit 15 Schritten/s (spart Rechenzeit am Handy).
+// Gibt die Zeitspanne zurück, um die die Figur weiterlaufen soll, oder -1 = diesmal auslassen.
+function chCull(n,dt){const R=n.rig;n.root.getWorldPosition(chV);chV.y+=.9;const d=chV.distanceTo(camera.position);chV.project(camera);
+  const on=d<2.5||(chV.z<1&&Math.abs(chV.x)<1.35&&Math.abs(chV.y)<1.7);
+  if(R.model.visible!==on)R.model.visible=on;
+  if(!on){n.t+=dt;return -1;}
+  if(d>9){R.acc=(R.acc||0)+dt;if(R.acc<.066)return -1;dt=R.acc;R.acc=0;}
+  return dt;}
 function chAnimate(n,dt){
   n.t+=dt;const R=n.rig;const want=chClipFor(n);chPlay(n,want);
   R.mixer.update(dt*R.speed*(R.tScale||1));

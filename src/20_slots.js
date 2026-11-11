@@ -517,7 +517,9 @@ function slotStep(m,dt){
   if(m.timer>0){m.timer-=dt;if(m.timer<=0)timerDone(m);}
   if(m.state==='fsIntro'){m.dirty=true;}
   if(m.state==='expand'){m.expand.p=Math.min(1,m.expand.p+dt*1.4);m.dirty=true;}
-  if(m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer'||m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  // Laufende Bilder jedes Bild neu; Risiko/Angebot/Menü blinken nur langsam, da reichen 30 Zeichnungen/s (spart am Handy das Neuzeichnen + Hochladen des großen Bildschirms)
+  if(m.state==='power'||m.state==='splash'||m.state==='myst'||(m.state==='show'&&!m.auto))m.dirty=true;
+  else if((m.state==='gamble'||m.state==='gambleNext'||m.state==='menu'||m.state==='boot'||m.state==='poffer')&&now>=(m.fdT||0)){m.fdT=now+.03;m.dirty=true;}
   if(m.state!==m.prevState){m.prevState=m.state;m.stateAt=now;}
   // LEDs
   const hot=m.fs||m.state==='count'||m.state==='show';
@@ -693,7 +695,7 @@ function startGamble(m,kind){
     // Gewinn unter der untersten Stufe: erster Druck geht auf die unterste Stufe oder 0 (fair)
     const rest=idx<0?0:m.win-ladOf(m)[idx];if(rest>0){slotAdd(m,rest);}
     if(idx>=0)m.win=ladOf(m)[idx];m.disp=m.win;
-    if(idx>=ladOf(m).length-1){collect(m);return;}
+    if(idx>=ladOf(m).length-1){collect(m);if(m.auto)m.timer=.6;return;} // AUTO läuft danach weiter (blieb sonst stehen)
     m.gamble={kind:'ladder',n:0,busy:false,idx,last:null,t0:now};m.stateT=0;m.state='gamble';m.msg=rest>0?('REST '+fmt(rest)+' GUTGESCHRIEBEN · DRÜCKEN!'):'LEITER DRÜCKEN ODER NEHMEN';
     if(rest>0&&idx>=0&&idx+1<ladOf(m).length){const gm=m.gamble;gm.ent={t0:now,a:idx,b:idx===AUS_I-1?AUS_I:ladNext(idx)};gm.busy=true;m.disp=idx>=0?ladOf(m)[idx]+rest:m.win;m.state='gambleNext';m.timer=1.05;}
     else{m.gamble.noChord=now+.3;if(idx>=0&&!m.remote)SFX.ladFan();}}
@@ -1112,7 +1114,7 @@ function drawGamble(m,g){
     hs.forEach((c,i)=>drawNiceCard(g,c,160-hs.length*15+i*30+3,RY+27,24,34,true));
     const blinkRed=Math.floor(now*3)%2===0,cy=RY+(hs.length?66:44),ch=hs.length?84:100,cw=ch*.71;
     if(m.state==='gambleNext'&&gm.card!==null)drawNiceCard(g,gm.card,160-cw/2,cy,cw,ch,true,'#ffffff');
-    else{drawNiceCard(g,0,160-cw/2,cy,cw,ch,false,blinkRed?'#ff3a3a':'#e8e8f0');if(!m.remote&&Math.floor(now*3)!==Math.floor((now-.02)*3))SFX.gambleTick(blinkRed);}
+    else{drawNiceCard(g,0,160-cw/2,cy,cw,ch,false,blinkRed?'#ff3a3a':'#e8e8f0');{const ti=Math.floor(now*3);if(ti!==m.gtk){m.gtk=ti;if(!m.remote)SFX.gambleTick(blinkRed);}}}
     // Rot / Schwarz als Schilder links und rechts
     const pill=(x,t,bgc,fg,on)=>{px(g,8,800);const w=g.measureText(t).width+18;g.save();if(on){g.shadowColor=bgc;g.shadowBlur=10;}g.fillStyle=bgc;lRR(g,x-w/2,cy+ch/2-10,w,20,10);g.fill();g.restore();
       g.lineWidth=1;g.strokeStyle='rgba(232,184,64,.7)';lRR(g,x-w/2+.5,cy+ch/2-9.5,w-1,19,9.5);g.stroke();g.fillStyle=fg;g.fillText(t,x,cy+ch/2+1);};
@@ -1246,7 +1248,7 @@ function updMachines(dt,F,focusM){
       if(m.state==='spin')updReels(m,dt);else m.reels.forEach(r=>{if(r.bounce>0){r.bounce=Math.max(0,r.bounce-dt*6);m.dirty=true;}});
     }
     // Lockmodus flüssig am eigenen Automaten, in der Nähe sparsam (ca. 8 Bilder/s)
-    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?0:.12);m.dirty=true;}
+    if((m.state==='idle'||m.state==='idle_r')&&d<7&&now>(m.swT||0)){m.swT=now+(m===focusM?.033:.12);m.dirty=true;}
     if(m.G.special&&m.topAnim&&d<9){const f=Math.floor(now*6);if(f!==m.topFr){m.topFr=f;m.topDirty=true;}} // Alles Spitze: volle Leitern blinken im Aufsatz
     {const near=d<6.5||m===focusM;if(near!==m.near){m.near=near;for(const k in m.btns)m.btns[k].mesh.visible=near;}} // Tasten nur in der Nähe (spart Zeichenaufrufe)
     if(m.topDirty)drawTop(m);

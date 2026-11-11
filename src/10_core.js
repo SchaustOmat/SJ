@@ -6,6 +6,18 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt=n=>(Math.round(n)/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const app=$('#app');
 
+/* ---------- nur ein Tab ---------- */
+// Läuft das Spiel schon in einem anderen Tab, würde dieser hier beim Start Geld „zurückholen“, das dort noch im Spiel ist (= doppeltes Geld).
+// Darum wartet ein zweiter Tab, bis der erste zu ist. Lebenszeichen alle 2 s in nk_alive („Tab-Kennung:Zeit“).
+const TAB_ID=Math.random().toString(36).slice(2);
+{const otherAlive=()=>{try{const v=(localStorage.getItem('nk_alive')||'').split(':');return !!v[0]&&v[0]!==TAB_ID&&Date.now()-(+v[1])<6000;}catch(e){return false;}};
+  if(otherAlive()){
+    document.body.innerHTML='<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0907;color:#e8c878;font:600 20px/1.5 Georgia,serif;text-align:center;padding:24px"><div><div style="font-size:30px;letter-spacing:.12em;margin-bottom:14px">SJ SPIELBANK</div>Das Spiel läuft schon in einem anderen Tab.<br>Schließ den anderen Tab – hier geht es dann von selbst weiter.</div></div>';
+    setTimeout(()=>location.reload(),3000);throw new Error('Spiel läuft schon in einem anderen Tab');}
+  const beat=()=>{if(otherAlive()){location.reload();return;}try{localStorage.setItem('nk_alive',TAB_ID+':'+Date.now());}catch(e){}}; // ein neuerer Tab hat übernommen (dieser war lange im Hintergrund): neu laden = warten
+  beat();setInterval(beat,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat();});
+  addEventListener('pagehide',()=>{try{if((localStorage.getItem('nk_alive')||'').split(':')[0]===TAB_ID)localStorage.removeItem('nk_alive');}catch(e){}});}
+
 /* ---------- chips ---------- */
 let chips=20000;
 try{const v=localStorage.getItem('nk_chips');if(v!==null&&isFinite(+v))chips=+v;

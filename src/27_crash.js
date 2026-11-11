@@ -121,7 +121,7 @@ function crStep(dt){
   // Gastgeber bestimmen (Raum) – wechselt er mitten im Lauf, zahlt jeder seinen Einsatz zum aktuellen Wert aus
   const host=room?crHostPick():'';
   if(host!==CR.host){if(CR.state==='run'&&CR.pend>0)crCash(CR.m);CR.host=host;CR.ctKey='';
-    if(room&&host===MP.myPeer)crNewRound(CR.r+1);else if(!room||!host){CR.state='bet';CR.bt=Infinity;CR.t=0;CR.m=1;crUpdate();}}
+    if(room&&host===MP.myPeer)crNewRound(CR.r+1);else if(!room||!host){CR.state='bet';CR.bt=Infinity;CR.t=0;CR.m=1;if(!room){if(CR.queued>0){CR.pend=CR.queued;CR.queued=0;}if(CR.pend>0){CR.C=crPoint();CR.bt=.9;}}crUpdate();}}
   if(!room||host===MP.myPeer)crHostStep(dt);else if(host)crClientStep(dt);
   // eigener Einsatz: Auto-Auszahlung
   if(CR.state==='run'&&CR.pend>0&&!CR.my.c){const a=crAuto();if(a&&CR.m>=a&&(!crIsHost()||a<=CR.C))crCash(a);}
@@ -140,12 +140,17 @@ function crHostStep(dt){
 }
 function crClientStep(dt){
   const pr=typeof mtPeerPresence==='function'?mtPeerPresence(CR.host):null,ct=pr&&pr.ct;if(!ct||typeof ct.r!=='number')return;
-  if(ct.r!==CR.r){if(CR.state==='run'&&CR.pend>0)crCash(CR.m);crNewRound(ct.r);}
+  if(ct.r!==CR.r){if(CR.state==='run'&&CR.pend>0){
+      // Crash verpasst (Seite war im Hintergrund): mit dem echten Crash-Punkt der verpassten Runde abrechnen statt mit dem stehengebliebenen Wert
+      const C=ct.r===CR.r+1&&Array.isArray(ct.h)&&ct.h.length?+ct.h[ct.h.length-1]:0;
+      if(C>=1){const a=crAuto();if(a&&a<=C)crCash(a);else{CR.C=C;crCrashNow();}}else crCash(CR.m);}
+    crNewRound(ct.r);}
   if(Array.isArray(ct.h))CR.hist=ct.h.map(Number).filter(x=>x>=1).slice(-12);
   if(ct.st==='run'&&CR.state!=='run'){if(CR.state==='bet'){CR.t=+ct.t||0;crLaunch();CR.t=+ct.t||0;CR.m=crM(CR.t);}}
   else if(ct.st==='crash'&&CR.state!=='crash'){CR.C=Math.max(1,+ct.C||CR.m);crCrashNow();}
   else if(ct.st==='bet'&&CR.state!=='bet'){CR.state='bet';CR.t=0;CR.m=1;crUpdate();}
-  if(CR.state==='run'){CR.t+=dt;const ht=+ct.t||0;const d=ht-CR.t;if(Math.abs(d)>.35)CR.t=ht;else CR.t+=d*Math.min(1,dt*3);CR.m=crM(CR.t);}
+  if(CR.state==='run'){CR.t+=dt;if(ct.t!==CR.hT){CR.hT=ct.t;CR.hAt=performance.now();}const ht=(+ct.t||0)+Math.min(.5,(performance.now()-CR.hAt)/1000);const d=ht-CR.t; // Gastgeber-Uhr weiterdenken, sonst zieht der alte Wert den Zähler zurück (Ruckeln)
+    if(Math.abs(d)>.35)CR.t=ht;else CR.t+=d*Math.min(1,dt*3);CR.m=crM(CR.t);}
   if(CR.state==='bet'||CR.state==='crash')CR.bt=+ct.bt||0;
 }
 // ---- Bildschirm ----
