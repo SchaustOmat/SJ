@@ -107,6 +107,10 @@ body.pcmode #joyBase,body.pcmode #joyHint{display:none}
 .rm-row button.down{transform:translateY(2px);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
 body.pcmode #rmBar{display:none}
 #itBar{position:fixed;z-index:6;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 60px);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);pointer-events:auto}
+/* Handy hoch, frei laufend: schmale Spalte am linken Rand statt drei Reihen quer über das Bild (Justin 2026-11-11: „nicht so eng“) */
+@media (min-height:461px){#itBar:not(.fc){left:max(8px,env(safe-area-inset-left,0px));transform:none;top:calc(env(safe-area-inset-top,0px) + 108px);flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:5px;max-width:44vw}
+#itBar:not(.fc) .itb{font-size:10px;padding:8px 10px;background:rgba(10,6,16,.55);border-color:rgba(214,160,42,.4)}
+#itBar.fc{flex-wrap:nowrap;gap:4px}#itBar.fc .itb{font-size:10px;padding:7px 8px;white-space:nowrap}}
 .itb{font-family:var(--f-title);font-size:11px;letter-spacing:.06em;padding:9px 11px;border:1px solid rgba(214,160,42,.55);border-radius:8px;background:rgba(10,6,16,.78);color:var(--gold);box-shadow:0 2px 10px rgba(0,0,0,.5)}
 .itb.down{transform:translateY(2px);background:rgba(214,160,42,.3)}
 body.pcmode #itBar{display:none}
@@ -768,7 +772,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1794393731";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1794400354";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -2138,9 +2142,9 @@ function chHandPose(kind,F){
   const fp=!!F.fp,ax=F.ax||1;
   switch(kind){
     case 'cig':if(fp){const c=m(.3,-.35*ax,.9),fd=m(.7,.55*ax,-.2);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const far=(1-ax)*2; // Hand vor der Brust, Handrücken zum Auge (Knöchel sichtbar), Kippe steht nach vorn-oben heraus; Hochformat etwas weiter weg (kleiner)
-        return {p:F.sp(.23+.05*far,.08*ax,.14+.02*far),fd,pal:c.negate(),fp:CH_FPOSE.cig};}
+        return {p:F.sp(.23+.08*far,.08*ax+.01*far,.14+.09*far),fd,pal:c.negate(),fp:CH_FPOSE.cig};} // Handy hoch: etwas weiter weg und klar tiefer – die Hand schaut nur von unten ins Bild (Hand war ein riesiger Klotz unten rechts, Justin 2026-11-11)
       return {p:F.pt(.12,.21,.36),fd:v(.5,.05,-.85),pal:v(-.45,-.85,-.25),fp:CH_FPOSE.cig}; // Arm hängt locker (Schulter liegt ~27 cm hinter dem Auge), Kippe zeigt nach vorn-außen
-    case 'cigAsh':if(fp){const fd=m(.5,.2*ax,-.84),pal=m(-.3,-.9,-.2);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();return {p:F.sp(.24,.13*ax,.15),fd,pal,fp:CH_FPOSE.cig};} // Hand kippt: Finger nach vorn-unten, Handfläche nach innen, Glut zeigt nach unten
+    case 'cigAsh':if(fp){const fd=m(.5,.2*ax,-.84),pal=m(-.3,-.9,-.2);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();return {p:F.sp(.24+.06*(1-ax)*2,.13*ax,.15+.08*(1-ax)*2),fd,pal,fp:CH_FPOSE.cig};} // Hand kippt: Finger nach vorn-unten, Handfläche nach innen, Glut zeigt nach unten
       return {p:F.pt(.08,.25,.40),fd:v(.75,.2,-.6),pal:v(-.1,-.35,.93),fp:CH_FPOSE.cig};
     case 'cigMouth':{const c=m(.8,.1,.6),fd=m(-.3,-.7,.52);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const pal=c.clone().negate(); // Filter an den Lippen, Finger quer vor dem Mund nach oben-links, Kippe zeigt nach vorn-oben
       const at=F.M.clone();if(fp)at.addScaledVector(F.mf,.05+.08*(1-ax)*2).addScaledVector(F.mu,-.01); // eigene Figur: die Lippen liegen unter dem Bildrand, darum Hand und Kippe nach vorn (unten im Bild sichtbar; Hochformat weiter weg, sonst füllt die Hand das Bild)
@@ -7053,7 +7057,8 @@ const HD_MOUTH=POSE.mouth.p; // Lippen im Kamera-Raum (auch Ziel der Hand beim Z
 // Am Automaten verdeckt die Tastenleiste den unteren Bildrand: dort wird die Pose nur so weit angehoben, dass das Filterende knapp
 // hinter der Leiste bleibt und der Rest wie gewohnt darüber zu sehen ist (nie ein frei schwebendes Filterende, Nutzer 2026-10-22)
 function hdMouth(){
-  const bt=hdBarTop(),k=hdK()*(bt>0?1.3:1),tv=Math.tan(camera.fov*Math.PI/360);const p=POSE.mouth.p.map(v=>v*k),r=POSE.mouth.r.slice(); // am Automaten ein Drittel weiter weg (verdeckt weniger vom Bildschirm)
+  const bt=hdBarTop(),k=hdK()*(bt>0?1.3:1),tv=Math.tan(camera.fov*Math.PI/360);const p=POSE.mouth.p.map(v=>v*k),r=POSE.mouth.r.slice();
+  if(!bt&&LW()<LH()){p[0]+=.006*k;p[1]-=.02*k;r[0]-=.06;} // Handy hoch: tiefer und flacher, sonst steht die Kippe riesig mitten im Bild // am Automaten ein Drittel weiter weg (verdeckt weniger vom Bildschirm)
   if(bt>0){const need=((-1+2*bt)-.07)*tv*(-p[2]);if(p[1]<need)p[1]=need;}
   return {p,r};}
 // Schachtel: Zielpunkt der Schachtelmitte im Kamera-Raum, über Bildanteile (sx/sy wie Normkoordinaten -1..1) und Abstand d:
@@ -7372,7 +7377,7 @@ function handsKey(e){
 }
 function handsAvail(){const C=HD.cig,o=[];
   if(HD.packSt!=='off')o.push(['pack','SCHACHTEL WEG','R']);else if(!C||C.where==='mouth')o.push(['pack',C?'SCHACHTEL':'ZIGARETTEN ('+INV.cigs+')','R']);
-  if(C){if(!C.lit&&C.where==='mouth')o.push(['fire','FEUER','F']);if(C.lit)o.push(['drag','ZIEHEN','Q']);if(!atSlot()||C.where==='hand')o.push(['hand',C.where==='mouth'?'IN DIE HAND':'IN DEN MUND','H']);if(C.lit)o.push(['ash','ABASCHEN','X']);o.push(['throw','WEG','V']);}
+  if(C){if(!C.lit&&C.where==='mouth')o.push(['fire','FEUER','F']);if(C.lit)o.push(['drag','ZIEHEN','Q']);if(!atSlot()||C.where==='hand')o.push(['hand',C.where==='mouth'?(PC?'IN DIE HAND':'HAND'):(PC?'IN DEN MUND':'MUND'),'H']);if(C.lit)o.push(['ash','ABASCHEN','X']);o.push(['throw','WEG','V']);}
   if(HD.drink)o.push(['sip','TRINKEN','T']);if(typeof walletAvail==='function')walletAvail(o);return o;}
 function hdUi(){
   const bar=$('#itBar'),hint=$('#itHint');const vis=started&&(!focus||atSlot())&&!locked&&!openId;const av=vis?handsAvail():[];

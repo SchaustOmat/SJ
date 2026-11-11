@@ -37,7 +37,8 @@ const HD_MOUTH=POSE.mouth.p; // Lippen im Kamera-Raum (auch Ziel der Hand beim Z
 // Am Automaten verdeckt die Tastenleiste den unteren Bildrand: dort wird die Pose nur so weit angehoben, dass das Filterende knapp
 // hinter der Leiste bleibt und der Rest wie gewohnt darüber zu sehen ist (nie ein frei schwebendes Filterende, Nutzer 2026-10-22)
 function hdMouth(){
-  const bt=hdBarTop(),k=hdK()*(bt>0?1.3:1),tv=Math.tan(camera.fov*Math.PI/360);const p=POSE.mouth.p.map(v=>v*k),r=POSE.mouth.r.slice(); // am Automaten ein Drittel weiter weg (verdeckt weniger vom Bildschirm)
+  const bt=hdBarTop(),k=hdK()*(bt>0?1.3:1),tv=Math.tan(camera.fov*Math.PI/360);const p=POSE.mouth.p.map(v=>v*k),r=POSE.mouth.r.slice();
+  if(!bt&&LW()<LH()){p[0]+=.006*k;p[1]-=.02*k;r[0]-=.06;} // Handy hoch: tiefer und flacher, sonst steht die Kippe riesig mitten im Bild // am Automaten ein Drittel weiter weg (verdeckt weniger vom Bildschirm)
   if(bt>0){const need=((-1+2*bt)-.07)*tv*(-p[2]);if(p[1]<need)p[1]=need;}
   return {p,r};}
 // Schachtel: Zielpunkt der Schachtelmitte im Kamera-Raum, über Bildanteile (sx/sy wie Normkoordinaten -1..1) und Abstand d:
@@ -356,7 +357,7 @@ function handsKey(e){
 }
 function handsAvail(){const C=HD.cig,o=[];
   if(HD.packSt!=='off')o.push(['pack','SCHACHTEL WEG','R']);else if(!C||C.where==='mouth')o.push(['pack',C?'SCHACHTEL':'ZIGARETTEN ('+INV.cigs+')','R']);
-  if(C){if(!C.lit&&C.where==='mouth')o.push(['fire','FEUER','F']);if(C.lit)o.push(['drag','ZIEHEN','Q']);if(!atSlot()||C.where==='hand')o.push(['hand',C.where==='mouth'?'IN DIE HAND':'IN DEN MUND','H']);if(C.lit)o.push(['ash','ABASCHEN','X']);o.push(['throw','WEG','V']);}
+  if(C){if(!C.lit&&C.where==='mouth')o.push(['fire','FEUER','F']);if(C.lit)o.push(['drag','ZIEHEN','Q']);if(!atSlot()||C.where==='hand')o.push(['hand',C.where==='mouth'?(PC?'IN DIE HAND':'HAND'):(PC?'IN DEN MUND':'MUND'),'H']);if(C.lit)o.push(['ash','ABASCHEN','X']);o.push(['throw','WEG','V']);}
   if(HD.drink)o.push(['sip','TRINKEN','T']);if(typeof walletAvail==='function')walletAvail(o);return o;}
 function hdUi(){
   const bar=$('#itBar'),hint=$('#itHint');const vis=started&&(!focus||atSlot())&&!locked&&!openId;const av=vis?handsAvail():[];

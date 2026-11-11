@@ -331,9 +331,9 @@ function chHandPose(kind,F){
   const fp=!!F.fp,ax=F.ax||1;
   switch(kind){
     case 'cig':if(fp){const c=m(.3,-.35*ax,.9),fd=m(.7,.55*ax,-.2);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const far=(1-ax)*2; // Hand vor der Brust, Handrücken zum Auge (Knöchel sichtbar), Kippe steht nach vorn-oben heraus; Hochformat etwas weiter weg (kleiner)
-        return {p:F.sp(.23+.05*far,.08*ax,.14+.02*far),fd,pal:c.negate(),fp:CH_FPOSE.cig};}
+        return {p:F.sp(.23+.08*far,.08*ax+.01*far,.14+.09*far),fd,pal:c.negate(),fp:CH_FPOSE.cig};} // Handy hoch: etwas weiter weg und klar tiefer – die Hand schaut nur von unten ins Bild (Hand war ein riesiger Klotz unten rechts, Justin 2026-11-11)
       return {p:F.pt(.12,.21,.36),fd:v(.5,.05,-.85),pal:v(-.45,-.85,-.25),fp:CH_FPOSE.cig}; // Arm hängt locker (Schulter liegt ~27 cm hinter dem Auge), Kippe zeigt nach vorn-außen
-    case 'cigAsh':if(fp){const fd=m(.5,.2*ax,-.84),pal=m(-.3,-.9,-.2);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();return {p:F.sp(.24,.13*ax,.15),fd,pal,fp:CH_FPOSE.cig};} // Hand kippt: Finger nach vorn-unten, Handfläche nach innen, Glut zeigt nach unten
+    case 'cigAsh':if(fp){const fd=m(.5,.2*ax,-.84),pal=m(-.3,-.9,-.2);pal.sub(fd.clone().multiplyScalar(pal.dot(fd))).normalize();return {p:F.sp(.24+.06*(1-ax)*2,.13*ax,.15+.08*(1-ax)*2),fd,pal,fp:CH_FPOSE.cig};} // Hand kippt: Finger nach vorn-unten, Handfläche nach innen, Glut zeigt nach unten
       return {p:F.pt(.08,.25,.40),fd:v(.75,.2,-.6),pal:v(-.1,-.35,.93),fp:CH_FPOSE.cig};
     case 'cigMouth':{const c=m(.8,.1,.6),fd=m(-.3,-.7,.52);fd.sub(c.clone().multiplyScalar(fd.dot(c))).normalize();const pal=c.clone().negate(); // Filter an den Lippen, Finger quer vor dem Mund nach oben-links, Kippe zeigt nach vorn-oben
       const at=F.M.clone();if(fp)at.addScaledVector(F.mf,.05+.08*(1-ax)*2).addScaledVector(F.mu,-.01); // eigene Figur: die Lippen liegen unter dem Bildrand, darum Hand und Kippe nach vorn (unten im Bild sichtbar; Hochformat weiter weg, sonst füllt die Hand das Bild)
