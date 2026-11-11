@@ -162,7 +162,11 @@ document.addEventListener('click',e=>{
   else if(t.dataset.add){ATM.amt=String(Math.min(1e10,(+ATM.amt||0)+ +t.dataset.add));atmSay('');}
   else if(t.dataset.all){ATM.amt=String(ATM.step==='dep'?chips:BANK.bal);atmSay('');}
   else if(t.dataset.to){const a=ATM.list&&ATM.list[+t.dataset.to];if(a){ATM.to={name:a.name,kn:a.kn};ATM.step='sendAmt';ATM.amt='';atmSay('');}}
-  else if(t.dataset.undo){const p=BANK.pend[+t.dataset.undo];if(p){BANK.pend.splice(+t.dataset.undo,1);BANK.bal+=p.a;bankSave();atmSay(fmt(p.a)+' ZURÜCKGEHOLT','ok');}}
+  else if(t.dataset.undo){const p=BANK.pend[+t.dataset.undo];
+    // Zurückholen nur, wenn der Empfänger nicht im Raum ist und die Überweisung schon etwas liegt – sonst könnte er sie gerade gutschreiben (doppeltes Geld)
+    const here=p&&typeof MP!=='undefined'&&MP.avatars&&[...MP.avatars.values()].some(a=>a.kn===p.to);
+    if(p&&(here||Date.now()-(p.t||0)<20000)){atmSay(here?'KOMMT GLEICH AN – '+p.n+' IST IM RAUM':'NOCH KURZ WARTEN','bad');}
+    else if(p){BANK.pend.splice(+t.dataset.undo,1);BANK.bal+=p.a;bankSave();atmSay(fmt(p.a)+' ZURÜCKGEHOLT','ok');}}
   else if(t.dataset.ok){atmBook();return;}
   atmRender();
 });

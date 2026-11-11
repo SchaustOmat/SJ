@@ -235,6 +235,7 @@ function pressButton(m,key){if(typeof chPress==='function')chPress(m,key); // ei
   if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;{const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
   // Einstiegs-Flackern (krummer Betrag): erst landen lassen – sonst drückt man unbemerkt von der unteren Stufe aus. Nehmen geht sofort.
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.ent){if(key==='START'){m.timer=0;timerDone(m);if(m.gamble)collect(m,true);}return;}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='rb'&&m.win>0&&(key==='LEITER'||key==='START'||key==='KARTE')){m.timer=0;timerDone(m);if(m.state!=='gamble')return;} // Karten-Risiko: Druck während der Anzeige zählt sofort (wurde vorher verschluckt)
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START'||key==='KARTE')){for(let n=0;n<3&&m.state==='gambleNext';n++){m.timer=0;timerDone(m);}if(m.state!=='gamble')return;}
   if(typeof svGateOn==='function'&&svGateOn(m))return;
   {const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();
@@ -327,8 +328,8 @@ function drawUnlock(m,g){const t=now-(m.unlockT||-9);if(t>2.2)return;m.dirty=tru
   const bg=g.createLinearGradient(0,-14,0,22);bg.addColorStop(0,'#fff2a0');bg.addColorStop(1,'#c88a10');g.fillStyle=bg;g.fillRect(-22,-14,44,36);g.strokeStyle='#5a3a00';g.lineWidth=2;g.strokeRect(-22,-14,44,36);
   g.fillStyle='#3a2000';g.beginPath();g.arc(0,2,5,0,TAU);g.fill();g.fillRect(-2,2,4,10);g.restore();
   const sc=1+Math.sin(t*10)*.04+(t<.5?(.5-t)*1.2:0);g.save();g.translate(160,140);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,22);
-  g.lineWidth=8;g.strokeStyle='#002a08';g.strokeText('ENTSPERRT',0,0);const tg=g.createLinearGradient(0,-11,0,11);tg.addColorStop(0,'#e8ffe0');tg.addColorStop(.5,'#3adf5a');tg.addColorStop(1,'#0a6a1a');g.fillStyle=tg;g.fillText('ENTSPERRT',0,0);g.restore();
-  px(g,7);g.textAlign='center';g.fillStyle='#f4f0e8';g.fillText('DER AUTOMAT GEHÖRT DIR',160,168);
+  g.lineWidth=8;g.strokeStyle='#002a08';const ut=slotCashMode(m)?'BARGELD':'ENTSPERRT';g.strokeText(ut,0,0);const tg=g.createLinearGradient(0,-11,0,11);tg.addColorStop(0,'#e8ffe0');tg.addColorStop(.5,'#3adf5a');tg.addColorStop(1,'#0a6a1a');g.fillStyle=tg;g.fillText(ut,0,0);g.restore();
+  px(g,7);g.textAlign='center';g.fillStyle='#f4f0e8';g.fillText(slotCashMode(m)?'GUTHABEN '+fmt(m.cash||0):'DER AUTOMAT GEHÖRT DIR',160,168);
   g.restore();}
 // runde Goldmünze (Vorder-/Rückseite) und weicher Funke, einmal vorgezeichnet
 function coinSprite(back){const k=back?'b':'f';coinSprite.c=coinSprite.c||{};if(coinSprite.c[k])return coinSprite.c[k];
@@ -611,12 +612,13 @@ function powerSpin(m){
   const P=m.power;if(P.spinning||P.left<=0)return;
   P.left--;P.spinning=true;P.last=0;P.count++;
   P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.myst=SlotEngine.mystery(m.G,S.grid,Math.random);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
-    S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;});});
+    S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;r.back=0;});});
   m.msg=P.left+' POWER SPINS ÜBRIG';SFX.reelStart();m.dirty=true;m.topDirty=true;updateButtons(m);
 }
 function powerStep(m,dt){
   const P=m.power;if(!P.spinning)return;let any=false;
-  P.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;r.pos-=24*dt;if(now>=r.stopAt){r.spin=false;r.pos=r.target;SFX.clunk();}}));
+  P.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;if(r.back){const u=(now-r.back)/.2;if(u>=1){r.spin=false;r.back=0;r.pos=r.target;}else{const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;r.pos=r.target-.2*(1-e);}return;} // weich zurück aufs Ziel wie die großen Walzen
+    r.pos-=24*dt;if(now>=r.stopAt){r.back=now;r.pos=r.target-.2;SFX.clunk();}}));
   m.dirty=true;
   if(!any){P.spinning=false;const w=P.sets.reduce((a,S)=>a+S.ev.total,0);P.last=w;P.sum+=w;m.win+=w;
     P.sets.forEach((S,si)=>{if(S.ev.total>0)fxBurst(m,RX-3+(si%2)*143+70,RY-3+(si/2|0)*82+38,S.ev.total>=P.cost?18:8,{spd:90,w:100,h:50});});

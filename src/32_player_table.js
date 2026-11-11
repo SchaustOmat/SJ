@@ -169,7 +169,7 @@ function mtAuthTick(T){
   S.seats.forEach((s,i)=>{if(!s||s.gone)return;const r=reqs[s.p];
     if(!r||r.tok!==s.tok){if(isBetting(S)&&mtLive(s)){s.f=1;s.gone=1;s.l='WEG';if(S.toAct===i){S.toAct=mtNext(S,i,mtCan);S.dl=t+MT_TURN;}mtSettle(T,S);}else if(S.stage==='show'&&s.c)s.gone=1;else S.seats[i]=null;ch=true;}});
   for(const p in reqs){
-    if(S.seats.some(s=>s&&s.p===p&&!s.gone))continue;const r=reqs[p];if(r.b<T.bb*5)continue;
+    if(S.seats.some(s=>s&&s.p===p&&!s.gone))continue;const r=reqs[p];if(!(r.b>0))continue;
     const idx=r.s>=0&&r.s<MT_N&&!S.seats[r.s]?r.s:S.seats.findIndex(x=>!x);if(idx<0)continue;
     S.seats[idx]={p,n:r.n,tok:r.tok,st:r.b,b:0,t:0,f:1,a:0,l:'NEU',c:null,acted:0};ch=true;
   }
@@ -212,7 +212,9 @@ function mtStep(){
   for(const id in TABLES)mtStepTable(TABLES[id]);
   // eigener Platz: Buy-in abziehen, Stack merken
   const T=TABLES[MT.table],my=mtMySeat(T);
-  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}}
+  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}
+    // Platzwunsch trägt immer den aktuellen Stapel: nach einem Verbindungsabriss setzt der Tisch dich damit wieder hin (vorher mit dem alten Einkauf = Verluste zurück, Gewinne weg)
+    if(s.st>0&&MP.me.ts&&MP.me.ts.tok===MT.tok&&MP.me.ts.b!==s.st){MP.me.ts.b=s.st;MP.dirty=true;}}
   const V=T&&T.view;
   const tk=V&&my>=0&&V.toAct===my&&isBetting(V)?V.hand+'/'+V.board.length+'/'+V.curBet:'';
   if(tk&&tk!==MT.turnKey){MT.turnKey=tk;SFX.ding();MT.raiseTo=0;if(focus&&focus.type==='mtable')mtBarSync();}

@@ -768,7 +768,7 @@ body:not(.gfx-sharp) #game{image-rendering:pixelated}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';document.head.appendChild(s)"></script>
-<script>window.NK_STANDALONE=true;window.NK_VERSION="1794391101";</script>
+<script>window.NK_STANDALONE=true;window.NK_VERSION="1794393731";</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
@@ -1317,6 +1317,7 @@ function signTex(text,color,bg){
 }
 function sign(F,text,color,x,y,z,rotY,h){
   h=h||.55;const t=signTex(text,color);const w=h*t.image.width/t.image.height;
+  t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.anisotropy=4;t.needsUpdate=true; // Schilder flimmern aus der Ferne nicht mehr
   const m=mesh(new THREE.PlaneGeometry(w,h),bas({map:t,side:THREE.DoubleSide}),x,y,z,F.group);m.rotation.y=rotY||0;(F.signs||(F.signs=[])).push(m);return m;
 }
 function decal(F,tex,w,h,x,y,z,rotY){const m=mesh(new THREE.PlaneGeometry(w,h),lam({map:tex,transparent:true,alphaTest:.5}),x,y,z,F.group);m.rotation.y=rotY;return m;}
@@ -2565,6 +2566,7 @@ function pressButton(m,key){if(typeof chPress==='function')chPress(m,key); // ei
   if(m.gamble&&m.gamble.run){if(key==='LEITER'||key==='START'){m.gamble.queued=key;{const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();}return;} // Druck wird gemerkt und nach der Ausspielung ausgeführt
   // Einstiegs-Flackern (krummer Betrag): erst landen lassen – sonst drückt man unbemerkt von der unteren Stufe aus. Nehmen geht sofort.
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.ent){if(key==='START'){m.timer=0;timerDone(m);if(m.gamble)collect(m,true);}return;}
+  if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='rb'&&m.win>0&&(key==='LEITER'||key==='START'||key==='KARTE')){m.timer=0;timerDone(m);if(m.state!=='gamble')return;} // Karten-Risiko: Druck während der Anzeige zählt sofort (wurde vorher verschluckt)
   if(m.state==='gambleNext'&&m.gamble&&m.gamble.kind==='ladder'&&(key==='LEITER'||key==='START'||key==='KARTE')){for(let n=0;n<3&&m.state==='gambleNext';n++){m.timer=0;timerDone(m);}if(m.state!=='gamble')return;}
   if(typeof svGateOn==='function'&&svGateOn(m))return;
   {const bk=key==='KARTE'?'RISIKO':key;if(m.btns[bk])m.btns[bk].press=1;}SFX.btn();
@@ -2657,8 +2659,8 @@ function drawUnlock(m,g){const t=now-(m.unlockT||-9);if(t>2.2)return;m.dirty=tru
   const bg=g.createLinearGradient(0,-14,0,22);bg.addColorStop(0,'#fff2a0');bg.addColorStop(1,'#c88a10');g.fillStyle=bg;g.fillRect(-22,-14,44,36);g.strokeStyle='#5a3a00';g.lineWidth=2;g.strokeRect(-22,-14,44,36);
   g.fillStyle='#3a2000';g.beginPath();g.arc(0,2,5,0,TAU);g.fill();g.fillRect(-2,2,4,10);g.restore();
   const sc=1+Math.sin(t*10)*.04+(t<.5?(.5-t)*1.2:0);g.save();g.translate(160,140);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';px(g,22);
-  g.lineWidth=8;g.strokeStyle='#002a08';g.strokeText('ENTSPERRT',0,0);const tg=g.createLinearGradient(0,-11,0,11);tg.addColorStop(0,'#e8ffe0');tg.addColorStop(.5,'#3adf5a');tg.addColorStop(1,'#0a6a1a');g.fillStyle=tg;g.fillText('ENTSPERRT',0,0);g.restore();
-  px(g,7);g.textAlign='center';g.fillStyle='#f4f0e8';g.fillText('DER AUTOMAT GEHÖRT DIR',160,168);
+  g.lineWidth=8;g.strokeStyle='#002a08';const ut=slotCashMode(m)?'BARGELD':'ENTSPERRT';g.strokeText(ut,0,0);const tg=g.createLinearGradient(0,-11,0,11);tg.addColorStop(0,'#e8ffe0');tg.addColorStop(.5,'#3adf5a');tg.addColorStop(1,'#0a6a1a');g.fillStyle=tg;g.fillText(ut,0,0);g.restore();
+  px(g,7);g.textAlign='center';g.fillStyle='#f4f0e8';g.fillText(slotCashMode(m)?'GUTHABEN '+fmt(m.cash||0):'DER AUTOMAT GEHÖRT DIR',160,168);
   g.restore();}
 // runde Goldmünze (Vorder-/Rückseite) und weicher Funke, einmal vorgezeichnet
 function coinSprite(back){const k=back?'b':'f';coinSprite.c=coinSprite.c||{};if(coinSprite.c[k])return coinSprite.c[k];
@@ -2941,12 +2943,13 @@ function powerSpin(m){
   const P=m.power;if(P.spinning||P.left<=0)return;
   P.left--;P.spinning=true;P.last=0;P.count++;
   P.sets.forEach((S,si)=>{S.stops=SlotEngine.randStops(m.G,Math.random);S.grid=SlotEngine.grid(m.G,S.stops);S.myst=SlotEngine.mystery(m.G,S.grid,Math.random);S.ev=SlotEngine.evaluate(m.G,S.grid,m.lines,betLine(m)*P.mult);
-    S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;});});
+    S.reels.forEach((r,i)=>{r.spin=true;r.target=S.stops[i];r.stopAt=now+.5+i*.11+si*.16;r.back=0;});});
   m.msg=P.left+' POWER SPINS ÜBRIG';SFX.reelStart();m.dirty=true;m.topDirty=true;updateButtons(m);
 }
 function powerStep(m,dt){
   const P=m.power;if(!P.spinning)return;let any=false;
-  P.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;r.pos-=24*dt;if(now>=r.stopAt){r.spin=false;r.pos=r.target;SFX.clunk();}}));
+  P.sets.forEach(S=>S.reels.forEach(r=>{if(!r.spin)return;any=true;if(r.back){const u=(now-r.back)/.2;if(u>=1){r.spin=false;r.back=0;r.pos=r.target;}else{const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;r.pos=r.target-.2*(1-e);}return;} // weich zurück aufs Ziel wie die großen Walzen
+    r.pos-=24*dt;if(now>=r.stopAt){r.back=now;r.pos=r.target-.2;SFX.clunk();}}));
   m.dirty=true;
   if(!any){P.spinning=false;const w=P.sets.reduce((a,S)=>a+S.ev.total,0);P.last=w;P.sum+=w;m.win+=w;
     P.sets.forEach((S,si)=>{if(S.ev.total>0)fxBurst(m,RX-3+(si%2)*143+70,RY-3+(si/2|0)*82+38,S.ev.total>=P.cost?18:8,{spd:90,w:100,h:50});});
@@ -5901,7 +5904,7 @@ function mtAuthTick(T){
   S.seats.forEach((s,i)=>{if(!s||s.gone)return;const r=reqs[s.p];
     if(!r||r.tok!==s.tok){if(isBetting(S)&&mtLive(s)){s.f=1;s.gone=1;s.l='WEG';if(S.toAct===i){S.toAct=mtNext(S,i,mtCan);S.dl=t+MT_TURN;}mtSettle(T,S);}else if(S.stage==='show'&&s.c)s.gone=1;else S.seats[i]=null;ch=true;}});
   for(const p in reqs){
-    if(S.seats.some(s=>s&&s.p===p&&!s.gone))continue;const r=reqs[p];if(r.b<T.bb*5)continue;
+    if(S.seats.some(s=>s&&s.p===p&&!s.gone))continue;const r=reqs[p];if(!(r.b>0))continue;
     const idx=r.s>=0&&r.s<MT_N&&!S.seats[r.s]?r.s:S.seats.findIndex(x=>!x);if(idx<0)continue;
     S.seats[idx]={p,n:r.n,tok:r.tok,st:r.b,b:0,t:0,f:1,a:0,l:'NEU',c:null,acted:0};ch=true;
   }
@@ -5944,7 +5947,9 @@ function mtStep(){
   for(const id in TABLES)mtStepTable(TABLES[id]);
   // eigener Platz: Buy-in abziehen, Stack merken
   const T=TABLES[MT.table],my=mtMySeat(T);
-  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}}
+  if(my>=0){const s=T.view.seats[my];if(MT.deducted!==MT.tok){setChips(chips-MT.buy);MT.deducted=MT.tok;}if(MT.savedSt!==s.st){MT.savedSt=s.st;store('nk_mtstack',s.st);}
+    // Platzwunsch trägt immer den aktuellen Stapel: nach einem Verbindungsabriss setzt der Tisch dich damit wieder hin (vorher mit dem alten Einkauf = Verluste zurück, Gewinne weg)
+    if(s.st>0&&MP.me.ts&&MP.me.ts.tok===MT.tok&&MP.me.ts.b!==s.st){MP.me.ts.b=s.st;MP.dirty=true;}}
   const V=T&&T.view;
   const tk=V&&my>=0&&V.toAct===my&&isBetting(V)?V.hand+'/'+V.board.length+'/'+V.curBet:'';
   if(tk&&tk!==MT.turnKey){MT.turnKey=tk;SFX.ding();MT.raiseTo=0;if(focus&&focus.type==='mtable')mtBarSync();}
@@ -6587,7 +6592,11 @@ document.addEventListener('click',e=>{
   else if(t.dataset.add){ATM.amt=String(Math.min(1e10,(+ATM.amt||0)+ +t.dataset.add));atmSay('');}
   else if(t.dataset.all){ATM.amt=String(ATM.step==='dep'?chips:BANK.bal);atmSay('');}
   else if(t.dataset.to){const a=ATM.list&&ATM.list[+t.dataset.to];if(a){ATM.to={name:a.name,kn:a.kn};ATM.step='sendAmt';ATM.amt='';atmSay('');}}
-  else if(t.dataset.undo){const p=BANK.pend[+t.dataset.undo];if(p){BANK.pend.splice(+t.dataset.undo,1);BANK.bal+=p.a;bankSave();atmSay(fmt(p.a)+' ZURÜCKGEHOLT','ok');}}
+  else if(t.dataset.undo){const p=BANK.pend[+t.dataset.undo];
+    // Zurückholen nur, wenn der Empfänger nicht im Raum ist und die Überweisung schon etwas liegt – sonst könnte er sie gerade gutschreiben (doppeltes Geld)
+    const here=p&&typeof MP!=='undefined'&&MP.avatars&&[...MP.avatars.values()].some(a=>a.kn===p.to);
+    if(p&&(here||Date.now()-(p.t||0)<20000)){atmSay(here?'KOMMT GLEICH AN – '+p.n+' IST IM RAUM':'NOCH KURZ WARTEN','bad');}
+    else if(p){BANK.pend.splice(+t.dataset.undo,1);BANK.bal+=p.a;bankSave();atmSay(fmt(p.a)+' ZURÜCKGEHOLT','ok');}}
   else if(t.dataset.ok){atmBook();return;}
   atmRender();
 });
